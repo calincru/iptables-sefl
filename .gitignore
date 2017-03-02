@@ -75,3 +75,6 @@ test.txt
 =======
 /libz3java.dll
 /libz3java.lib
+
+# Coveralls
+.coveralls_token
