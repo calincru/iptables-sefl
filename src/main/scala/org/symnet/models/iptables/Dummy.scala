@@ -1,0 +1,10 @@
+// Copyright (C) 2017 Calin Cruceru <calin.cruceru@stud.acs.upb.ro>.
+//
+// See the LICENCE file distributed with this work for additional
+// information regarding copyright ownership.
+
+package org.symnet.models.iptables
+
+object Dummy {
+  def dummySum(a: Int, b: Int): Int = a + b
+}
