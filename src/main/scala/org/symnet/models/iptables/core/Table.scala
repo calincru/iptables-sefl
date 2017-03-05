@@ -3,4 +3,6 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables.parser
+package org.symnet.models.iptables.core
+
+class Table(name: String, chains: List[Chain])

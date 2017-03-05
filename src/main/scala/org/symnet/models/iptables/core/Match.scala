@@ -3,6 +3,8 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables.model
+package org.symnet.models.iptables.core
 
-class Table(chains: List[Chain])
+import org.symnet.types.Net._
+
+abstract class Match

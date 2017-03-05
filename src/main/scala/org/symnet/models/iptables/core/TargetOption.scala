@@ -3,8 +3,6 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables
+package org.symnet.models.iptables.core
 
-object Dummy {
-  def dummySum(a: Int, b: Int): Int = a + b
-}
+abstract class TargetOptions

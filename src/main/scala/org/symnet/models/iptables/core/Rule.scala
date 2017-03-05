@@ -3,8 +3,9 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables.model
+package org.symnet.models.iptables.core
 
-class Rule(matches: List[Match],
-           target: Target,
-           targetOptions: List[TargetOption])
+abstract class Rule(
+    matches: List[Match],
+    target: Target,
+    targetOptions: TargetOptions)
