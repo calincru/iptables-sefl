@@ -5,4 +5,8 @@
 
 package org.symnet.models.iptables.core
 
-class Table(name: String, chains: List[Chain])
+class Table(val name: String, val chains: List[Chain])
+
+object Table {
+  def apply(name: String, chains: List[Chain]): Table = new Table(name, chains)
+}

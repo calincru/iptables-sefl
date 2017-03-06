@@ -8,17 +8,17 @@ package models.iptables
 package filter
 
 import core.{Match, Parsing, RuleParser, Target}
-import types.Net.Ipv4
+import types.net.Ipv4
 
-object FilterRuleParsing extends RuleParser {
-  val matchParsers = List(Impl.srcIpMatchParser, Impl.dstIpMatchParser)
+object FilteringParser extends RuleParser {
+  val matchParsers  = List(Impl.srcIpMatchParser, Impl.dstIpMatchParser)
   val targetParsers = List(Impl.targetParser)
 
-  private object Impl {
+  object Impl {
     import Parsing._
     import Parsing.ParserMP.monadPlusSyntax._
 
-    case class SourceMatch(val ip: Ipv4) extends Match
+    case class SourceMatch     (val ip: Ipv4) extends Match
     case class DestinationMatch(val ip: Ipv4) extends Match
 
     def srcIpMatchParser: Parser[Match] =
@@ -44,8 +44,9 @@ object FilterRuleParsing extends RuleParser {
                         ("return", ReturnTarget))
       for {
         _      <- spacesParser >> parseString("-j")
-        target <- stringParser.map(_.toLowerCase) if targets contains target
-      } yield targets(target)
+        target <- spacesParser >> stringParser.map(_.toLowerCase)
+          if (targets contains target)
+      } yield (targets(target))
     }
   }
 }

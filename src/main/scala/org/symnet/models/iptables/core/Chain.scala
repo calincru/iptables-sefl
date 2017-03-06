@@ -5,6 +5,18 @@
 
 package org.symnet.models.iptables.core
 
+object Policy extends Enumeration {
+  type Policy = Value
+  val Accept, Drop, Return = Value
+
+  def apply(s: String): Option[Policy] =
+    s.toLowerCase match {
+      case "accept" => Some(Accept)
+      case "drop"   => Some(Drop)
+      case "return" => Some(Return)
+      case _        => None
+    }
+}
 import Policy._
 
 abstract class Chain(
@@ -17,7 +29,7 @@ case class UserChain(
     name: String,
     rules: List[Rule]) extends Chain(name, rules, None)
 
-/** iptables built-in chains *must* have a default policy. */
+/** iptables built-in chains must have a default policy. */
 case class BuiltinChain(
     name: String,
     rules: List[Rule],

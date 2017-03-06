@@ -9,7 +9,7 @@ package core
 
 import scalaz.{Maybe, MonadPlus, MonadState, StateT}
 
-import types.Net.Ipv4
+import types.net.Ipv4
 
 abstract class RuleParser {
   import Parsing.Parser
@@ -85,7 +85,7 @@ object Parsing {
 
   def parseChar(c: Char): Parser[Char] = parseCharIf(_ == c)
 
-  def spacesParser: Parser[String] = many(parseCharIf(_.isSpaceChar))
+  def spacesParser: Parser[String] = many(parseCharIf(_.isWhitespace))
 
   def parseString(s: String): Parser[String] =
     if (s.isEmpty)
@@ -93,7 +93,7 @@ object Parsing {
     else
       parseChar(s.head) >> parseString(s.tail) >>= (t => pure(s.head +: t))
 
-  def stringParser: Parser[String] = some(parseCharIf {!_.isSpaceChar})
+  def stringParser: Parser[String] = some(parseCharIf(!_.isWhitespace))
 
   def digitParser: Parser[Int] = parseCharIf(_.isDigit).map(_.asDigit)
 
@@ -120,7 +120,7 @@ object Parsing {
 
 
   ///
-  /// Rule, chain and table (TODO) parsers.
+  /// Rule, chain and table parsers.
   ///
 
   def ruleParser(implicit context: ParsingContext): Parser[Rule] = {
@@ -141,6 +141,11 @@ object Parsing {
       rules       <- many(ruleParser)
     } yield Chain(chainName, rules, Policy(maybePolicy getOrElse ""))
 
+  def tableParser(implicit context: ParsingContext): Parser[Table] =
+    for {
+      tableName <- spacesParser >> stringParser
+      chains    <- many(chainParser)
+    } yield Table(tableName, chains)
 
   ///
   /// Object private functions.

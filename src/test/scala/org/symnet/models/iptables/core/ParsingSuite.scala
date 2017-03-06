@@ -6,17 +6,20 @@
 package org.symnet
 package models.iptables.core
 
+// scala
 import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
+// 3rd party: scalaz
 import scalaz.Maybe._
 
-import types.Net.Ipv4
+// project
+import types.net.Ipv4
 import Parsing._
 
 @RunWith(classOf[JUnitRunner])
-class ParsingSuite extends FunSuite with Matchers {
+class CoreParsingSuite extends FunSuite with Matchers {
 
   ///
   /// Combinators testing suite.

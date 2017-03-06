@@ -5,6 +5,4 @@
 
 package org.symnet.models.iptables.core
 
-import org.symnet.types.Net._
-
 abstract class Match
