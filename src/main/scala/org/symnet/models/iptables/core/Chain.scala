@@ -7,7 +7,10 @@ package org.symnet.models.iptables.core
 
 import Policy._
 
-abstract class Chain(name: String, rules: List[Rule], policy: Option[Policy])
+abstract class Chain(
+    name: String,
+    rules: List[Rule],
+    policy: Option[Policy]) extends Target(name)
 
 /** A user-defined chain cannot have an implicit policy in iptables. */
 case class UserChain(

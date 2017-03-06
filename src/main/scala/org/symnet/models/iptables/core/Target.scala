@@ -3,12 +3,6 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables
+package org.symnet.models.iptables.core
 
-package object core {
-  type Target = Chain
-
-  object Target {
-    case object placeholder extends Target("placeholder", Nil, None)
-  }
-}
+abstract class Target(name: String)

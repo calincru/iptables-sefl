@@ -2,6 +2,7 @@
 //
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
+
 package org.symnet.models
 
 import scalaz.Functor

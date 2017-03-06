@@ -14,14 +14,8 @@ import types.Net.Ipv4
 abstract class RuleParser {
   import Parsing.Parser
 
-  val matchers: List[Parser[Match]]
-  val targetParser: Parser[Target]
-  val targetOptionsParser: Parser[TargetOptions]
-
-  def newRule(
-    matches: List[Match],
-    target: Target,
-    targetOptions: TargetOptions): Rule
+  val matchParsers:  List[Parser[Match]]
+  val targetParsers: List[Parser[Target]]
 }
 
 /** The parsing context.
@@ -44,7 +38,7 @@ object Parsing {
   val ParserMP = MonadPlus[Parser]
   import ParserMP.monadPlusSyntax._
 
-  private val ParserMS = MonadState[Parser, String]
+  val ParserMS = MonadState[Parser, String]
   import ParserMS.{get, put}
 
   implicit class ParserOps[A](p: Parser[A]) {
@@ -129,19 +123,22 @@ object Parsing {
   /// Rule, chain and table (TODO) parsers.
   ///
 
-  def ruleParser(rp: RuleParser): Parser[Rule] =
+  def ruleParser(implicit context: ParsingContext): Parser[Rule] = {
+    val matchParsers  = context.ruleParsers.map(_.matchParsers).flatten
+    val targetParsers = context.ruleParsers.map(_.targetParsers).flatten
+
     for {
-      matches <- some(rp.matchers.reduce(_ <<|> _))
-      target  <- rp.targetParser
-      targetOptions <- rp.targetOptionsParser
-    } yield rp.newRule(matches, target, targetOptions)
+      matches <- some(matchParsers.reduce(_ <<|> _))
+      target  <- targetParsers.reduce(_ <<|> _)
+    } yield Rule(matches, target)
+  }
 
   def chainParser(implicit context: ParsingContext): Parser[Chain] =
     for {
-      chainName <- spacesParser >> parseChar('<') >> stringParser
+      chainName   <- spacesParser >> parseChar('<') >> stringParser
       maybePolicy <- optional(parseChar(':') >> stringParser)
-      _ <- parseChar('>')
-      rules <- context.ruleParsers.map(x => many(ruleParser(x))).reduce(_ <<|> _)
+      _           <- parseChar('>')
+      rules       <- many(ruleParser)
     } yield Chain(chainName, rules, Policy(maybePolicy getOrElse ""))
 
 
