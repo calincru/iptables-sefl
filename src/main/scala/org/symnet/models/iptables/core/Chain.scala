@@ -19,7 +19,7 @@ object Policy extends Enumeration {
 }
 import Policy._
 
-abstract class Chain(
+sealed abstract class Chain(
     name: String,
     rules: List[Rule],
     policy: Option[Policy]) extends Target(name)
