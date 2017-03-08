@@ -5,4 +5,4 @@
 
 package org.symnet.models.iptables.core
 
-abstract class Match
+abstract class Match(negated: Boolean)

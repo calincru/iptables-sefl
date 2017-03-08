@@ -85,6 +85,20 @@ class CoreParsingSuite extends FunSuite with Matchers {
     state shouldBe Just("a")
   }
 
+  test("oneOf selects second") {
+    val input = "  ana"
+    val parser = Combinators.oneOf(parseString("ana"), spacesParser)
+    val value = parser.eval(input)
+    val state = parser.exec(input)
+
+    value shouldBe Just("  ")
+    state shouldBe Just("ana")
+  }
+
+  ///
+  /// Core parsers testing suite.
+  ///
+
   test("parseCharIf ana") {
     val result = parseCharIf(_ == 'a').eval("ana")
     result shouldBe Just('a')
@@ -127,10 +141,6 @@ class CoreParsingSuite extends FunSuite with Matchers {
     spaces shouldBe Just("  ")
     state shouldBe Just("ana")
   }
-
-  ///
-  /// Core parsers testing suite.
-  ///
 
   test("parse one string") {
     val parser = parseString("ana")
@@ -197,6 +207,25 @@ class CoreParsingSuite extends FunSuite with Matchers {
     byteParser.eval("-155 ") shouldBe empty
   }
 
+  test("parsing ports") {
+    portParser.eval("8080") shouldBe Just(8080)
+    portParser.eval("0") shouldBe Just(0)
+    portParser.eval("65535 ") shouldBe Just(65535)
+
+    portParser.eval("65536") shouldBe empty
+  }
+
+  test("parsing port ranges") {
+    portRangeParser.eval("1024-1024") shouldBe Just((1024, 1024))
+    portRangeParser.eval("1024-1025") shouldBe Just((1024, 1025))
+    portRangeParser.eval("0-80 ") shouldBe Just((0, 80))
+
+    portRangeParser.eval("0-65536") shouldBe empty
+    portRangeParser.eval("0 -65535") shouldBe empty
+    portRangeParser.eval("0 - 80") shouldBe empty
+    portRangeParser.eval("1024-1023") shouldBe empty
+  }
+
   test("parsing masks") {
     maskParser.eval("23asda") shouldBe Just(23)
     maskParser.eval("32 asd") shouldBe Just(32)
@@ -233,5 +262,38 @@ class CoreParsingSuite extends FunSuite with Matchers {
 
     ipParser.eval("0.0.0.10/256") shouldBe Just(Ipv4(0, 0, 0, 10, Some(25)))
     ipParser.exec("0.0.0.10/256") shouldBe Just("6")
+  }
+
+  test("chain target parser simple") {
+    chainTargetParser.eval("-j name") shouldBe
+      Just(PlaceholderTarget("name"))
+    chainTargetParser.eval(" --jump NamE") shouldBe
+      Just(PlaceholderTarget("NamE"))
+    chainTargetParser.eval(" --goto some$name") shouldBe
+      Just(PlaceholderTarget("some$name", true))
+    chainTargetParser.eval(" -g sOmeName") shouldBe
+      Just(PlaceholderTarget("sOmeName", true))
+
+    chainTargetParser.eval(" --jumpname") shouldBe empty
+    chainTargetParser.eval(" --jum pname") shouldBe empty
+    chainTargetParser.eval(" -jname") shouldBe empty
+  }
+
+  test("optionless target parser simple") {
+    val only = new Target("ONLY") {}
+
+    optionlessTargetParser(Map(("ONLY", only))).eval("-j ONLY") shouldBe
+      Just(only)
+    optionlessTargetParser(Map(("ONLY", only))).eval("--jump ONLY") shouldBe
+      Just(only)
+
+    optionlessTargetParser(Map(("ONLY", only))).eval("--goto ONLY") shouldBe
+      empty
+    optionlessTargetParser(Map(("ONLY", only))).eval("-g ONLY") shouldBe
+      empty
+    optionlessTargetParser(Map(("ONLY", only))).eval("--j umpONLY") shouldBe
+      empty
+    optionlessTargetParser(Map(("ONLY", only))).eval("-j OnLY") shouldBe
+      empty
   }
 }

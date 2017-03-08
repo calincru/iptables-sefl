@@ -25,8 +25,8 @@ import Parsing.Combinators._
 import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
-class FilterParsingSuite extends FunSuite with Matchers {
-  import FilteringParser.Impl._
+class FilterExtensionSuite extends FunSuite with Matchers {
+  import FilteringExtension.Impl._
 
   ///
   /// Matchers suite.
@@ -49,6 +49,11 @@ class FilterParsingSuite extends FunSuite with Matchers {
       Just("   -s  8.8.8.8/10 ")
   }
 
+  test("negated src ip parser") {
+    srcIpMatchParser.eval("-s ! 192.168.0.1") shouldBe
+      Just(SourceMatch(Ipv4(192, 168, 0, 1), negated=true))
+  }
+
   test("multiple src/dst ip parsers") {
     some(srcIpMatchParser).eval("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
       Just(List(SourceMatch(Ipv4(8, 8, 8, 6, Some(10))),
@@ -67,9 +72,9 @@ class FilterParsingSuite extends FunSuite with Matchers {
     targetParser.eval("-j DROP") shouldBe Just(DropTarget)
     targetParser.eval("-j RETURN") shouldBe Just(ReturnTarget)
 
-    targetParser.eval("-j accept") shouldBe Just(AcceptTarget)
-    targetParser.eval("-j DrOp") shouldBe Just(DropTarget)
-    targetParser.eval("-j ReTuRn") shouldBe Just(ReturnTarget)
+    targetParser.eval("-j accept") shouldBe empty
+    targetParser.eval("-j DrOp") shouldBe empty
+    targetParser.eval("-j ReTuRn") shouldBe empty
   }
 
 
@@ -80,7 +85,8 @@ class FilterParsingSuite extends FunSuite with Matchers {
   // Construct an implicit ParsingContext consisting only of the filtering
   // parser.
   implicit val context = new ParsingContext {
-    val ruleParsers = List(FilteringParser)
+    val matchExtensions  = List(FilteringExtension)
+    val targetExtensions = List(FilteringExtension)
   }
 
   test("simple rule parsing") {
@@ -100,4 +106,6 @@ class FilterParsingSuite extends FunSuite with Matchers {
     assert(ruleParser.eval("-j ACCEPT").isEmpty) // just target
     assert(ruleParser.eval("-s 8.8.8.8/10 -j retunr").isEmpty) // invalid target
   }
+
+  // TODO(calincru): Tests for in/out interface and protocols.
 }

@@ -7,30 +7,9 @@ package org.symnet
 package models.iptables
 package core
 
-import scalaz.{Maybe, MonadPlus, MonadState, StateT}
+import scalaz.{Maybe, MonadPlus, MonadState, NonEmptyList, StateT}
 
-import types.net.Ipv4
-
-abstract class RuleParser {
-  import Parsing.Parser
-
-  val matchParsers:  List[Parser[Match]]
-  val targetParsers: List[Parser[Target]]
-}
-
-/** The parsing context.
- *
- * Example usage before initiating the parsing.
- *
- *  {{{
- *  implicit val context = new ParsingContext {
- *    ruleParsers = List(...)
- *  }
- *  }}}
- */
-trait ParsingContext {
-  val ruleParsers: List[RuleParser]
-}
+import types.net.{Ipv4, Port, PortRange}
 
 object Parsing {
   type Parser[A] = StateT[Maybe, String, A]
@@ -70,8 +49,11 @@ object Parsing {
           case Some(x) => atMost(n - 1, p) >>= (xs => pure(x :: xs))
           case None    => pure(Nil)
         })
+
+    def oneOf[A](ps: Parser[A]*): Parser[A] = ps.reduce(_ <<|> _)
   }
   import Combinators._
+
 
   ///
   /// Basic parsers.
@@ -87,6 +69,8 @@ object Parsing {
 
   def spacesParser: Parser[String] = many(parseCharIf(_.isWhitespace))
 
+  def someSpacesParser: Parser[String] = some(parseCharIf(_.isWhitespace))
+
   def parseString(s: String): Parser[String] =
     if (s.isEmpty)
       pure("")
@@ -97,16 +81,34 @@ object Parsing {
 
   def digitParser: Parser[Int] = parseCharIf(_.isDigit).map(_.asDigit)
 
+
+  ///
+  /// Common parsers provided here to avoid duplicated code.
+  ///
+
   def byteParser: Parser[Int] =
     for {
       digits <- atMost(3, digitParser) if digitsValid(digits)
-      byte = toByte(digits) if byte <= 255
+      byte = toInt(digits) if byte <= 255
     } yield byte
+
+  def portParser: Parser[Port] =
+    for {
+      digits <- atMost(5, digitParser) if digitsValid(digits)
+      port = toInt(digits) if port < (1 << 16)
+    } yield port
+
+  def portRangeParser: Parser[PortRange] =
+    for {
+      lhs <- portParser
+      _   <- parseChar('-')
+      rhs <- portParser if rhs >= lhs
+    } yield (lhs, rhs)
 
   def maskParser: Parser[Int] =
     for {
       digits <- atMost(2, digitParser) if digitsValid(digits)
-      mask = toByte(digits) if mask <= 32
+      mask = toInt(digits) if mask <= 32
     } yield mask
 
   def ipParser: Parser[Ipv4] =
@@ -120,16 +122,56 @@ object Parsing {
 
 
   ///
-  /// Rule, chain and table parsers.
+  /// Target, rule, chain and table parsers.
   ///
 
+  def jumpOptionParser: Parser[String] =
+    spacesParser >> oneOf(parseString("-j"), parseString("--jump"))
+
+  def gotoOptionParser: Parser[String] =
+    spacesParser >> oneOf(parseString("-g"), parseString("--goto"))
+
+  /** Chain target parser.
+   *
+   *  This parser is used as the solution of last resort when matching targets
+   *  in a rule, and the parsed target name should refer to the name of another
+   *  chain.
+   *
+   *  This is ensured at a later stage, when the entire parsing is complete, to
+   *  allow forward references.
+   *
+   *  NOTE: The rule parser (see above) containing it should be added last to
+   *  the list of rule parsers as part of the parsing context if support for
+   *  jumps to other chains is needed.
+   */
+  def chainTargetParser: Parser[Target] =
+    for {
+      jump       <- oneOf(jumpOptionParser, gotoOptionParser)
+      targetName <- someSpacesParser >> stringParser
+    } yield PlaceholderTarget(targetName, List("-g", "--goto").contains(jump))
+
+  /** Helper implementation of a optionless target parser.
+   *
+   *  Other specialized target parsers can often be easily implemented by simply
+   *  providing a mapping of target names and the actual target object from the
+   *  iptables model.
+   */
+  def optionlessTargetParser(
+      nameToTarget: Map[String, Target]): Parser[Target] = {
+    for {
+      _          <- jumpOptionParser
+      targetName <- someSpacesParser >> stringParser
+        if nameToTarget contains targetName
+    } yield nameToTarget(targetName)
+  }
+
   def ruleParser(implicit context: ParsingContext): Parser[Rule] = {
-    val matchParsers  = context.ruleParsers.map(_.matchParsers).flatten
-    val targetParsers = context.ruleParsers.map(_.targetParsers).flatten
+    val matchParsers  = context.matchExtensions.map(_.matchParsers).flatten
+    val targetParsers = context.targetExtensions.map(_.targetParser)
 
     for {
-      matches <- some(matchParsers.reduce(_ <<|> _))
-      target  <- targetParsers.reduce(_ <<|> _)
+      matches <- some(oneOf(matchParsers: _*))
+      target  <- oneOf(targetParsers: _*)
     } yield Rule(matches, target)
   }
 
@@ -147,11 +189,12 @@ object Parsing {
       chains    <- many(chainParser)
     } yield Table(tableName, chains)
 
+
   ///
   /// Object private functions.
   ///
 
-  private def toByte(digits: List[Int]): Int = {
+  private def toInt(digits: List[Int]): Int = {
     val powers = Seq.iterate(1, digits.length)(_ * 10).reverse
     (digits, powers).zipped.map(_ * _).sum
   }

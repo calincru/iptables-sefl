@@ -10,10 +10,10 @@ object Policy extends Enumeration {
   val Accept, Drop, Return = Value
 
   def apply(s: String): Option[Policy] =
-    s.toLowerCase match {
-      case "accept" => Some(Accept)
-      case "drop"   => Some(Drop)
-      case "return" => Some(Return)
+    s match {
+      case "ACCEPT" => Some(Accept)
+      case "DROP"   => Some(Drop)
+      case "RETURN" => Some(Return)
       case _        => None
     }
 }
