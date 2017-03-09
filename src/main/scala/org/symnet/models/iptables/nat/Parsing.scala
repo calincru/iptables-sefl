@@ -14,13 +14,17 @@ import Parsing._
 import Combinators._
 import Parsing.ParserMP.monadPlusSyntax._
 
+// TODO(calincru): Make sure that the IPs for snat and dnat are host IPs, not
+// network IPs (no mask).
+
 object SnatTargetExtension extends TargetExtension {
   val targetParser = Impl.targetParser
 
   object Impl {
     // TODO(calincru): Do something useful with this.
     case class SnatTarget(
-        src:       Ipv4,
+        lowerIp:   Ipv4,
+        upperIp:   Option[Ipv4],
         portRange: Option[PortRange]) extends Target("SNAT")
 
     def targetParser: Parser[Target] =
@@ -32,11 +36,14 @@ object SnatTargetExtension extends TargetExtension {
 
         // Parse the mandatory '--to-source' target option.
         _ <- someSpacesParser >> parseString("--to-source")
-        srcIp <- someSpacesParser >> ipParser
+        lowerIp <- someSpacesParser >> ipParser
+
+        // Parse the optional upper bound ip.
+        upperIp <- optional(parseChar('-') >> ipParser)
 
         // Parse the optional port range.
         maybePortRange <- optional(parseChar(':') >> portRangeParser)
-      } yield SnatTarget(srcIp, maybePortRange)
+      } yield SnatTarget(lowerIp, upperIp, maybePortRange)
   }
 }
 
@@ -46,7 +53,8 @@ object DnatTargetExtension extends TargetExtension {
   object Impl {
     // TODO(calincru): Do something useful with this.
     case class DnatTarget(
-        dst:       Ipv4,
+        lowerIp:   Ipv4,
+        upperIp:   Option[Ipv4],
         portRange: Option[PortRange]) extends Target("DNAT")
 
     def targetParser: Parser[Target] =
@@ -58,11 +66,14 @@ object DnatTargetExtension extends TargetExtension {
 
         // Parse the mandatory '--to-destination' target option.
         _ <- someSpacesParser >> parseString("--to-destination")
-        dstIp <- someSpacesParser >> ipParser
+        lowerIp <- someSpacesParser >> ipParser
+
+        // Parse the optional upper bound ip.
+        upperIp <- optional(parseChar('-') >> ipParser)
 
         // Parse the optional port range.
         maybePortRange <- optional(parseChar(':') >> portRangeParser)
-      } yield DnatTarget(dstIp, maybePortRange)
+      } yield DnatTarget(lowerIp, upperIp, maybePortRange)
   }
 }
 
