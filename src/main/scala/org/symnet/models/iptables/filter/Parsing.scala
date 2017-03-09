@@ -31,6 +31,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
       val protocol: String,
       val negated: Boolean = false) extends Match(negated)
 
+    // TODO(calincru): Make sure it is a supported protocol.
     def protocolMatchParser: Parser[Match] =
       for {
         _        <- spacesParser >> oneOf(parseString("-p"),

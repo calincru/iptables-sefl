@@ -28,10 +28,11 @@ object SnatTargetExtension extends TargetExtension {
         _ <- jumpOptionParser
 
         // Parse the actual target.
-        targetName <- spacesParser >> stringParser if targetName == "SNAT"
+        targetName <- someSpacesParser >> stringParser if targetName == "SNAT"
 
         // Parse the mandatory '--to-source' target option.
-        srcIp <- spacesParser >> ipParser
+        _ <- someSpacesParser >> parseString("--to-source")
+        srcIp <- someSpacesParser >> ipParser
 
         // Parse the optional port range.
         maybePortRange <- optional(parseChar(':') >> portRangeParser)
@@ -53,10 +54,11 @@ object DnatTargetExtension extends TargetExtension {
         _ <- jumpOptionParser
 
         // Parse the actual target.
-        targetName <- spacesParser >> stringParser if targetName == "DNAT"
+        targetName <- someSpacesParser >> stringParser if targetName == "DNAT"
 
         // Parse the mandatory '--to-destination' target option.
-        dstIp <- spacesParser >> ipParser
+        _ <- someSpacesParser >> parseString("--to-destination")
+        dstIp <- someSpacesParser >> ipParser
 
         // Parse the optional port range.
         maybePortRange <- optional(parseChar(':') >> portRangeParser)
@@ -70,10 +72,28 @@ object MasqueradeTargetExtension extends TargetExtension {
   object Impl {
     // TODO(calincru): Do something useful with this.
     case class MasqueradeTarget(
-        lowerPort: Port,
+        lowerPort: Option[Port],
         upperPort: Option[Port]) extends Target("MASQUERADE")
 
     def targetParser: Parser[Target] =
-      pure(MasqueradeTarget(1.toShort, Some(2.toShort)))
+      for {
+        _ <- jumpOptionParser
+
+        // Parse the actual  target
+        targetName <- someSpacesParser >> stringParser
+          if targetName == "MASQUERADE"
+
+        // Parse the optional '--to-ports' target option
+        // ([--to-ports port[-port]]).
+        lowerPort <- optional(someSpacesParser >> parseString("--to-ports") >>
+                              someSpacesParser >> portParser)
+
+        // Try to parse the upper bound port only if the previous one succeeded.
+        upperPort <-
+          if (lowerPort.isDefined)
+            optional(parseChar('-') >> portParser)
+          else
+            pure(None)
+      } yield MasqueradeTarget(lowerPort, upperPort)
   }
 }
