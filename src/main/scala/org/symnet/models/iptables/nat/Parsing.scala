@@ -97,11 +97,24 @@ object MasqueradeTargetExtension extends TargetExtension {
         lowerPort: Option[Port],
         upperPort: Option[Port]) extends Target("MASQUERADE") {
 
+      /** This target is only valid in the 'nat' table, in the 'POSTROUTING'
+       *  chain.
+       *
+       *  The '--to-ports' option is only valid if the rule also specifies
+       *  '-p tcp' or '-p udp'.
+       */
       override def isValid(
           rule: Rule,
           chain: Chain,
-          table: Table): Boolean =
-        table.name == "nat" && chain.name == "POSTROUTING"
+          table: Table): Boolean = {
+        import FilteringExtension.Impl.ProtocolMatch
+
+        table.name == "nat" && chain.name == "POSTROUTING" &&
+        rule.matches.exists(x => x match {
+          case ProtocolMatch(p, true) => p == "tcp" || p == "udp"
+          case _ => false
+        })
+      }
     }
 
     def targetParser: Parser[Target] =
