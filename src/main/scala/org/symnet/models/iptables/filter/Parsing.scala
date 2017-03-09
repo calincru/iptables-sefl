@@ -31,11 +31,15 @@ object FilteringExtension extends MatchExtension with TargetExtension {
       val protocol: String,
       val negated: Boolean = false) extends Match(negated) {
 
-      // TODO(calincru): Make sure it is a supported protocol.
       override def isValid(
           rule: Rule,
           chain: Chain,
-          table: Table): Boolean = true
+          table: Table): Boolean =
+        // Check if it is one of the 'named' protocols
+        (List("tcp", "udp", "icmp", "all") contains protocol) &&
+        // TODO(calincru): Check if it is a valid numeric protocol or a protocol
+        // from /etc/protocols.
+        true
     }
 
     def protocolMatchParser: Parser[Match] =

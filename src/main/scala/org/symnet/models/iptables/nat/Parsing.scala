@@ -30,7 +30,13 @@ object SnatTargetExtension extends TargetExtension {
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
-        table.name == "nat" && chain.name == "POSTROUTING"
+        // Check the table/chain in which this target is valid.
+        table.name == "nat" && chain.name == "POSTROUTING" &&
+        // Check that 'tcp' or 'udp' is specified when given the port range.
+        //
+        // The existance of the port range implies that '-p tcp/udp' must
+        // have been specified.
+        (portRange.isEmpty || rule.matchesTcpOrUdp)
     }
 
     def targetParser: Parser[Target] =
@@ -66,7 +72,14 @@ object DnatTargetExtension extends TargetExtension {
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
-        table.name == "nat" && (List("PREROUTING", "OUTPUT") contains chain.name)
+        // Check the table/chain in which this target is valid.
+        table.name == "nat" &&
+          (List("PREROUTING", "OUTPUT") contains chain.name) &&
+        // Check that 'tcp' or 'udp' is specified when given the port range.
+        //
+        // The existance of the port range implies that '-p tcp/udp' must
+        // have been specified.
+        (portRange.isEmpty || rule.matchesTcpOrUdp)
     }
 
     def targetParser: Parser[Target] =
@@ -107,13 +120,25 @@ object MasqueradeTargetExtension extends TargetExtension {
           rule: Rule,
           chain: Chain,
           table: Table): Boolean = {
-        import FilteringExtension.Impl.ProtocolMatch
-
+        // Check the table/chain in which this target is valid.
         table.name == "nat" && chain.name == "POSTROUTING" &&
-        rule.matches.exists(x => x match {
-          case ProtocolMatch(p, true) => p == "tcp" || p == "udp"
-          case _ => false
-        })
+        // The existance of the upper port implies the existance of the lower
+        // one.
+        //
+        //      upperPort -> lowerPort <=> !upperPort or lowerPort
+        //
+        (upperPort.isEmpty || lowerPort.isDefined)
+        // Check that 'tcp' or 'udp' is specified when either of the lower/upper
+        // ports are given.
+        //
+        // The existance of any of the lower/upper ports implies that '-p
+        // tcp/udp' must have been specified.
+        //
+        //      lowerPort or upperPort -> tcp/udp
+        // but  upperPort -> lowerPort =>
+        // =>   lowerPort -> tcp/udp  <=> !lowerPort or tcp/udp
+        //
+        (lowerPort.isEmpty || rule.matchesTcpOrUdp)
       }
     }
 
