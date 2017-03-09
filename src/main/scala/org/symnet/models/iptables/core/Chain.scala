@@ -9,6 +9,7 @@ object Policy extends Enumeration {
   type Policy = Value
   val Accept, Drop, Return = Value
 
+  // TODO(calincru): There is also a QUEUE policy; is it relevant?
   def apply(s: String): Option[Policy] =
     s match {
       case "ACCEPT" => Some(Accept)
@@ -20,20 +21,44 @@ object Policy extends Enumeration {
 import Policy._
 
 sealed abstract class Chain(
-    name: String,
-    rules: List[Rule],
-    policy: Option[Policy]) extends Target(name)
+    val name: String,
+    val rules: List[Rule],
+    policy: Option[Policy]) extends Target(name) {
+
+  def isValid(table: Table): Boolean
+
+  /** The validation routine, inherrited from class 'Target'.
+   *
+   *  A chain can be the target destination of any rule.
+   */
+  override def isValid(rule: Rule, chain: Chain, table: Table): Boolean = true
+}
 
 /** A user-defined chain cannot have an implicit policy in iptables. */
 case class UserChain(
-    name: String,
-    rules: List[Rule]) extends Chain(name, rules, None)
+    override val name: String,
+    override val rules: List[Rule]) extends Chain(name, rules, None) {
+
+  /** A user-defined chain can be part of any table. */
+  override def isValid(table: Table): Boolean = true
+}
 
 /** iptables built-in chains must have a default policy. */
 case class BuiltinChain(
-    name: String,
-    rules: List[Rule],
-    policy: Policy) extends Chain(name, rules, Some(policy))
+    override val name: String,
+    override val rules: List[Rule],
+    val policy: Policy) extends Chain(name, rules, Some(policy)) {
+
+  override def isValid(table: Table): Boolean =
+    (name match {
+      case "PREROUTING"  => List("nat", "mangle")
+      case "FORWARD"     => List("mangle", "filter")
+      case "INPUT"       => List("mangle", "filter")
+      case "OUTPUT"      => List("nat", "mangle", "filter")
+      case "POSTROUTING" => List("nat", "mangle")
+      case _             => Nil
+    }) contains table.name
+}
 
 object Chain {
   def apply(name: String, rules: List[Rule], policy: Option[Policy]): Chain =

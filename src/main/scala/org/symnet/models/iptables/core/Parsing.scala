@@ -11,6 +11,26 @@ import scalaz.{Maybe, MonadPlus, MonadState, NonEmptyList, StateT}
 
 import types.net.{Ipv4, Port, PortRange}
 
+
+/** The parsing context.
+ *
+ *  Example usage before initiating the parsing.
+ *
+ *  {{{
+ *  implicit val context = new ParsingContext {
+ *    matchExtensions  = List(...)
+ *    targetExtensions = List(...)
+ *  }
+ *  }}}
+ *
+ *  If support for jump's/goto's to user defined chains, the predefined
+ *  ChainTargetExtension should be added last in the target extensions list.
+ */
+abstract class ParsingContext {
+  val matchExtensions:  List[MatchExtension]
+  val targetExtensions: List[TargetExtension]
+}
+
 object Parsing {
   type Parser[A] = StateT[Maybe, String, A]
 
@@ -25,10 +45,7 @@ object Parsing {
     def <|>> = (_: Parser[A]) <+> p
   }
 
-  /** This object includes several combinators used in parsing.
-   *
-   *  TODO: Doc
-   */
+  /** This object includes several combinators used in parsing. */
   object Combinators {
     def optional[A](p: Parser[A]): Parser[Option[A]] =
       (p >>= (x => pure(Option(x)))) <<|> pure(None)

@@ -5,7 +5,7 @@
 
 package org.symnet.models.iptables.core
 
-class Rule(matches: List[Match], target: Target)
+class Rule(val matches: List[Match], val target: Target)
 
 object Rule {
   def apply(matches: List[Match], target: Target): Rule =

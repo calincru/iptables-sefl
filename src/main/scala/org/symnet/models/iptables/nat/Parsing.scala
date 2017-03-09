@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables
 package filter
 
-import core.{Match, Parsing, TargetExtension, Target}
+import core._
 import types.net.{Ipv4, Port, PortRange}
 
 import Parsing._
@@ -21,11 +21,17 @@ object SnatTargetExtension extends TargetExtension {
   val targetParser = Impl.targetParser
 
   object Impl {
-    // TODO(calincru): Do something useful with this.
     case class SnatTarget(
         lowerIp:   Ipv4,
         upperIp:   Option[Ipv4],
-        portRange: Option[PortRange]) extends Target("SNAT")
+        portRange: Option[PortRange]) extends Target("SNAT") {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean =
+        table.name == "nat" && chain.name == "POSTROUTING"
+    }
 
     def targetParser: Parser[Target] =
       for {
@@ -51,11 +57,17 @@ object DnatTargetExtension extends TargetExtension {
   val targetParser = Impl.targetParser
 
   object Impl {
-    // TODO(calincru): Do something useful with this.
     case class DnatTarget(
         lowerIp:   Ipv4,
         upperIp:   Option[Ipv4],
-        portRange: Option[PortRange]) extends Target("DNAT")
+        portRange: Option[PortRange]) extends Target("DNAT") {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean =
+        table.name == "nat" && (List("PREROUTING", "OUTPUT") contains chain.name)
+    }
 
     def targetParser: Parser[Target] =
       for {
@@ -81,10 +93,16 @@ object MasqueradeTargetExtension extends TargetExtension {
   val targetParser = Impl.targetParser
 
   object Impl {
-    // TODO(calincru): Do something useful with this.
     case class MasqueradeTarget(
         lowerPort: Option[Port],
-        upperPort: Option[Port]) extends Target("MASQUERADE")
+        upperPort: Option[Port]) extends Target("MASQUERADE") {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean =
+        table.name == "nat" && chain.name == "POSTROUTING"
+    }
 
     def targetParser: Parser[Target] =
       for {

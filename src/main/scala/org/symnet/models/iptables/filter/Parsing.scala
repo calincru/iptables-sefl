@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables
 package filter
 
-import core.{Match, MatchExtension, Parsing, Target, TargetExtension}
+import core._
 import types.net.Ipv4
 
 import Parsing._
@@ -29,9 +29,15 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class ProtocolMatch(
       val protocol: String,
-      val negated: Boolean = false) extends Match(negated)
+      val negated: Boolean = false) extends Match(negated) {
 
-    // TODO(calincru): Make sure it is a supported protocol.
+      // TODO(calincru): Make sure it is a supported protocol.
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean = true
+    }
+
     def protocolMatchParser: Parser[Match] =
       for {
         _        <- spacesParser >> oneOf(parseString("-p"),
@@ -47,11 +53,23 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class SourceMatch(
         val ip: Ipv4,
-        val negated: Boolean = false) extends Match(negated)
+        val negated: Boolean = false) extends Match(negated) {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean = true
+    }
 
     case class DestinationMatch(
         val ip: Ipv4,
-        val negated: Boolean = false) extends Match(negated)
+        val negated: Boolean = false) extends Match(negated) {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean = true
+    }
 
     def srcIpMatchParser: Parser[Match] =
       for {
@@ -78,11 +96,33 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class InInterfaceMatch(
       val interface: String,
-      val negated: Boolean = false) extends Match(negated)
+      val negated: Boolean = false) extends Match(negated) {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean =
+        chain match {
+          case BuiltinChain(n, _, _) =>
+            List("INPUT", "FORWARD", "PREROUTING") contains n
+          case _ => false
+        }
+    }
 
     case class OutInterfaceMatch(
       val interface: String,
-      val negated: Boolean = false) extends Match(negated)
+      val negated: Boolean = false) extends Match(negated) {
+
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean =
+        chain match {
+          case BuiltinChain(n, _, _) =>
+            List("FORWARD", "OUTPUT", "POSTROUTING") contains n
+          case _ => false
+        }
+    }
 
     def inInterfaceMatchParser: Parser[Match] =
       for {
@@ -105,10 +145,18 @@ object FilteringExtension extends MatchExtension with TargetExtension {
     /// The target parser.
     ///
 
-    /** The base 'special' targets used in iptables. */
-    case object AcceptTarget extends Target("ACCEPT")
-    case object DropTarget   extends Target("DROP")
-    case object ReturnTarget extends Target("RETURN")
+    /// The base 'special' targets used in iptables.
+
+    class FilterTarget(name: String) extends Target(name) {
+      override def isValid(
+          rule: Rule,
+          chain: Chain,
+          table: Table): Boolean = table.name == "filter"
+    }
+
+    case object AcceptTarget extends FilterTarget("ACCEPT")
+    case object DropTarget   extends FilterTarget("DROP")
+    case object ReturnTarget extends FilterTarget("RETURN")
 
     def targetParser: Parser[Target] =
       optionlessTargetParser(Map(("ACCEPT", AcceptTarget),

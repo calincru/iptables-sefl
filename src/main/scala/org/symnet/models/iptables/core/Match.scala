@@ -5,4 +5,6 @@
 
 package org.symnet.models.iptables.core
 
-abstract class Match(negated: Boolean)
+abstract class Match(negated: Boolean) {
+  def isValid(rule: Rule, chain: Chain, table: Table): Boolean
+}
