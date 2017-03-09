@@ -280,7 +280,7 @@ class CoreParsingSuite extends FunSuite with Matchers {
   }
 
   test("optionless target parser simple") {
-    val only = new Target("ONLY") {}
+    val only = PlaceholderTarget("ONLY")
 
     optionlessTargetParser(Map(("ONLY", only))).eval("-j ONLY") shouldBe
       Just(only)

@@ -29,7 +29,7 @@ sealed abstract class Chain(
 
   /** The validation routine, inherrited from class 'Target'.
    *
-   *  A chain can be the target destination of any rule.
+   *  A chain can be the target of any rule.
    */
   override def isValid(rule: Rule, chain: Chain, table: Table): Boolean = true
 }

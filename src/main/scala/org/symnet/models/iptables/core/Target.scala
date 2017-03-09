@@ -6,7 +6,7 @@
 package org.symnet.models.iptables.core
 
 abstract class Target(name: String) {
-  def isValid(rule: Rule, chain: Chain, table: Table): Boolean = false
+  def isValid(rule: Rule, chain: Chain, table: Table): Boolean
 }
 
 /** PLaceholder target is used when a (possible) forward reference to a user
