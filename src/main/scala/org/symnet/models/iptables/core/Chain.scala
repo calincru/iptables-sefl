@@ -55,14 +55,14 @@ case class BuiltinChain(
     // A built-in chain is valid if its parent class is valid ...
     super.isValid(table) &&
     // ... and it conforms to the chain/table restrictions.
-    (name match {
+    ((name match {
       case "PREROUTING"  => List("nat", "mangle")
       case "FORWARD"     => List("mangle", "filter")
       case "INPUT"       => List("mangle", "filter")
       case "OUTPUT"      => List("nat", "mangle", "filter")
       case "POSTROUTING" => List("nat", "mangle")
       case _             => Nil
-    }) contains table.name
+    }) contains table.name)
 }
 
 object Chain {

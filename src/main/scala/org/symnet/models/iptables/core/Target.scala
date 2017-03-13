@@ -19,5 +19,9 @@ case class PlaceholderTarget(
     name: String,
     goto: Boolean = false) extends Target(name) {
 
+  /** We shouldn't get to checking the validty of a placeholder target.
+   *
+   *  It should be replaced on a prior semantic validation step.
+   */
   override def isValid(rule: Rule, chain: Chain, table: Table): Boolean = false
 }
