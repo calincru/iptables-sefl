@@ -25,7 +25,9 @@ sealed abstract class Chain(
     val rules: List[Rule],
     policy: Option[Policy]) extends Target(name) {
 
-  def isValid(table: Table): Boolean
+  def isValid(table: Table): Boolean =
+    // An abstract chain is valid if all its rules are valid.
+    rules.forall(_.isValid(this, table))
 
   /** The validation routine, inherrited from class 'Target'.
    *
@@ -40,7 +42,7 @@ case class UserChain(
     override val rules: List[Rule]) extends Chain(name, rules, None) {
 
   /** A user-defined chain can be part of any table. */
-  override def isValid(table: Table): Boolean = true
+  override def isValid(table: Table): Boolean = super.isValid(table)
 }
 
 /** iptables built-in chains must have a default policy. */
@@ -50,6 +52,9 @@ case class BuiltinChain(
     val policy: Policy) extends Chain(name, rules, Some(policy)) {
 
   override def isValid(table: Table): Boolean =
+    // A built-in chain is valid if its parent class is valid ...
+    super.isValid(table) &&
+    // ... and it conforms to the chain/table restrictions.
     (name match {
       case "PREROUTING"  => List("nat", "mangle")
       case "FORWARD"     => List("mangle", "filter")

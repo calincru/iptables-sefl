@@ -10,10 +10,16 @@ class Rule(val matches: List[Match], val target: Target) {
   import filter.FilteringExtension.Impl.ProtocolMatch
 
   def matchesTcpOrUdp: Boolean =
-    matches.exists(x => x match {
+    matches.exists(_ match {
       case ProtocolMatch(p) => p == "tcp" || p == "udp"
       case _ => false
     })
+
+  def isValid(chain: Chain, table: Table): Boolean =
+    // A rule is valid if all its matches are valid ...
+    matches.forall(_.isValid(this, chain, table)) &&
+    // ... and its target is valid.
+    target.isValid(this, chain, table)
 }
 
 object Rule {

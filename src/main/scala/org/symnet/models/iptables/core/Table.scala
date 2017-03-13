@@ -7,8 +7,12 @@ package org.symnet.models.iptables.core
 
 class Table(val name: String, val chains: List[Chain]) {
 
-  // TODO(calincru): Check the post-parsing validity of this table.
-  def isValid: Boolean = false
+  /** Checks the post-parsing (semantic) validity of this table. */
+  def isValid: Boolean =
+    // A table is valid iff it is one of the currently supported ones.
+    (List("filter", "nat", "mangle", "raw") contains name) &&
+    // And all its chains are valid.
+    chains.forall(_.isValid(this))
 }
 
 object Table {
