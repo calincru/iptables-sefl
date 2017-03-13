@@ -19,7 +19,14 @@ class Rule(val matches: List[Match], val target: Target) {
     // A rule is valid if all its matches are valid ...
     matches.forall(_.isValid(this, chain, table)) &&
     // ... and its target is valid.
-    target.isValid(this, chain, table)
+    //
+    // A target is valid if exactly one of the following is true:
+    //  * it's a PlaceholderTarget and it `points' to a valid chain.
+    //  * it's a regular target and its validity routine returns true.
+    (target match {
+      case PlaceholderTarget(name, _) => table.chains.exists(_.name == name)
+      case _ => target.isValid(this, chain, table)
+    })
 }
 
 object Rule {

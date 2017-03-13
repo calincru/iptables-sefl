@@ -26,7 +26,10 @@ sealed abstract class Chain(
     policy: Option[Policy]) extends Target(name) {
 
   def isValid(table: Table): Boolean =
-    // An abstract chain is valid if all its rules are valid.
+    // An abstract chain is valid if its name is unique across all chains in
+    // this table ...
+    table.chains.count(_.name == name) == 1 &&
+    // ... and all its rules are valid.
     rules.forall(_.isValid(this, table))
 
   /** The validation routine, inherrited from class 'Target'.
