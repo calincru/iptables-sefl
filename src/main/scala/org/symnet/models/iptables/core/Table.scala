@@ -5,7 +5,11 @@
 
 package org.symnet.models.iptables.core
 
-class Table(val name: String, val chains: List[Chain])
+class Table(val name: String, val chains: List[Chain]) {
+
+  // TODO(calincru): Check the post-parsing validity of this table.
+  def isValid: Boolean = false
+}
 
 object Table {
   def apply(name: String, chains: List[Chain]): Table = new Table(name, chains)

@@ -11,7 +11,7 @@ class Rule(val matches: List[Match], val target: Target) {
 
   def matchesTcpOrUdp: Boolean =
     matches.exists(x => x match {
-      case ProtocolMatch(p, true) => p == "tcp" || p == "udp"
+      case ProtocolMatch(p) => p == "tcp" || p == "udp"
       case _ => false
     })
 }

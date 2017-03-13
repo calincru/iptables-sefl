@@ -5,6 +5,16 @@
 
 package org.symnet.models.iptables.core
 
-abstract class Match(negated: Boolean) {
+abstract class Match {
   def isValid(rule: Rule, chain: Chain, table: Table): Boolean
+}
+
+case class NegatedMatch(m: Match) extends Match {
+  def isValid(rule: Rule, chain: Chain, table: Table): Boolean =
+    m.isValid(rule, chain, table)
+}
+
+object Match {
+  def maybeNegated[A](m: Match, o: Option[A]): Match =
+    if (o.isDefined) NegatedMatch(m) else m
 }

@@ -17,7 +17,7 @@ import scalaz.Maybe._
 
 // project
 // -> core
-import core.{ChainTargetExtension, Parsing, ParsingContext}
+import core.{ChainTargetExtension, NegatedMatch, Parsing, ParsingContext}
 import Parsing.{ruleParser, chainParser}
 import Parsing.Combinators._
 
@@ -51,7 +51,7 @@ class FilterExtensionSuite extends FunSuite with Matchers {
 
   test("negated src ip parser") {
     srcIpMatchParser.eval("-s ! 192.168.0.1") shouldBe
-      Just(SourceMatch(Ipv4(192, 168, 0, 1), negated=true))
+      Just(NegatedMatch(SourceMatch(Ipv4(192, 168, 0, 1))))
   }
 
   test("multiple src/dst ip parsers") {

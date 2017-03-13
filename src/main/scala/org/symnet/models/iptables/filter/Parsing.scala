@@ -27,19 +27,17 @@ object FilteringExtension extends MatchExtension with TargetExtension {
     /// Protocol matcher.
     ///
 
-    case class ProtocolMatch(
-      val protocol: String,
-      val negated: Boolean = false) extends Match(negated) {
+    case class ProtocolMatch(val protocol: String) extends Match {
 
       override def isValid(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
         // Check if it is one of the 'named' protocols
-        (List("tcp", "udp", "icmp", "all") contains protocol) &&
+        (List("tcp", "udp", "icmp", "all") contains protocol) ||
         // TODO(calincru): Check if it is a valid numeric protocol or a protocol
         // from /etc/protocols.
-        true
+        false
     }
 
     def protocolMatchParser: Parser[Match] =
@@ -48,16 +46,14 @@ object FilteringExtension extends MatchExtension with TargetExtension {
                                           parseString("--protocol"))
         neg      <- optional(someSpacesParser >> parseChar('!'))
         protocol <- someSpacesParser >> stringParser
-      } yield ProtocolMatch(protocol, neg.isDefined)
+      } yield Match.maybeNegated(ProtocolMatch(protocol), neg)
 
 
     ///
     /// Source/Destination ip matchers.
     ///
 
-    case class SourceMatch(
-        val ip: Ipv4,
-        val negated: Boolean = false) extends Match(negated) {
+    case class SourceMatch(val ip: Ipv4) extends Match {
 
       override def isValid(
           rule: Rule,
@@ -65,9 +61,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
           table: Table): Boolean = true
     }
 
-    case class DestinationMatch(
-        val ip: Ipv4,
-        val negated: Boolean = false) extends Match(negated) {
+    case class DestinationMatch(val ip: Ipv4) extends Match {
 
       override def isValid(
           rule: Rule,
@@ -82,7 +76,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
                                      parseString("--src"))
         neg <- optional(someSpacesParser >> parseChar('!'))
         ip  <- someSpacesParser >> ipParser
-      } yield SourceMatch(ip, neg.isDefined)
+      } yield Match.maybeNegated(SourceMatch(ip), neg)
 
     def dstIpMatchParser: Parser[Match] =
       for {
@@ -91,16 +85,14 @@ object FilteringExtension extends MatchExtension with TargetExtension {
                                      parseString("--dst"))
         neg <- optional(someSpacesParser >> parseChar('!'))
         ip  <- someSpacesParser >> ipParser
-      } yield DestinationMatch(ip, neg.isDefined)
+      } yield Match.maybeNegated(DestinationMatch(ip), neg)
 
 
     ///
     /// Input/Output interface matchers.
     ///
 
-    case class InInterfaceMatch(
-      val interface: String,
-      val negated: Boolean = false) extends Match(negated) {
+    case class InInterfaceMatch(val interface: String) extends Match {
 
       override def isValid(
           rule: Rule,
@@ -113,9 +105,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
         }
     }
 
-    case class OutInterfaceMatch(
-      val interface: String,
-      val negated: Boolean = false) extends Match(negated) {
+    case class OutInterfaceMatch(val interface: String) extends Match {
 
       override def isValid(
           rule: Rule,
@@ -134,7 +124,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
                                      parseString("--in-interface"))
         neg <- optional(someSpacesParser >> parseChar('!'))
         int <- someSpacesParser >> stringParser
-      } yield InInterfaceMatch(int, neg.isDefined)
+      } yield Match.maybeNegated(InInterfaceMatch(int), neg)
 
     def outInterfaceMatchParser: Parser[Match] =
       for {
@@ -142,7 +132,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
                                      parseString("--out-interface"))
         neg <- optional(someSpacesParser >> parseChar('!'))
         int <- someSpacesParser >> stringParser
-      } yield OutInterfaceMatch(int, neg.isDefined)
+      } yield Match.maybeNegated(OutInterfaceMatch(int), neg)
 
 
     ///
@@ -155,7 +145,16 @@ object FilteringExtension extends MatchExtension with TargetExtension {
       override def isValid(
           rule: Rule,
           chain: Chain,
-          table: Table): Boolean = table.name == "filter"
+          table: Table): Boolean =
+        // The table should be 'filter' ...
+        table.name == "filter" &&
+        // ... and the chain, if it is a builtin one, should be one of the
+        // following
+        (chain match {
+          case BuiltinChain(name, _, _) =>
+            List("INPUT", "FORWARD", "OUTPUT") contains chain.name
+          case _ /* UserChain */        => true
+        })
     }
 
     case object AcceptTarget extends FilterTarget("ACCEPT")
