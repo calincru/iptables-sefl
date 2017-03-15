@@ -29,7 +29,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class ProtocolMatch(val protocol: String) extends Match {
 
-      override def isValid(
+      override protected def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
@@ -53,21 +53,8 @@ object FilteringExtension extends MatchExtension with TargetExtension {
     /// Source/Destination ip matchers.
     ///
 
-    case class SourceMatch(val ip: Ipv4) extends Match {
-
-      override def isValid(
-          rule: Rule,
-          chain: Chain,
-          table: Table): Boolean = true
-    }
-
-    case class DestinationMatch(val ip: Ipv4) extends Match {
-
-      override def isValid(
-          rule: Rule,
-          chain: Chain,
-          table: Table): Boolean = true
-    }
+    case class SourceMatch(val ip: Ipv4) extends Match
+    case class DestinationMatch(val ip: Ipv4) extends Match
 
     def srcIpMatchParser: Parser[Match] =
       for {
@@ -94,7 +81,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class InInterfaceMatch(val interface: String) extends Match {
 
-      override def isValid(
+      override protected def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
@@ -107,7 +94,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
 
     case class OutInterfaceMatch(val interface: String) extends Match {
 
-      override def isValid(
+      override protected def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
@@ -142,7 +129,7 @@ object FilteringExtension extends MatchExtension with TargetExtension {
     /// The base 'special' targets used in iptables.
 
     class FilterTarget(name: String) extends Target(name) {
-      override def isValid(
+      override protected def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =

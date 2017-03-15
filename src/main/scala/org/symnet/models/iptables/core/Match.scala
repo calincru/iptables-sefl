@@ -5,13 +5,28 @@
 
 package org.symnet.models.iptables.core
 
+import scalaz.Maybe
+import scalaz.Maybe._
+
 abstract class Match {
-  def isValid(rule: Rule, chain: Chain, table: Table): Boolean
+
+  ///
+  /// Validation
+  ///
+
+  protected def validateIf(rule: Rule, chain: Chain, table: Table): Boolean =
+    true
+
+  def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
+    if (validateIf(rule, chain, table))
+      Just(this)
+    else
+      empty
 }
 
 case class NegatedMatch(m: Match) extends Match {
-  def isValid(rule: Rule, chain: Chain, table: Table): Boolean =
-    m.isValid(rule, chain, table)
+  override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
+    m.validate(rule, chain, table)
 }
 
 object Match {

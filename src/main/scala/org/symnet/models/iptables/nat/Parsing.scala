@@ -26,7 +26,7 @@ object SnatTargetExtension extends TargetExtension {
         upperIp:   Option[Ipv4],
         portRange: Option[PortRange]) extends Target("SNAT") {
 
-      override def isValid(
+      override def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
@@ -68,7 +68,7 @@ object DnatTargetExtension extends TargetExtension {
         upperIp:   Option[Ipv4],
         portRange: Option[PortRange]) extends Target("DNAT") {
 
-      override def isValid(
+      override def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean =
@@ -116,7 +116,7 @@ object MasqueradeTargetExtension extends TargetExtension {
        *  The '--to-ports' option is only valid if the rule also specifies
        *  '-p tcp' or '-p udp'.
        */
-      override def isValid(
+      override def validateIf(
           rule: Rule,
           chain: Chain,
           table: Table): Boolean = {

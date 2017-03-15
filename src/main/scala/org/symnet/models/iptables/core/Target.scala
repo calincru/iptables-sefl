@@ -5,8 +5,23 @@
 
 package org.symnet.models.iptables.core
 
+import scalaz.Maybe
+import scalaz.Maybe._
+
 abstract class Target(name: String) {
-  def isValid(rule: Rule, chain: Chain, table: Table): Boolean
+
+  ///
+  /// Validation
+  ///
+
+  protected def validateIf(rule: Rule, chain: Chain, table: Table): Boolean =
+    true
+
+  def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
+    if (validateIf(rule, chain, table))
+      Just(this)
+    else
+      empty
 }
 
 /** PLaceholder target is used when a (possible) forward reference to a user
@@ -19,9 +34,7 @@ case class PlaceholderTarget(
     name: String,
     goto: Boolean = false) extends Target(name) {
 
-  /** We shouldn't get to check the validty of a placeholder target.
-   *
-   *  TODO(calincru): It should be replaced on a prior semantic validation step.
-   */
-  override def isValid(rule: Rule, chain: Chain, table: Table): Boolean = false
+  /** We shouldn't get to check the validty of a placeholder target. */
+  override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
+    empty
 }

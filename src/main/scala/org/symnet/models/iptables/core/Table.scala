@@ -3,16 +3,29 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables.core
+package org.symnet.models.iptables
+package core
+
+import scalaz.Maybe
+import scalaz.Maybe._
 
 class Table(val name: String, val chains: List[Chain]) {
 
+  ///
+  /// Validation
+  ///
+  import scalaz.Maybe.maybeInstance.traverse
+
   /** Checks the post-parsing (semantic) validity of this table. */
-  def isValid: Boolean =
+  def validate: Maybe[Table] =
     // A table is valid iff it is one of the currently supported ones ...
-    (List("filter", "nat", "mangle", "raw") contains name) &&
-    // ... and all its chains are valid
-    chains.forall(_.isValid(this))
+    if (List("filter", "nat", "mangle", "raw") contains name)
+      // ... and all its chains are valid
+      for {
+        vChains <- traverse(chains)(_.validate(this))
+      } yield Table(name, vChains)
+    else
+      empty
 }
 
 object Table {

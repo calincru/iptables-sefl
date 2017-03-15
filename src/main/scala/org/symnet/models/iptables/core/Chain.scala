@@ -3,7 +3,11 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet.models.iptables.core
+package org.symnet.models.iptables
+package core
+
+import scalaz.Maybe
+import scalaz.Maybe.empty
 
 object Policy extends Enumeration {
   type Policy = Value
@@ -20,33 +24,45 @@ object Policy extends Enumeration {
 }
 import Policy._
 
+/** TODO(calincru): Doc
+ *
+ *  NOTE: A chain can be the target of any rule (no need to override the target
+ *  validation routine).
+ */
 sealed abstract class Chain(
     val name: String,
     val rules: List[Rule],
     policy: Option[Policy]) extends Target(name) {
 
-  def isValid(table: Table): Boolean =
+  ///
+  /// Validation
+  ///
+
+  import scalaz.Maybe.maybeInstance.traverse
+
+  protected def validateIf(table: Table): Boolean =
     // An abstract chain is valid if its name is unique across all chains in
     // this table ...
-    table.chains.count(_.name == name) == 1 &&
-    // ... and all its rules are valid.
-    rules.forall(_.isValid(this, table))
+    table.chains.count(_.name == name) == 1
 
-  /** The validation routine, inherrited from class 'Target'.
-   *
-   *  A chain can be the target of any rule.
-   */
-  override def isValid(rule: Rule, chain: Chain, table: Table): Boolean = true
+  def validate(table: Table): Maybe[Chain] =
+    if (validateIf(table))
+      // ... and all its rules are valid.
+      for {
+        vRules <- traverse(rules)(_.validate(this, table))
+      } yield Chain(name, vRules, policy)
+    else
+      empty
 }
 
-/** A user-defined chain cannot have an implicit policy in iptables. */
+/** A user-defined chain cannot have an implicit policy in iptables.
+ *
+ *  NOTE: A user-defined chain can be part of any table (default implementation
+ *  of the `validate' routine).
+ */
 case class UserChain(
     override val name: String,
-    override val rules: List[Rule]) extends Chain(name, rules, None) {
-
-  /** A user-defined chain can be part of any table. */
-  override def isValid(table: Table): Boolean = super.isValid(table)
-}
+    override val rules: List[Rule]) extends Chain(name, rules, None)
 
 /** iptables built-in chains must have a default policy. */
 case class BuiltinChain(
@@ -54,9 +70,13 @@ case class BuiltinChain(
     override val rules: List[Rule],
     val policy: Policy) extends Chain(name, rules, Some(policy)) {
 
-  override def isValid(table: Table): Boolean =
+  ///
+  /// Validation
+  ///
+
+  override protected def validateIf(table: Table): Boolean =
     // A built-in chain is valid if its parent class is valid ...
-    super.isValid(table) &&
+    super.validateIf(table) &&
     // ... and it conforms to the chain/table restrictions.
     ((name match {
       case "PREROUTING"  => List("nat", "mangle")
