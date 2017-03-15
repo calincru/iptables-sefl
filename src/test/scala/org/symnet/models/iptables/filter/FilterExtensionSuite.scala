@@ -26,40 +26,42 @@ import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
 class FilterExtensionSuite extends FunSuite with Matchers {
-  import FilteringExtension.Impl._
+  import filter._
+  import FilterTarget.{parser => targetParser}
+  import IpMatch.{dstParser, srcParser}
 
   ///
   /// Matchers suite.
   ///
 
   test("src/dst ip parser") {
-    srcIpMatchParser.eval("-s 192.168.0.1") shouldBe
+    srcParser.eval("-s 192.168.0.1") shouldBe
       Just(SourceMatch(Ipv4(192, 168, 0, 1)))
 
-    srcIpMatchParser.eval("   -d   10.10.10.2/10  ") shouldBe empty
+    srcParser.eval("   -d   10.10.10.2/10  ") shouldBe empty
 
-    dstIpMatchParser.eval("   -d   10.10.10.2/10  ") shouldBe
+    dstParser.eval("   -d   10.10.10.2/10  ") shouldBe
       Just(DestinationMatch(Ipv4(10, 10, 10, 2, Some(10))))
 
-    dstIpMatchParser.eval("-s 192.168.0.1") shouldBe empty
+    dstParser.eval("-s 192.168.0.1") shouldBe empty
 
-    srcIpMatchParser.eval("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
+    srcParser.eval("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
       Just(SourceMatch(Ipv4(8, 8, 8, 6, Some(10))))
-    srcIpMatchParser.exec("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
+    srcParser.exec("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
       Just("   -s  8.8.8.8/10 ")
   }
 
   test("negated src ip parser") {
-    srcIpMatchParser.eval("-s ! 192.168.0.1") shouldBe
+    srcParser.eval("-s ! 192.168.0.1") shouldBe
       Just(NegatedMatch(SourceMatch(Ipv4(192, 168, 0, 1))))
   }
 
   test("multiple src/dst ip parsers") {
-    some(srcIpMatchParser).eval("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
+    some(srcParser).eval("  -s   8.8.8.6/10   -s  8.8.8.8/10 ") shouldBe
       Just(List(SourceMatch(Ipv4(8, 8, 8, 6, Some(10))),
                 SourceMatch(Ipv4(8, 8, 8, 8, Some(10)))))
 
-    many(dstIpMatchParser).eval("""-d 192.168.0.10/24
+    many(dstParser).eval("""-d 192.168.0.10/24
                                    -d 192.168.0.11/24
                                    -d 0.0.0.0""") shouldBe
       Just(List(DestinationMatch(Ipv4(192, 168, 0, 10, Some(24))),

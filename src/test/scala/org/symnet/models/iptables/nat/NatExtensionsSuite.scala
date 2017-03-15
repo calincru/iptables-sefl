@@ -26,9 +26,6 @@ import types.net._
 
 @RunWith(classOf[JUnitRunner])
 class NatTargetExtensionsSuite extends FunSuite with Matchers {
-  import SnatTargetExtension.Impl._
-  import DnatTargetExtension.Impl._
-  import MasqueradeTargetExtension.Impl._
 
   test("source nat test") {
     implicit val context = new ParsingContext {

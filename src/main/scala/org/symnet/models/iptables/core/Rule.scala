@@ -10,7 +10,7 @@ import scalaz.Maybe
 import scalaz.Maybe._
 
 class Rule(val matches: List[Match], val target: Target) {
-  import filter.FilteringExtension.Impl.ProtocolMatch
+  import filter.ProtocolMatch
 
   def matchesTcpOrUdp: Boolean =
     matches.exists(_ match {
