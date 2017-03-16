@@ -9,7 +9,7 @@ package core
 import scalaz.Maybe
 import scalaz.Maybe._
 
-class Table(val name: String, val chains: List[Chain]) {
+case class Table(val name: String, val chains: List[Chain]) {
 
   ///
   /// Validation
@@ -26,8 +26,4 @@ class Table(val name: String, val chains: List[Chain]) {
       } yield Table(name, vChains)
     else
       empty
-}
-
-object Table {
-  def apply(name: String, chains: List[Chain]): Table = new Table(name, chains)
 }

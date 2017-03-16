@@ -11,6 +11,7 @@ import core._
 
 
 class FilterTarget(name: String) extends Target(name) {
+
   override protected def validateIf(
       rule: Rule,
       chain: Chain,
@@ -33,7 +34,7 @@ case object DropTarget   extends FilterTarget("DROP")
 case object ReturnTarget extends FilterTarget("RETURN")
 
 object FilterTarget {
-  import core.Parsing.{Parser, optionlessTargetParser}
+  import Parsing.{Parser, optionlessTargetParser}
 
   def parser: Parser[Target] =
     optionlessTargetParser(Map(("ACCEPT", AcceptTarget),

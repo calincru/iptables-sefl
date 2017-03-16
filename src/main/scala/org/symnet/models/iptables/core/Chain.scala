@@ -55,14 +55,25 @@ sealed abstract class Chain(
       empty
 }
 
-/** A user-defined chain cannot have an implicit policy in iptables.
- *
- *  NOTE: A user-defined chain can be part of any table (default implementation
- *  of the `validate' routine).
- */
+/** A user-defined chain cannot have an implicit policy in iptables. */
 case class UserChain(
     override val name: String,
-    override val rules: List[Rule]) extends Chain(name, rules, None)
+    override val rules: List[Rule]) extends Chain(name, rules, None) {
+
+  ///
+  /// Validation
+  ///
+
+  override protected def validateIf(table: Table): Boolean =
+    // A built-in chain is valid if its parent class is valid ...
+    super.validateIf(table) &&
+    // ... and its name is not one of the reserved ones.
+    !(List("PREROUTING",
+           "FORWARD",
+           "INPUT",
+           "OUTPUT",
+           "POSTROUTING") contains name)
+}
 
 /** iptables built-in chains must have a default policy. */
 case class BuiltinChain(

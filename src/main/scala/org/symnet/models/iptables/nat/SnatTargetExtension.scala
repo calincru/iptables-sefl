@@ -16,7 +16,7 @@ case class SnatTarget(
     upperIp:   Option[Ipv4],
     portRange: Option[PortRange]) extends Target("SNAT") {
 
-  override def validateIf(
+  override protected def validateIf(
       rule: Rule,
       chain: Chain,
       table: Table): Boolean =

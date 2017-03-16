@@ -9,7 +9,7 @@ package core
 import scalaz.Maybe
 import scalaz.Maybe._
 
-class Rule(val matches: List[Match], val target: Target) {
+case class Rule(val matches: List[Match], val target: Target) {
   import filter.ProtocolMatch
 
   def matchesTcpOrUdp: Boolean =
@@ -37,7 +37,7 @@ class Rule(val matches: List[Match], val target: Target) {
       vMatches <- traverse(matches)(_.validate(this, chain, table))
 
       // ... and its target is valid: if exactly one of the following is true:
-      //  * it's a PlaceholderTarget and it `points' to a valid chain.
+      //  * it's a PlaceholderTarget and it `points' to a 'valid' chain.
       //  * it's a regular target and its validity routine returns true.
       vTarget  <- target match {
         case PlaceholderTarget(name, _) =>
@@ -45,9 +45,4 @@ class Rule(val matches: List[Match], val target: Target) {
         case _ => target.validate(this, chain, table)
       }
     } yield Rule(vMatches, vTarget)
-}
-
-object Rule {
-  def apply(matches: List[Match], target: Target): Rule =
-    new Rule(matches, target)
 }

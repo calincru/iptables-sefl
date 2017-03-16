@@ -21,7 +21,7 @@ case class MasqueradeTarget(
    *  The '--to-ports' option is only valid if the rule also specifies
    *  '-p tcp' or '-p udp'.
    */
-  override def validateIf(
+  override protected def validateIf(
       rule: Rule,
       chain: Chain,
       table: Table): Boolean = {
