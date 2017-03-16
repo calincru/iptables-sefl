@@ -25,7 +25,7 @@ import Parsing.Combinators._
 import types.net._
 
 @RunWith(classOf[JUnitRunner])
-class NatTargetExtensionsSuite extends FunSuite with Matchers {
+class NatParsingSuite extends FunSuite with Matchers {
 
   test("source nat test") {
     implicit val context = new ParsingContext {

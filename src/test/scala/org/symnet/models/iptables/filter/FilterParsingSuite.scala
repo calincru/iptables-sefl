@@ -25,7 +25,7 @@ import Parsing.Combinators._
 import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
-class FilterExtensionSuite extends FunSuite with Matchers {
+class FilterParsingSuite extends FunSuite with Matchers {
   import filter._
   import FilterTarget.{parser => targetParser}
   import IpMatch.{dstParser, srcParser}
