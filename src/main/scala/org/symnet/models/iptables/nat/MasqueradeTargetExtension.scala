@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package filter
+package nat
 
 import core._
 import types.net.{Ipv4, Port}

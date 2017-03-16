@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package filter
+package nat
 
 // scala
 import org.junit.runner.RunWith
@@ -18,6 +18,7 @@ import scalaz.Maybe._
 // project
 // -> core
 import core.{Parsing, ParsingContext}
+import filter._
 import Parsing.{ruleParser, chainParser}
 import Parsing.Combinators._
 
