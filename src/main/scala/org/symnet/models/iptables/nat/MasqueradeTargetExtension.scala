@@ -24,7 +24,7 @@ case class MasqueradeTarget(
   override protected def validateIf(
       rule: Rule,
       chain: Chain,
-      table: Table): Boolean = {
+      table: Table): Boolean =
     // Check the table/chain in which this target is valid.
     table.name == "nat" && chain.name == "POSTROUTING" &&
     // The existance of the upper port implies the existance of the lower
@@ -32,7 +32,7 @@ case class MasqueradeTarget(
     //
     //      upperPort -> lowerPort <=> !upperPort or lowerPort
     //
-    (upperPort.isEmpty || lowerPort.isDefined)
+    (upperPort.isEmpty || lowerPort.isDefined) &&
     // Check that 'tcp' or 'udp' is specified when either of the lower/upper
     // ports are given.
     //
@@ -44,7 +44,6 @@ case class MasqueradeTarget(
     // =>   lowerPort -> tcp/udp  <=> !lowerPort or tcp/udp
     //
     (lowerPort.isEmpty || rule.matchesTcpOrUdp)
-  }
 }
 
 object MasqueradeTarget {
