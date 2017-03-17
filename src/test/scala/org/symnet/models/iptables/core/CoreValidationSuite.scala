@@ -153,21 +153,38 @@ class CoreValidationSuite extends FunSuite with Matchers {
       table.validate shouldBe Just(table)
     }
     {
-      // TODO(calincru): Recursive target; should this be allowed?
-      val rule  = Rule(List(validMatch), PlaceholderTarget("FORWARD"))
+      val rule  = Rule(List(validMatch), PlaceholderTarget("MY_CHAIN"))
+      val myChain = UserChain("MY_CHAIN", Nil)
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
-      val table = Table("filter", List(chain))
+      val table = Table("filter", List(chain, myChain))
 
       // The model after the rule is validated.
-      val vRule = Rule(List(validMatch), chain)
+      val vRule = Rule(List(validMatch), myChain)
       val vChain = BuiltinChain("FORWARD", List(vRule), Drop)
-      val vTable = Table("filter", List(vChain))
+      val vTable = Table("filter", List(vChain, myChain))
 
       table.validate shouldBe Just(vTable)
       vTable should not equal (table)
     }
 
     // Failure
+    {
+      // Jumps to builtin chains are not allowed.
+      val rule  = Rule(List(validMatch), PlaceholderTarget("FORWARD"))
+      val myChain = UserChain("MY_CHAIN", List(rule))
+      val chain = BuiltinChain("FORWARD", Nil, Drop)
+      val table = Table("filter", List(chain, myChain))
+
+      table.validate shouldBe empty
+    }
+    {
+      // Recursive jumps are not allowed.
+      val rule  = Rule(List(validMatch), PlaceholderTarget("MY_CHAIN"))
+      val chain = UserChain("MY_CHAIN", List(rule))
+      val table = Table("filter", List(chain))
+
+      table.validate shouldBe empty
+    }
     {
       // Invalid match.
       val rule = Rule(List(invalidMatch), validTarget)

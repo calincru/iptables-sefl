@@ -36,13 +36,16 @@ case class Rule(val matches: List[Match], val target: Target) {
       // A rule is valid if all its matches are valid ...
       vMatches <- traverse(matches)(_.validate(this, chain, table))
 
-      // ... and its target is valid: if exactly one of the following is true:
-      //  * it's a PlaceholderTarget and it `points' to a 'valid' chain.
-      //  * it's a regular target and its validity routine returns true.
-      vTarget  <- target match {
+      // ... and its 'real' target is valid.
+      //
+      // NOTE: The 'real' target of a rule could be another one than that used
+      // when constructing it only if it is a placeholder target which refers a
+      // valid (from a 'target' perspective) chain.
+      actualTarget  <- target match {
         case PlaceholderTarget(name, _) =>
           Maybe.fromOption(table.chains.find(_.name == name))
-        case _ => target.validate(this, chain, table)
+        case _ => Just(target)
       }
+      vTarget <- actualTarget.validate(this, chain, table)
     } yield Rule(vMatches, vTarget)
 }

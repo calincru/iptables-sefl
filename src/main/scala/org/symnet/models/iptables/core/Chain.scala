@@ -24,11 +24,6 @@ object Policy extends Enumeration {
 }
 import Policy._
 
-/** TODO(calincru): Doc
- *
- *  NOTE: A chain can be the target of any rule (no need to override the target
- *  validation routine).
- */
 sealed abstract class Chain(
     val name: String,
     val rules: List[Rule],
@@ -63,6 +58,14 @@ case class UserChain(
   ///
   /// Validation
   ///
+  /** Target validation routine: a user-defined chain is a valid target for a
+   *  rule if and only if that rule is not part of the same chain (recursive
+   *  jump).
+   */
+  override protected def validateIf(
+      rule: Rule,
+      chain: Chain,
+      table: Table): Boolean = chain != this
 
   override protected def validateIf(table: Table): Boolean =
     // A built-in chain is valid if its parent class is valid ...
@@ -84,6 +87,17 @@ case class BuiltinChain(
   ///
   /// Validation
   ///
+
+  /** Target validation routine: a builtin-chain is not a valid target.
+   *
+   *  NOTE: This could be acheived in a different manner, by making 'Target' a
+   *  trait and making UserChain implement that trait, but it is currently
+   *  easier to check validity in this way.
+   */
+  override protected def validateIf(
+      rule: Rule,
+      chain: Chain,
+      table: Table): Boolean = false
 
   override protected def validateIf(table: Table): Boolean =
     // A built-in chain is valid if its parent class is valid ...
