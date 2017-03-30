@@ -9,7 +9,6 @@ package filter
 
 import core._
 
-
 case class InInterfaceMatch(val interface: String) extends Match {
 
   override protected def validateIf(
@@ -36,10 +35,8 @@ case class OutInterfaceMatch(val interface: String) extends Match {
     }
 }
 
-object InterfaceMatch {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object InterfaceMatch extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def inParser: Parser[Match] =
     for {

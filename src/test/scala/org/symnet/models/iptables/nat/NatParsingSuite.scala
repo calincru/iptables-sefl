@@ -17,10 +17,9 @@ import scalaz.Maybe._
 
 // project
 // -> core
-import core.{Parsing, ParsingContext}
+import core.ParsingContext
+import core.iptParsers.{ruleParser, chainParser}
 import filter._
-import Parsing.{ruleParser, chainParser}
-import Parsing.Combinators._
 
 // -> types
 import types.net._

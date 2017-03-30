@@ -9,7 +9,6 @@ package filter
 
 import core._
 
-
 class FilterTarget(name: String) extends Target(name) {
 
   override protected def validateIf(
@@ -33,11 +32,9 @@ case object DropTarget   extends FilterTarget("DROP")
 
 case object ReturnTarget extends FilterTarget("RETURN")
 
-object FilterTarget {
-  import Parsing.{Parser, optionlessTargetParser}
-
+object FilterTarget extends BaseParsers {
   def parser: Parser[Target] =
-    optionlessTargetParser(Map(("ACCEPT", AcceptTarget),
-                               ("DROP",   DropTarget),
-                               ("RETURN", ReturnTarget)))
+    iptParsers.optionlessTargetParser(Map(("ACCEPT", AcceptTarget),
+                                          ("DROP",   DropTarget),
+                                          ("RETURN", ReturnTarget)))
 }

@@ -17,15 +17,14 @@ import scalaz.Maybe._
 
 // project
 // -> core
-import core.{ChainTargetExtension, NegatedMatch, Parsing, ParsingContext}
-import Parsing.{ruleParser, chainParser}
-import Parsing.Combinators._
+import core.{BaseParsers, ChainTargetExtension, NegatedMatch, ParsingContext}
+import core.iptParsers.{ruleParser, chainParser}
 
 // -> types
 import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
-class FilterParsingSuite extends FunSuite with Matchers {
+class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
   import filter._
   import FilterTarget.{parser => targetParser}
   import IpMatch.{dstParser, srcParser}

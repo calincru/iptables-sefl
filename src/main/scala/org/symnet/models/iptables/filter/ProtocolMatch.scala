@@ -23,10 +23,8 @@ case class ProtocolMatch(val protocol: String) extends Match {
     false
 }
 
-object ProtocolMatch {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object ProtocolMatch extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def parser: Parser[Match] =
     for {

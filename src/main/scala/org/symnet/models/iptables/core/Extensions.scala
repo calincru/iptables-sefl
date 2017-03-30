@@ -8,15 +8,15 @@ package models.iptables
 package core
 
 /** A trait for classes implementing matcher parsers. */
-trait MatchExtension {
-  val matchParsers: List[Parsing.Parser[Match]]
+trait MatchExtension extends BaseParsers {
+  val matchParsers: List[Parser[Match]]
 }
 
 /** A trait for classes implementing target parsers. */
-trait TargetExtension {
-  val targetParser: Parsing.Parser[Target]
+trait TargetExtension extends BaseParsers {
+  val targetParser: Parser[Target]
 }
 
 object ChainTargetExtension extends TargetExtension {
-  val targetParser = Parsing.chainTargetParser
+  val targetParser = iptParsers.chainTargetParser
 }

@@ -10,7 +10,6 @@ package nat
 import core._
 import types.net.{Ipv4, Port}
 
-
 case class MasqueradeTarget(
     lowerPort: Option[Port],
     upperPort: Option[Port]) extends Target("MASQUERADE") {
@@ -46,14 +45,12 @@ case class MasqueradeTarget(
     (lowerPort.isEmpty || rule.matchesTcpOrUdp)
 }
 
-object MasqueradeTarget {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object MasqueradeTarget extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def parser: Parser[Target] =
     for {
-      _ <- jumpOptionParser
+      _ <- iptParsers.jumpOptionParser
 
       // Parse the actual  target
       targetName <- someSpacesParser >> stringParser

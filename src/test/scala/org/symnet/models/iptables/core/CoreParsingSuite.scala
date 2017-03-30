@@ -16,15 +16,14 @@ import scalaz.Maybe._
 
 // project
 import types.net.Ipv4
-import Parsing._
+import iptParsers._
 
 @RunWith(classOf[JUnitRunner])
-class CoreParsingSuite extends FunSuite with Matchers {
+class CoreParsingSuite extends FunSuite with Matchers with BaseParsers {
 
   ///
   /// Combinators testing suite.
   ///
-  import Combinators._
 
   test("optional ana false") {
     val result = optional(parseChar('b')).eval("ana")
@@ -77,7 +76,7 @@ class CoreParsingSuite extends FunSuite with Matchers {
   }
 
   test("atMost combinator succeeds") {
-    val parser = Combinators.atMost(2, parseChar('a'))
+    val parser = atMost(2, parseChar('a'))
     val value = parser.eval("aaa").map(_.mkString)
     val state = parser.exec("aaa").map(_.mkString)
 
@@ -87,7 +86,7 @@ class CoreParsingSuite extends FunSuite with Matchers {
 
   test("oneOf selects second") {
     val input = "  ana"
-    val parser = Combinators.oneOf(parseString("ana"), spacesParser)
+    val parser = super[BaseParsers].oneOf(parseString("ana"), spacesParser)
     val value = parser.eval(input)
     val state = parser.exec(input)
 
@@ -191,7 +190,7 @@ class CoreParsingSuite extends FunSuite with Matchers {
   }
 
   test("atMost on digits") {
-    val digitsParser = Combinators.atMost(3, digitParser)
+    val digitsParser = atMost(3, digitParser)
     val result = digitsParser.eval("1234")
 
     result shouldBe Just(List(1,2,3))

@@ -10,7 +10,6 @@ package nat
 import core._
 import types.net.{Ipv4, PortRange}
 
-
 case class DnatTarget(
     lowerIp:   Ipv4,
     upperIp:   Option[Ipv4],
@@ -30,14 +29,12 @@ case class DnatTarget(
     (portRange.isEmpty || rule.matchesTcpOrUdp)
 }
 
-object DnatTarget  {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object DnatTarget extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def parser: Parser[Target] =
     for {
-      _ <- jumpOptionParser
+      _ <- iptParsers.jumpOptionParser
 
       // Parse the actual target.
       targetName <- someSpacesParser >> stringParser if targetName == "DNAT"

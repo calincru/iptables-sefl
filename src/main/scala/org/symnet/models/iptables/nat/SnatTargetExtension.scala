@@ -29,14 +29,12 @@ case class SnatTarget(
     (portRange.isEmpty || rule.matchesTcpOrUdp)
 }
 
-object SnatTarget {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object SnatTarget extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def parser: Parser[Target] =
     for {
-      _ <- jumpOptionParser
+      _ <- iptParsers.jumpOptionParser
 
       // Parse the actual target.
       targetName <- someSpacesParser >> stringParser if targetName == "SNAT"

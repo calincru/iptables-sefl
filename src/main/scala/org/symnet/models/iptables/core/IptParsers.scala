@@ -7,11 +7,6 @@ package org.symnet
 package models.iptables
 package core
 
-import scalaz.{Maybe, MonadPlus, MonadState, NonEmptyList, StateT}
-
-import types.net.{Ipv4, Port, PortRange}
-
-
 /** The parsing context.
  *
  *  Example usage before initiating the parsing.
@@ -31,112 +26,8 @@ abstract class ParsingContext {
   val targetExtensions: List[TargetExtension]
 }
 
-object Parsing {
-  type Parser[A] = StateT[Maybe, String, A]
-
-  val ParserMP = MonadPlus[Parser]
+object iptParsers extends BaseParsers {
   import ParserMP.monadPlusSyntax._
-
-  val ParserMS = MonadState[Parser, String]
-  import ParserMS.{get, put}
-
-  implicit class ParserOps[A](p: Parser[A]) {
-    def <<|> =              p <+> (_: Parser[A])
-    def <|>> = (_: Parser[A]) <+> p
-  }
-
-  /** This object includes several combinators used in parsing. */
-  object Combinators {
-    def optional[A](p: Parser[A]): Parser[Option[A]] =
-      (p >>= (x => pure(Option(x)))) <<|> pure(None)
-
-    def many[A](p: Parser[A]): Parser[List[A]] = some(p) <<|> pure(Nil)
-
-    def some[A](p: Parser[A]): Parser[List[A]] =
-      for {
-        x <- p
-        y <- many(p)
-      } yield (x +: y)
-
-    def atMost[A](n: Int, p: Parser[A]): Parser[List[A]] =
-      if (n <= 0)
-        pure(Nil)
-      else
-        optional(p) >>= (_ match {
-          case Some(x) => atMost(n - 1, p) >>= (xs => pure(x :: xs))
-          case None    => pure(Nil)
-        })
-
-    def oneOf[A](ps: Parser[A]*): Parser[A] = ps.reduce(_ <<|> _)
-  }
-  import Combinators._
-
-
-  ///
-  /// Basic parsers.
-  ///
-
-  def parseCharIf(f: Char => Boolean): Parser[Char] =
-    for {
-      input <- get if !input.isEmpty && f(input.head)
-      _     <- put(input.tail)
-    } yield input.head
-
-  def parseChar(c: Char): Parser[Char] = parseCharIf(_ == c)
-
-  def spacesParser: Parser[String] = many(parseCharIf(_.isWhitespace))
-
-  def someSpacesParser: Parser[String] = some(parseCharIf(_.isWhitespace))
-
-  def parseString(s: String): Parser[String] =
-    if (s.isEmpty)
-      pure("")
-    else
-      parseChar(s.head) >> parseString(s.tail) >>= (t => pure(s.head +: t))
-
-  def stringParser: Parser[String] = some(parseCharIf(!_.isWhitespace))
-
-  def digitParser: Parser[Int] = parseCharIf(_.isDigit).map(_.asDigit)
-
-
-  ///
-  /// Common parsers provided here to avoid duplicated code.
-  ///
-
-  def byteParser: Parser[Int] =
-    for {
-      digits <- atMost(3, digitParser) if digitsValid(digits)
-      byte = toInt(digits) if byte <= 255
-    } yield byte
-
-  def portParser: Parser[Port] =
-    for {
-      digits <- atMost(5, digitParser) if digitsValid(digits)
-      port = toInt(digits) if port < (1 << 16)
-    } yield port
-
-  def portRangeParser: Parser[PortRange] =
-    for {
-      lhs <- portParser
-      _   <- parseChar('-')
-      rhs <- portParser if rhs >= lhs
-    } yield (lhs, rhs)
-
-  def maskParser: Parser[Int] =
-    for {
-      digits <- atMost(2, digitParser) if digitsValid(digits)
-      mask = toInt(digits) if mask <= 32
-    } yield mask
-
-  def ipParser: Parser[Ipv4] =
-    for {
-      b0 <- byteParser
-      b1 <- parseChar('.') >> byteParser
-      b2 <- parseChar('.') >> byteParser
-      b3 <- parseChar('.') >> byteParser
-      optionalMask <- optional(parseChar('/') >> maskParser)
-    } yield Ipv4(b0, b1, b2, b3, optionalMask)
-
 
   ///
   /// Target, rule, chain and table parsers.
@@ -207,17 +98,4 @@ object Parsing {
       tableName <- spacesParser >> stringParser
       chains    <- many(chainParser)
     } yield Table(tableName, chains)
-
-
-  ///
-  /// Object private functions.
-  ///
-
-  private def toInt(digits: List[Int]): Int = {
-    val powers = Seq.iterate(1, digits.length)(_ * 10).reverse
-    (digits, powers).zipped.map(_ * _).sum
-  }
-
-  private def digitsValid(digits: List[Int]): Boolean =
-    !digits.isEmpty && !(digits.length >= 2 && digits(0) == 0)
 }

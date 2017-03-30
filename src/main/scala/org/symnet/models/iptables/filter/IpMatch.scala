@@ -15,10 +15,8 @@ case class SourceMatch(val ip: Ipv4) extends Match
 
 case class DestinationMatch(val ip: Ipv4) extends Match
 
-object IpMatch {
-  import Parsing._
-  import Combinators._
-  import Parsing.ParserMP.monadPlusSyntax._
+object IpMatch extends BaseParsers {
+  import ParserMP.monadPlusSyntax._
 
   def srcParser: Parser[Match] =
     for {
