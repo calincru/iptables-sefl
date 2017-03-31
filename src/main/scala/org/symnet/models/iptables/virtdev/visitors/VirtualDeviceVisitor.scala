@@ -4,12 +4,14 @@
 // information regarding copyright ownership.
 
 package org.symnet
-package models.iptables
-package virtdev
+package models.iptables.virtdev
 package visitors
 
 import devices._
 
 abstract class VirtualDeviceVisitor {
+  // This shouldn't really get called.
+  def visit(vd:  VirtualDevice[_]): Any = null
+
   def visit(rvd: RegularVirtualDevice[_]): Any
 }

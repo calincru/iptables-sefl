@@ -4,8 +4,7 @@
 // information regarding copyright ownership.
 
 package org.symnet
-package models.iptables
-package virtdev
+package models.iptables.virtdev
 package visitors
 
 import devices._
