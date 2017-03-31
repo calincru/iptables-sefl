@@ -10,13 +10,6 @@ import scalaz.Maybe
 import scalaz.Maybe._
 
 case class Rule(val matches: List[Match], val target: Target) {
-  import filter.ProtocolMatch
-
-  def matchesTcpOrUdp: Boolean =
-    matches.exists(_ match {
-      case ProtocolMatch(p) => p == "tcp" || p == "udp"
-      case _ => false
-    })
 
   ///
   /// Validation

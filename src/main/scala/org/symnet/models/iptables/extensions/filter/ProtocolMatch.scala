@@ -5,10 +5,9 @@
 
 package org.symnet
 package models.iptables
-package filter
+package extensions.filter
 
 import core._
-
 
 case class ProtocolMatch(val protocol: String) extends Match {
 
@@ -24,6 +23,13 @@ case class ProtocolMatch(val protocol: String) extends Match {
 }
 
 object ProtocolMatch extends BaseParsers {
+
+  def ruleMatchesTcpOrUdp(rule: Rule): Boolean =
+    rule.matches.exists(_ match {
+      case ProtocolMatch(p) => p == "tcp" || p == "udp"
+      case _ => false
+    })
+
   import ParserMP.monadPlusSyntax._
 
   def parser: Parser[Match] =

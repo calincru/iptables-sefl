@@ -5,11 +5,12 @@
 
 package org.symnet
 package models.iptables
-package nat
+package extensions.nat
 
-import core._
 import types.net.{Ipv4, PortRange}
 
+import core._
+import extensions.filter.ProtocolMatch
 
 case class SnatTarget(
     lowerIp:   Ipv4,
@@ -26,7 +27,7 @@ case class SnatTarget(
     //
     // The existance of the port range implies that '-p tcp/udp' must
     // have been specified.
-    (portRange.isEmpty || rule.matchesTcpOrUdp)
+    (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 }
 
 object SnatTarget extends BaseParsers {

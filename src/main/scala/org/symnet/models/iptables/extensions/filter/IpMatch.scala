@@ -5,11 +5,10 @@
 
 package org.symnet
 package models.iptables
-package filter
+package extensions.filter
 
 import core._
 import types.net.Ipv4
-
 
 case class SourceMatch(val ip: Ipv4) extends Match
 

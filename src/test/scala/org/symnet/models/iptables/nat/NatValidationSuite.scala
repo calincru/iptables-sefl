@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package nat
+package extensions.nat
 
 // scala
 import org.junit.runner.RunWith
@@ -16,9 +16,9 @@ import org.scalatest.junit.JUnitRunner
 import scalaz.Maybe._
 
 // project
-import core._
-import filter.ProtocolMatch
 import types.net._
+import core._
+import extensions.filter.ProtocolMatch
 import Policy._
 
 @RunWith(classOf[JUnitRunner])

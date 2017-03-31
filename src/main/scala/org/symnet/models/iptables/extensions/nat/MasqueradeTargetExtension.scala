@@ -5,10 +5,12 @@
 
 package org.symnet
 package models.iptables
-package nat
+package extensions.nat
+
+import types.net.{Ipv4, Port}
 
 import core._
-import types.net.{Ipv4, Port}
+import extensions.filter.ProtocolMatch
 
 case class MasqueradeTarget(
     lowerPort: Option[Port],
@@ -42,7 +44,7 @@ case class MasqueradeTarget(
     // but  upperPort -> lowerPort =>
     // =>   lowerPort -> tcp/udp  <=> !lowerPort or tcp/udp
     //
-    (lowerPort.isEmpty || rule.matchesTcpOrUdp)
+    (lowerPort.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 }
 
 object MasqueradeTarget extends BaseParsers {

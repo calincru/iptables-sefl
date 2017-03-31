@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package filter
+package extensions.filter
 
 // scala
 import org.junit.runner.RunWith
@@ -25,7 +25,6 @@ import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
 class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
-  import filter._
   import FilterTarget.{parser => targetParser}
   import IpMatch.{dstParser, srcParser}
 

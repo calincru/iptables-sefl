@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package filter
+package extensions.filter
 
 import core._
 

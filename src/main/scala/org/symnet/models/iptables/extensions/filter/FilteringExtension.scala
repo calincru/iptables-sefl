@@ -3,12 +3,10 @@
 // See the LICENCE file distributed with this work for additional
 // information regarding copyright ownership.
 
-package org.symnet
-package models.iptables
-package filter
+package org.symnet.models.iptables
+package extensions.filter
 
 import core.{MatchExtension, TargetExtension}
-
 
 object FilteringExtension extends MatchExtension with TargetExtension {
   val matchParsers  = List(

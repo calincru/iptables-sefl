@@ -5,7 +5,7 @@
 
 package org.symnet
 package models.iptables
-package nat
+package extensions.nat
 
 // scala
 import org.junit.runner.RunWith
@@ -19,7 +19,7 @@ import scalaz.Maybe._
 // -> core
 import core.ParsingContext
 import core.iptParsers.{ruleParser, chainParser}
-import filter._
+import extensions.filter._
 
 // -> types
 import types.net._
