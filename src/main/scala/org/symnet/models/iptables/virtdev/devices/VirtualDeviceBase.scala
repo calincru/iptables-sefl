@@ -50,7 +50,8 @@ package devices {
     def portInstructions: Map[Port, Instruction] = Map.empty
   }
 
-  abstract class VirtualDeviceBuilder(deviceName: String) {
-    def build: VirtualDevice[_]
+  abstract class VirtualDeviceBuilder[T <: VirtualDevice[_]](
+      deviceName: String) {
+    def build: T
   }
 }

@@ -40,3 +40,13 @@ class ForwardingDecision(
 
   def portInstructions: Map[Port, Instruction] = linearIPLookup.instructions
 }
+
+class ForwardingDecisionBuilder(
+    deviceName:   String,
+    outputPorts:  Int,
+    routingTable: List[String])
+  extends VirtualDeviceBuilder[ForwardingDecision](deviceName) {
+
+  def build: ForwardingDecision =
+    new ForwardingDecision(deviceName, outputPorts, routingTable)
+}
