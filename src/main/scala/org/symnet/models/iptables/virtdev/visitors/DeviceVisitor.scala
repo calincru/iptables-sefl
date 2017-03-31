@@ -8,5 +8,8 @@ package models.iptables
 package virtdev
 package visitors
 
+import devices._
+
 abstract class VirtualDeviceVisitor {
+  def visit(rvd: RegularVirtualDevice[_]): Any
 }

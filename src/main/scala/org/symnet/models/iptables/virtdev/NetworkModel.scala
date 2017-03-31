@@ -13,4 +13,13 @@ package virtdev
  *  It can be passed to an executor to trace the flows through the modeled
  *  network.
  */
-trait NetworkModel
+abstract class NetworkModel {
+
+  def addDevice(device: VirtualDevice[_]): NetworkModel
+
+  def addLink(
+      fromDevice: VirtualDevice[_],
+      fromPort:   Port,
+      toDevice:   VirtualDevice[_],
+      toPort:     Port)
+}
