@@ -28,6 +28,6 @@ case class TagReturnDispatcher(
           Fork((0 until outputPorts).map(i => Forward(outputPort(i))): _*)) ++
     // Constrain the tag value so that it gets passed only through the expected
     // one.
-    ((0 until outputPorts).map(
-      i => outputPort(i) -> Constrain(tag, :==:(ConstantValue(i))))).toMap
+    (0 until outputPorts).map(
+      i => outputPort(i) -> Constrain(tag, :==:(ConstantValue(i)))).toMap
 }
