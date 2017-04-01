@@ -7,11 +7,18 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-/** A local process acts as a sink. It has one input port and no output ports. */
-case class LocalProcess(name: String)
-  extends RegularVirtualDevice[Unit](name, 1, 0, ()) {
+import models.iptables.core.Rule
 
-  def inputPort: Port = inputPort(0)
+// TODO
+case class ContiguousIVD(
+    name: String,
+    rules: List[Rule])
+  extends RegularVirtualDevice[Unit](
+    name,
+    1,
+    2,
+    ()) {
 
+  // TODO
   override def portInstructions: Map[Port, Instruction] = Map.empty
 }

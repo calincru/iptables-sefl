@@ -7,17 +7,23 @@ package org.symnet
 package models.iptables.virtdev
 
 package devices {
-
   abstract class VirtualDevice[+Config](
-      val name:         String,
-      val inputPorts:   Int,
-      val outputPorts:  Int,
+      name:         String,
+      inputPorts:   Int,
+      outputPorts:  Int,
       config:       Config) {
 
-    def inputPort(which: Int): Port = s"$name-in"
-    def outputPort(which: Int): Port = s"$name-out"
+    def inputPort(which: Int):  Port = {
+      assert(which < inputPorts)
+      s"$name-in"
+    }
+    def outputPort(which: Int): Port = {
+      assert(which < outputPorts)
+      s"$name-out"
+    }
 
     def portInstructions: Map[Port, Instruction]
+    def links:            Map[Port, Port]
   }
 
   abstract class RegularVirtualDevice[+Config](
@@ -25,7 +31,15 @@ package devices {
       inputPorts:   Int,
       outputPorts:  Int,
       config:       Config)
-    extends VirtualDevice(name, inputPorts, outputPorts, config)
+    extends VirtualDevice(name, inputPorts, outputPorts, config) {
+
+    // It is generally the case that regular VDs don't have links, otherwise
+    // they would be composite VDs.
+    //
+    // However, if that's not the case, this method can still be overridden,
+    // this is just the default.
+    override def links: Map[Port, Port] = Map.empty
+  }
 
   abstract class CompositeVirtualDevice[+Config](
       name:         String,
@@ -34,13 +48,30 @@ package devices {
       config:       Config)
     extends VirtualDevice[Config](name, inputPorts, outputPorts, config) {
 
-    // Composite VDs don't have port instructions themselves, but they link
-    // together VDs which do.
-    def portInstructions: Map[Port, Instruction] = Map.empty
+    final override def portInstructions: Map[Port, Instruction] =
+      compPortInstructions ++ devices.flatMap(_.portInstructions)
+
+    final override def links: Map[Port, Port] =
+      newLinks ++ devices.flatMap(_.links)
+
+    // Composites should be composed of some other virtual devices.  We use this
+    // to ensure that the links and the port instructions are correctly
+    // accumulated.
+    protected def devices: List[VirtualDevice[_]]
+
+    // Each composite VD should define the links it adds.
+    protected def newLinks: Map[Port, Port]
+
+    // It is generally the case that composite VDs don't have port instructions
+    // themselves, but they link together VDs which do.
+    //
+    // However, if there is any composite VD which needs to add some port
+    // instructions, this method can still be overridden, this is just the
+    // default.
+    protected def compPortInstructions: Map[Port, Instruction] = Map.empty
   }
 
-  abstract class VirtualDeviceBuilder[T <: VirtualDevice[_]](
-      deviceName: String) {
+  abstract class VirtualDeviceBuilder[T <: VirtualDevice[_]](name: String) {
     def build: T
   }
 }

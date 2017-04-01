@@ -7,6 +7,8 @@ package org.symnet
 package models.iptables.virtdev
 package visitors
 
+import devices.VirtualDevice
+
 /** A 'NetworkModel' aggregates multiple devices alongside the links between
  *  them.
  *
@@ -16,3 +18,9 @@ package visitors
 case class NetworkModel(
     instructions: Map[Port, Instruction],
     links:        Map[Port, Port])
+
+object NetworkModel {
+
+  def apply[T <: VirtualDevice[_]](t: T): NetworkModel =
+    NetworkModel(t.portInstructions, t.links)
+}

@@ -9,10 +9,11 @@ package devices
 
 import types.net.Ipv4
 
-case class RouterConfig(
-    localRD:      LocalForwardingDecision,
-    fwdRD:        ForwardingDecision,
-    localProcess: LocalProcess)
+trait RouterConfig {
+  val localRD:      LocalForwardingDecision
+  val fwdRD:        ForwardingDecision
+  val localProcess: LocalProcess
+}
 
 class Router(
     name:         String,
@@ -25,26 +26,46 @@ class Router(
     outputPorts,
     config) {
 
-  def localRD:      LocalForwardingDecision = config.localRD
-  def fwdRD:        ForwardingDecision      = config.fwdRD
-  def localProcess: LocalProcess            = config.localProcess
+  override def devices: List[VirtualDevice[_]] =
+    List(config.localRD, config.fwdRD, config.localProcess)
+
+  override def newLinks: Map[Port, Port] = {
+    val local        = config.localRD
+    val fwd          = config.fwdRD
+    val localProcess = config.localProcess
+
+    // Add links to the local forwarding decision.
+    (0 until inputPorts).map(i => inputPort(i) -> local.inputPort).toMap ++
+    // Add link from local decision to local process.
+    Map(local.localOutputPort -> localProcess.inputPort) ++
+    // Add link from local decision to routing decision.
+    Map(local.forwardOutputPort -> fwd.inputPort) ++
+    // Add links from routing decision to output ports.
+    (0 until outputPorts).map(i => fwd.outputPort(i) -> outputPort(i)).toMap
+  }
 }
 
-case class RouterBuilder(
+class RouterBuilder(
     name:         String,
     inputPorts:   Int,
     outputPorts:  Int,
-    localIps:     List[Ipv4],    // IPs of local interfaces
-    routingTable: List[String])  // routing table
-  extends VirtualDeviceBuilder[Router](name) {
+    localIps:     List[Ipv4],
+    routingTable: List[String]) extends VirtualDeviceBuilder[Router](name) {
 
-  override def build: Router =
-    new Router(name, inputPorts, outputPorts, RouterConfig(
-        LocalForwardingDecisionBuilder(localRDName, localIps).build,
-        ForwardingDecisionBuilder(fwdRDName, outputPorts, routingTable).build,
-        LocalProcessBuilder(localProcessName).build))
+  def build: Router =
+    new Router(name, inputPorts, outputPorts, new RouterConfig {
+      val (localRD, fwdRD, localProcess) =
+        (localRDDevice, fwdRDDevice, localProcessDevice)
+    })
 
-  private val localRDName      = s"$name-localRD"
-  private val fwdRDName        = s"$name-fwdRD"
-  private val localProcessName = s"$name-localProc"
+  protected val localRDDevice =
+    LocalForwardingDecision(localName(name), localIps)
+  protected val fwdRDDevice =
+    ForwardingDecision(fwdName(name), outputPorts, routingTable)
+  protected val localProcessDevice =
+    LocalProcess(procName(name))
+
+  private def localName(routerName: String) = s"$routerName-localRD"
+  private def fwdName  (routerName: String) = s"$routerName-fwdRD"
+  private def procName (routerName: String) = s"$routerName-localProc"
 }

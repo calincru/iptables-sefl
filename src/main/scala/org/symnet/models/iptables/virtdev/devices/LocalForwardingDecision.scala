@@ -14,7 +14,7 @@ import types.net.Ipv4
  *
  *  The config represents the list of router interfaces' IPs.
  */
-class LocalForwardingDecision(
+case class LocalForwardingDecision(
     name:     String,
     config:   List[Ipv4])
   extends RegularVirtualDevice[List[Ipv4]](
@@ -31,13 +31,4 @@ class LocalForwardingDecision(
 
   // TODO
   override def portInstructions: Map[Port, Instruction] = Map.empty
-}
-
-case class LocalForwardingDecisionBuilder(
-    name: String,
-    ips:  List[Ipv4])
-  extends VirtualDeviceBuilder[LocalForwardingDecision](name) {
-
-  override def build: LocalForwardingDecision =
-    new LocalForwardingDecision(name, ips)
 }
