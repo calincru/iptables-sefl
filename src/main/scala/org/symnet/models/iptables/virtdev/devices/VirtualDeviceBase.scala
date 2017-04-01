@@ -6,17 +6,13 @@
 package org.symnet
 package models.iptables.virtdev
 
-import visitors.VirtualDeviceVisitor
-
 package devices {
 
   abstract class VirtualDevice[+Config](
       val name:         String,
       val inputPorts:   Int,
       val outputPorts:  Int,
-      val config:       Config) {
-
-    def accept(visitor: VirtualDeviceVisitor): Any = visitor.visit(this)
+      config:       Config) {
 
     def inputPort(which: Int): Port = s"$name-in"
     def outputPort(which: Int): Port = s"$name-out"
@@ -30,13 +26,6 @@ package devices {
       outputPorts:  Int,
       config:       Config)
     extends VirtualDevice(name, inputPorts, outputPorts, config)
-
-  abstract class IptablesVirtualDevice[+Config](
-      name:         String,
-      inputPorts:   Int,
-      outputPorts:  Int,
-      config:       Config)
-    extends RegularVirtualDevice(name, inputPorts, outputPorts, config)
 
   abstract class CompositeVirtualDevice[+Config](
       name:         String,

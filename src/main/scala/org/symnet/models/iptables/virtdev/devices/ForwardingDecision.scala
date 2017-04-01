@@ -10,7 +10,7 @@ package devices
 import org.change.v2.abstractnet.generic.{Port => SPort}
 import org.change.v2.abstractnet.click.sefl.LinearIPLookupElementBuilder
 
-// This is just a wrapper over 'LinearIPLookup' from the click models.
+// NOTE: This is just a wrapper over 'LinearIPLookup' from the click models.
 class ForwardingDecision(
       name:         String,
       outputPorts:  Int,
@@ -20,6 +20,11 @@ class ForwardingDecision(
       1, // input port
       outputPorts,
       routingTable) {
+
+  override def portInstructions: Map[Port, Instruction] =
+    linearIPLookup.instructions
+
+  def inputPort: Port = inputPort(0)
 
   private val linearIPLookup = {
     val builder = new LinearIPLookupElementBuilder(name, "LinearIPLookup")
@@ -37,16 +42,14 @@ class ForwardingDecision(
 
     builder.buildElement
   }
-
-  def portInstructions: Map[Port, Instruction] = linearIPLookup.instructions
 }
 
-class ForwardingDecisionBuilder(
-    deviceName:   String,
+case class ForwardingDecisionBuilder(
+    name:         String,
     outputPorts:  Int,
     routingTable: List[String])
-  extends VirtualDeviceBuilder[ForwardingDecision](deviceName) {
+  extends VirtualDeviceBuilder[ForwardingDecision](name) {
 
-  def build: ForwardingDecision =
-    new ForwardingDecision(deviceName, outputPorts, routingTable)
+  override def build: ForwardingDecision =
+    new ForwardingDecision(name, outputPorts, routingTable)
 }

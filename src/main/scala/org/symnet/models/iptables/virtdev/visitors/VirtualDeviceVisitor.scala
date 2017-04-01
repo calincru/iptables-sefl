@@ -11,7 +11,8 @@ import devices._
 
 abstract class VirtualDeviceVisitor {
   // This shouldn't really get called.
-  def visit(vd:  VirtualDevice[_]): Any = null
+  def visit(vd: VirtualDevice[_]): Unit = ()
 
-  def visit(rvd: RegularVirtualDevice[_]): Any
+  def visit(rvd: RegularVirtualDevice[_]): Unit
+  def visit(router: Router): Unit
 }
