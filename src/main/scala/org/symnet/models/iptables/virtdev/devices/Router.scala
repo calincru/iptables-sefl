@@ -34,14 +34,19 @@ class Router(
     val fwd          = config.fwdRD
     val localProcess = config.localProcess
 
-    // Add links to the local forwarding decision.
-    (0 until inputPorts).map(i => inputPort(i) -> local.inputPort).toMap ++
-    // Add link from local decision to local process.
-    Map(local.localOutputPort -> localProcess.inputPort) ++
-    // Add link from local decision to routing decision.
-    Map(local.forwardOutputPort -> fwd.inputPort) ++
-    // Add links from routing decision to output ports.
-    (0 until outputPorts).map(i => fwd.outputPort(i) -> outputPort(i)).toMap
+    List(
+      // Add links to the local forwarding decision.
+      (0 until inputPorts).map(i => inputPort(i) -> local.inputPort).toMap,
+
+      // Add link from local decision to local process.
+      Map(local.localOutputPort -> localProcess.inputPort),
+
+      // Add link from local decision to routing decision.
+      Map(local.forwardOutputPort -> fwd.inputPort),
+
+      // Add links from routing decision to output ports.
+      (0 until outputPorts).map(i => fwd.outputPort(i) -> outputPort(i)).toMap
+    ).flatten.toMap
   }
 }
 

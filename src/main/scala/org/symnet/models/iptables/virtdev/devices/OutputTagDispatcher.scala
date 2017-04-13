@@ -8,21 +8,40 @@ package models.iptables.virtdev
 package devices
 
 trait OutputTagDispatcherConfig {
-  val tagName: String
-  // TODO: un map de la tag la portul pe care sa faca forward
+  val tagName:     String
+  val tagToPortId: Map[String, Int]
 }
 
 case class OutputTagDispatcher(
     name: String,
     outputPorts: Int,
-    tagName: String)
-  extends RegularVirtualDevice[String](
+    config: OutputTagDispatcherConfig)
+  extends RegularVirtualDevice[OutputTagDispatcherConfig](
     name,
     1, // 1 input port
     outputPorts,
-    tagName) {
+    config) {
 
   def inputPort: Port = inputPort(0)
 
+  // TODO
   override def portInstructions: Map[Port, Instruction] = Map.empty
+}
+
+class OutputTagDispatcherBuilder(
+    name: String,
+    outputPorts: Int,
+    tagsMap: Map[String, Int],
+    tag: Option[String] = None)
+  extends VirtualDeviceBuilder[OutputTagDispatcher](name) {
+
+  def build: OutputTagDispatcher =
+    OutputTagDispatcher(name, outputPorts, new OutputTagDispatcherConfig {
+      val tagName = tag match {
+        case Some(s) => s
+        case _       => s"$name-itd"
+      }
+
+      val tagToPortId = tagsMap
+    })
 }

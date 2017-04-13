@@ -7,27 +7,42 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain}
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
 case class InputTagDispatcher(
     name: String,
     outputPorts: Int,
-    tag: String)
+    tagName: String)
   extends RegularVirtualDevice[String](
     name,
     1, // 1 input port
     outputPorts,
-    tag) {
+    tagName) {
 
   def inputPort: Port = inputPort(0)
 
-  override def portInstructions: Map[Port, Instruction] =
-    // Fork to all output ports
-    Map(inputPort ->
-          Fork((0 until outputPorts).map(i => Forward(outputPort(i))): _*)) ++
-    // Constrain the tag value so that it gets passed only through the expected
-    // one.
-    (0 until outputPorts).map(
-      i => outputPort(i) -> Constrain(tag, :==:(ConstantValue(i)))).toMap
+  override def portInstructions: Map[Port, Instruction] = {
+    val portIdToInstr = (i: Int) => InstructionBlock(
+      Constrain(tagName, :==:(ConstantValue(i))),
+      Forward(outputPort(i))
+    )
+
+    // Forward to the port that matches the value of @tagName in packet's
+    // metadata.
+    Map(inputPort -> Fork((0 until outputPorts).map(portIdToInstr): _*))
+  }
+}
+
+class InputTagDispatcherBuilder(
+    name: String,
+    outputPorts: Int,
+    tagName: Option[String] = None)
+  extends VirtualDeviceBuilder[InputTagDispatcher](name) {
+
+  def build: InputTagDispatcher =
+    InputTagDispatcher(name, outputPorts, tagName match {
+      case Some(s) => s
+      case _       => s"$name-itd"
+    })
 }
