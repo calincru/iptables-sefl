@@ -9,4 +9,7 @@ package models.iptables
 package object virtdev {
   type Port = String
   type Instruction = org.change.v2.analysis.processingmodels.Instruction
+
+  val IN_DISPATCH_TAG_NAME  = "input-dispatch"
+  val OUT_DISPATCH_TAG_NAME = "output-dispatch"
 }

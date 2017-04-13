@@ -10,54 +10,34 @@ package devices
 import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
-trait OutputTagDispatcherConfig {
-  val tagName: String
-
-  // Maps value of the tag given by @tagName to the port id to forward packets
-  // which have the tag set to that value.
-  val tagValueToPortId: Map[Int, Int]
-}
-
+/** 'tagValues' is the list of values expected for the OUT_DISPATCH_TAG_NAME.
+ *
+ *  NOTE: Packets are forwarded to the output ports according to the order in
+ *  this list (aka order matters).
+ */
 case class OutputTagDispatcher(
-    name: String,
-    outputPorts: Int,
-    config: OutputTagDispatcherConfig)
-  extends RegularVirtualDevice[OutputTagDispatcherConfig](
+    name:        String,
+    tagValues:   List[Int])
+  extends RegularVirtualDevice[List[Int]](
     name,
-    1, // 1 input port
-    outputPorts,
-    config) {
+      // sole input port
+    1,
+      // the number of output ports is given by the number of tag values to
+      // match
+    tagValues.length,
+    tagValues) {
+
+  def outputPorts: Int = tagValues.length
 
   def inputPort: Port = inputPort(0)
 
   override def portInstructions: Map[Port, Instruction] = {
-    val tag     = config.tagName
-    val tagsMap = config.tagValueToPortId
-
     val portIdToInstr = (tagValue: Int, portId: Int) => InstructionBlock(
-      Constrain(tag, :==:(ConstantValue(tagValue))),
+      Constrain(OUT_DISPATCH_TAG_NAME, :==:(ConstantValue(tagValue))),
       Forward(outputPort(portId))
     )
 
-    Map(inputPort -> Fork(tagsMap.toList.map(
+    Map(inputPort -> Fork(tagValues.zipWithIndex.map(
       { case (tagValue, portId) => portIdToInstr(tagValue, portId) }): _*))
   }
-}
-
-class OutputTagDispatcherBuilder(
-    name: String,
-    outputPorts: Int,
-    tagsMap: Map[Int, Int],
-    tag: Option[String] = None)
-  extends VirtualDeviceBuilder[OutputTagDispatcher](name) {
-
-  override def build: OutputTagDispatcher =
-    OutputTagDispatcher(name, outputPorts, new OutputTagDispatcherConfig {
-      val tagName = tag match {
-        case Some(s) => s
-        case _       => s"$name-otd"
-      }
-
-      val tagValueToPortId = tagsMap
-    })
 }

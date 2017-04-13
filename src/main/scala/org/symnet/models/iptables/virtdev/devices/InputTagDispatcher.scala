@@ -12,37 +12,23 @@ import org.change.v2.analysis.expression.concrete.ConstantValue
 
 case class InputTagDispatcher(
     name: String,
-    outputPorts: Int,
-    tagName: String)
-  extends RegularVirtualDevice[String](
+    outputPorts: Int)
+  extends RegularVirtualDevice[Unit](
     name,
     1, // 1 input port
     outputPorts,
-    tagName) {
+    ()) {
 
   def inputPort: Port = inputPort(0)
 
   override def portInstructions: Map[Port, Instruction] = {
     val portIdToInstr = (i: Int) => InstructionBlock(
-      Constrain(tagName, :==:(ConstantValue(i))),
+      Constrain(IN_DISPATCH_TAG_NAME, :==:(ConstantValue(i))),
       Forward(outputPort(i))
     )
 
-    // Forward to the port that matches the value of @tagName in packet's
-    // metadata.
+    // Forward to the port that matches the value of IN_DISPATCH_TAG_NAME in
+    // packet's metadata.
     Map(inputPort -> Fork((0 until outputPorts).map(portIdToInstr): _*))
   }
-}
-
-class InputTagDispatcherBuilder(
-    name: String,
-    outputPorts: Int,
-    tagName: Option[String] = None)
-  extends VirtualDeviceBuilder[InputTagDispatcher](name) {
-
-  override def build: InputTagDispatcher =
-    InputTagDispatcher(name, outputPorts, tagName match {
-      case Some(s) => s
-      case _       => s"$name-itd"
-    })
 }

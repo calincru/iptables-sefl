@@ -9,7 +9,7 @@ package devices
 
 import models.iptables.core.Rule
 
-class ContiguousIVD(
+case class ContiguousIVD(
     name: String,
     rules: List[Rule])
   extends RegularVirtualDevice[Unit](

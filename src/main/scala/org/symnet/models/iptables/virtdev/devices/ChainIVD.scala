@@ -7,7 +7,10 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import models.iptables.core.{Chain, IPTIndex, Policy}
+import org.change.v2.analysis.processingmodels.instructions.Assign
+import org.change.v2.analysis.expression.concrete.ConstantValue
+
+import models.iptables.core.{BuiltinChain, Chain, IPTIndex, Policy, Rule, UserChain}
 import Policy._
 
 trait ChainIVDConfig {
@@ -18,6 +21,9 @@ trait ChainIVDConfig {
 
   // The default policy of the chain modelled by this IVD.
   val policy: Policy
+
+  // The index of this chain, as it is referred back by other chains.
+  val index: Int
 }
 
 class ChainIVD(
@@ -103,13 +109,47 @@ class ChainIVD(
         i => outDispatcher.outputPort(i) -> backlinkPort(i))
     ).flatten.toMap
   }
+
+  // Set the tag OUT_DISPATCH_TAG_NAME for all jump ports to this chain IVD's
+  // index.
+  override def compPortInstructions: Map[Port, Instruction] =
+    (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
+      Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(config.index))).toMap
 }
 
+/** This is a builder for the 'ChainIVD' class.
+ *
+ *  In order to build a ChainIVD, besides the name and the chain instance we
+ *  want to model, the following must be provided:
+ *    * 'index' - it uniquely identifies the chain amongst all chains.
+ *    * 'subrules' - this chain's rules split after each rule which has as its
+ *    target an user-defined chain.
+ *    * 'neighbourChainIndices' - these are the indices of the chains which at
+ *    some point might jump to this one; we need them in order to build the
+ *    output tag dispatcher, in case a RETURN target is jumped to.
+ */
 class ChainIVDBuilder(
-    name:  String,
+    name: String,
     chain: Chain,
-    index: IPTIndex) extends VirtualDeviceBuilder[ChainIVD](name) { self =>
+    index: Int,
+    subrules: List[List[Rule]],
+    neighbourChainIndices: List[Int])
+  extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
-  // TODO
-  override def build: ChainIVD = null
+  override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
+    val inDispatcher   =
+      InputTagDispatcher(s"$name-in-dispatcher", subrules.length)
+    val contiguousIVDs = subrules.zipWithIndex.map {
+      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules)
+    }
+    val outDispatcher  =
+      OutputTagDispatcher(s"$name-out-dispatcher", neighbourChainIndices)
+
+    val policy = chain match {
+      case bc: BuiltinChain => bc.policy
+      case uc: UserChain    => Return
+    }
+
+    val index = self.index
+  })
 }
