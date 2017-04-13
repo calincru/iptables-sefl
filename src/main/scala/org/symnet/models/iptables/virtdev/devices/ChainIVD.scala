@@ -11,10 +11,16 @@ import models.iptables.core.{Chain, IPTIndex, Policy}
 import Policy._
 
 trait ChainIVDConfig {
-  val tagDispatcher:  TagReturnDispatcher
-  val contiguousIVDs: List[ContiguousIVD]
-  val policy:         Policy
-  val returnIVD:      Option[ChainIVD]
+  // IVDs
+  val tagDispatcher:    InputTagDispatcher
+  val contiguousIVDs:   List[ContiguousIVD]
+  val returnDispatcher: OutputTagDispatcher
+
+  // The default policy of the chain modelled by this IVD.
+  val policy: Policy
+
+  // IVDs which jump to this one.
+  val backlinks: List[ChainIVD]
 }
 
 class ChainIVD(
@@ -24,33 +30,43 @@ class ChainIVD(
     name,
         // 1 input port
     1,
-        // n + 2 output ports:
+        // (2 + n + m) output ports:
         //  * 0 - ACCEPT output port
         //  * 1 - DROP output port
-        //  * [2; n + 2) - jumps to user-defined chains
-    config.contiguousIVDs.length + 2,
+        //  * [2; 2 + n) - jumps to user-defined chains
+        //  * [2 + n; 2 + n + m) - backlinks
+    2 + config.contiguousIVDs.length + config.backlinks.length,
     config) {
 
   def inputPort:Port = inputPort(0)
   def acceptPort: Port = outputPort(0)
   def dropPort: Port = outputPort(1)
   def jumpPort(n: Int): Port = outputPort(2 + n)
+  def backlinkPort(n: Int): Port =
+    outputPort(2 + config.contiguousIVDs.length + n)
 
-  // NOTE: We don't add 'returnIVD' (if it exists) because it is a backlink.
   override def devices: List[VirtualDevice[_]] =
     config.contiguousIVDs :+ config.tagDispatcher
 
   override def newLinks: Map[Port, Port] = {
-    val dispatcher = config.tagDispatcher
-    val ivds       = config.contiguousIVDs
-    val policy     = config.policy
-    val returnIVD  = config.returnIVD
+    val tagDispatcher    = config.tagDispatcher
+    val ivds             = config.contiguousIVDs
+    val returnDispatcher = config.returnDispatcher
+    val policy           = config.policy
 
-    // Link its input to the input of the tag dispatcher.
-    Map(inputPort -> dispatcher.inputPort) ++
-    // Link dispatcher's outputs to IVDs.
+    ///
+    /// input -> tag dispatcher
+    ///
+    Map(inputPort -> tagDispatcher.inputPort) ++
+    ///
+    /// tag dispatcher -> IVDs
+    ///
+    // Link tag dispatcher's outputs to IVDs.
     (0 until ivds.length).map(
-      i => dispatcher.outputPort(i) -> ivds(i).inputPort).toMap ++
+      i => tagDispatcher.outputPort(i) -> ivds(i).inputPort).toMap ++
+    ///
+    /// Setup output ports for IVDs
+    ///
     // Link IVDs' accept ports to this device's ACCEPT output port
     ivds.map(_.acceptPort -> acceptPort).toMap ++
     // Link IVD' drop ports to this device's DROP output port
@@ -58,29 +74,25 @@ class ChainIVD(
     // NOTE: The only reason this is done is to forward all drops to the same
     // port, in case we want to add some common logic at some point.
     ivds.map(_.dropPort -> dropPort).toMap ++
+    // Link all IVDs to the port controlling RETURNs.
+    ivds.map(_.returnPort -> returnDispatcher.inputPort).toMap ++
     // Link all IVDs to their corresponding jump ports.
     (0 until ivds.length).map(
       i => ivds(i).jumpPort -> jumpPort(i)).toMap ++
     // Link all IVDs but the last one to the next one.
     (0 until ivds.length - 1).map(
       i => ivds(i).nextIVDport -> ivds(i + 1).inputPort).toMap ++
-    // Link the last one according to the policy; we do the following:
-    //    * if the policy is Accept, link it to the ACCEPT port of this IVD
-    //    * if the policy is Return and there is a chain IVD to return to, link
-    //    it to its input port.
-    //    * if the policy is Drop OR the policy is return and we are in a
-    //    builtin chain (there is no chain to return to), link it to the DROP
-    //    port.
-    //    * also link to the DROP port in any remaining scenario (the QUEUE
-    //    policy)
-    Map(ivds.last.nextIVDport -> (
-      if (policy == Accept)
-        acceptPort
-      else if (policy == Return && returnIVD.isDefined)
-        returnIVD.get.inputPort
-      else
-        dropPort
-    ))
+    // Link the last one according to the policy.
+    Map(ivds.last.nextIVDport -> (policy match {
+      case Accept => acceptPort
+      case Return => returnDispatcher.inputPort
+      case _      => dropPort
+    })) ++
+    ///
+    /// return dispatcher -> output back links
+    ///
+    // TODO: Add these.
+    Map()
   }
 }
 

@@ -16,19 +16,21 @@ case class ContiguousIVD(
     name,
       // single input port
     1,
-      // 4 output ports:
+      // 5 output ports:
       //  * 0 - ACCEPT output port
       //  * 1 - DROP output port
-      //  * 2 - next contiguous IVD
+      //  * 2 - RETURN output port
       //  * 3 - towards its corresponding user-defined chain
-    4,
+      //  * 4 - next contiguous IVD
+    5,
     ()) {
 
   def inputPort:   Port = inputPort(0)
   def acceptPort:  Port = outputPort(0)
   def dropPort:    Port = outputPort(1)
-  def nextIVDport: Port = outputPort(2)
+  def returnPort:  Port = outputPort(2)
   def jumpPort:    Port = outputPort(3)
+  def nextIVDport: Port = outputPort(4)
 
   // TODO
   override def portInstructions: Map[Port, Instruction] = Map.empty

@@ -10,13 +10,13 @@ package devices
 import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
-case class TagReturnDispatcher(
+case class InputTagDispatcher(
     name: String,
     outputPorts: Int,
     tag: String)
   extends RegularVirtualDevice[String](
     name,
-    1, // one input port
+    1, // 1 input port
     outputPorts,
     tag) {
 
