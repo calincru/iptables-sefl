@@ -57,18 +57,18 @@ class RouterBuilder(
     localIps:     List[Ipv4],
     routingTable: List[String]) extends VirtualDeviceBuilder[Router](name) {
 
-  def build: Router =
+  override def build: Router =
     new Router(name, inputPorts, outputPorts, new RouterConfig {
       val (localRD, fwdRD, localProcess) =
         (localRDDevice, fwdRDDevice, localProcessDevice)
     })
 
   protected val localRDDevice =
-    LocalForwardingDecision(localName(name), localIps)
+    new LocalForwardingDecisionBuilder(localName(name), localIps).build
   protected val fwdRDDevice =
-    ForwardingDecision(fwdName(name), outputPorts, routingTable)
+    new ForwardingDecision(fwdName(name), outputPorts, routingTable)
   protected val localProcessDevice =
-    LocalProcess(procName(name))
+    new LocalProcess(procName(name))
 
   private def localName(routerName: String) = s"$routerName-localRD"
   private def fwdName  (routerName: String) = s"$routerName-fwdRD"

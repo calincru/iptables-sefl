@@ -11,7 +11,7 @@ import org.change.v2.abstractnet.generic.{Port => SPort}
 import org.change.v2.abstractnet.click.sefl.LinearIPLookupElementBuilder
 
 // NOTE: This is just a wrapper over 'LinearIPLookup' from the click models.
-case class ForwardingDecision(
+class ForwardingDecision(
       name:         String,
       outputPorts:  Int,
       routingTable: List[String])

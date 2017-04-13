@@ -40,7 +40,7 @@ class InputTagDispatcherBuilder(
     tagName: Option[String] = None)
   extends VirtualDeviceBuilder[InputTagDispatcher](name) {
 
-  def build: InputTagDispatcher =
+  override def build: InputTagDispatcher =
     InputTagDispatcher(name, outputPorts, tagName match {
       case Some(s) => s
       case _       => s"$name-itd"

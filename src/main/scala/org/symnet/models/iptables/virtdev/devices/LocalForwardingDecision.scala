@@ -12,23 +12,37 @@ import types.net.Ipv4
 /** This device represents the forwarding decision made by routers to know if a
  *  packet's destination is one of its interfaces.
  *
- *  The config represents the list of router interfaces' IPs.
+ *  It extends 'ForwardingDecision' as it is a particular one, with a routing
+ *  table constructed out of the local ip addresses (see the builder).
  */
-case class LocalForwardingDecision(
-    name:     String,
-    config:   List[Ipv4])
-  extends RegularVirtualDevice[List[Ipv4]](
+class LocalForwardingDecision(
+    name:         String,
+    routingTable: List[String])
+  extends ForwardingDecision(
     name,
-    1, // input port
     2, // output ports:
        //   * to local process
        //   * to the forwarding decision (routing table)
-    config) {
+    routingTable) {
 
-  def inputPort:          Port = inputPort(0)
   def localOutputPort:    Port = outputPort(0)
   def forwardOutputPort:  Port = outputPort(1)
+}
 
-  // TODO
-  override def portInstructions: Map[Port, Instruction] = Map.empty
+class LocalForwardingDecisionBuilder(
+    name:     String,
+    localIps: List[Ipv4])
+  extends VirtualDeviceBuilder[LocalForwardingDecision](name) {
+
+  override def build: LocalForwardingDecision =
+    new LocalForwardingDecision(name, makeRoutingTable(localIps))
+
+  // Construct a routing table based on the local ips of a router; if one of
+  // them is matched, the packet is forwarded to port 0 (that is the local
+  // output port); otherwise, it is forward to port 1.
+  private def makeRoutingTable(localIps: List[Ipv4]): List[String] =
+    // 'routes' to the local process
+    localIps.map(ip => ip.toString() + "/32 0") :+
+    // 'route' to the forwarding process
+    "0.0.0.0/0 1"
 }

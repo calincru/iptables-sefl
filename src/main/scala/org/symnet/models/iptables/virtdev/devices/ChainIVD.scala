@@ -64,30 +64,30 @@ class ChainIVD(
       ///
       // Link tag dispatcher's outputs to IVDs.
       (0 until ivds.length).map(
-        i => inDispatcher.outputPort(i) -> ivds(i).inputPort).toMap,
+        i => inDispatcher.outputPort(i) -> ivds(i).inputPort),
 
       ///
       /// Setup output ports for IVDs
       ///
       // Link IVDs' accept ports to this device's ACCEPT output port
-      ivds.map(_.acceptPort -> acceptPort).toMap,
+      ivds.map(_.acceptPort -> acceptPort),
 
       // Link IVD' drop ports to this device's DROP output port
       //
       // NOTE: The only reason this is done is to forward all drops to the same
       // port, in case we want to add some common logic at some point.
-      ivds.map(_.dropPort -> dropPort).toMap,
+      ivds.map(_.dropPort -> dropPort),
 
       // Link all IVDs to the port controlling RETURNs.
-      ivds.map(_.returnPort -> outDispatcher.inputPort).toMap,
+      ivds.map(_.returnPort -> outDispatcher.inputPort),
 
       // Link all IVDs to their corresponding jump ports.
       (0 until ivds.length).map(
-        i => ivds(i).jumpPort -> jumpPort(i)).toMap,
+        i => ivds(i).jumpPort -> jumpPort(i)),
 
       // Link all IVDs but the last one to the next one.
       (0 until ivds.length - 1).map(
-        i => ivds(i).nextIVDport -> ivds(i + 1).inputPort).toMap,
+        i => ivds(i).nextIVDport -> ivds(i + 1).inputPort),
 
       // Link the last one according to the policy.
       Map(ivds.last.nextIVDport -> (policy match {
@@ -97,10 +97,10 @@ class ChainIVD(
       })),
 
       ///
-      /// return dispatcher -> back link ports).toMap
+      /// return dispatcher -> back link ports
       ///
       (0 until backlinks).map(
-        i => outDispatcher.outputPort(i) -> backlinkPort(i)).toMap
+        i => outDispatcher.outputPort(i) -> backlinkPort(i))
     ).flatten.toMap
   }
 }
@@ -111,5 +111,5 @@ class ChainIVDBuilder(
     index: IPTIndex) extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   // TODO
-  def build: ChainIVD = null
+  override def build: ChainIVD = null
 }
