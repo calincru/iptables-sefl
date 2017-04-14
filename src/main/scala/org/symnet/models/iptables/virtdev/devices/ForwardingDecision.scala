@@ -26,6 +26,8 @@ class ForwardingDecision(
   override def portInstructions: Map[Port, Instruction] =
     linearIPLookup.instructions
 
+  // TODO: For now it uses a linear ip lookup.  Change it to the optimal one,
+  // as described in the paper.
   private val linearIPLookup = {
     val builder = new LinearIPLookupElementBuilder(name, "LinearIPLookup")
 

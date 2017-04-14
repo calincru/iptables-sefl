@@ -34,6 +34,8 @@ case class ContiguousIVD(
   def jumpPort:    Port = outputPort(3)
   def nextIVDport: Port = outputPort(4)
 
+  // TODO: There might be room for optimization here, in terms of generated Sefl
+  // code.
   override def portInstructions: Map[Port, Instruction] = {
     val seflGenOptions = new SeflGenOptions {
       val acceptPort = self.acceptPort
