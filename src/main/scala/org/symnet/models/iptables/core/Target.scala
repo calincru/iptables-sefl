@@ -5,6 +5,8 @@
 
 package org.symnet.models.iptables.core
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import scalaz.Maybe
 import scalaz.Maybe._
 
@@ -22,6 +24,15 @@ abstract class Target(name: String) {
       Just(this)
     else
       empty
+
+  ///
+  /// Sefl code generation
+  ///
+
+  /** Generates the FORWARD and any other SEFL instructions that match this
+   *  target's semantics.
+   */
+  def seflCode(options: SeflGenOptions): Instruction
 }
 
 /** PLaceholder target is used when a (possible) forward reference to a user
@@ -37,4 +48,5 @@ case class PlaceholderTarget(
   /** We shouldn't get to check the validty of a placeholder target. */
   override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
     empty
+  override def seflCode(options: SeflGenOptions): Instruction = null
 }

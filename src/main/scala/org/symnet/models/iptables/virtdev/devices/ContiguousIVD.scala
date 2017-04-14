@@ -7,9 +7,9 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{Fail, Fork}
+import org.change.v2.analysis.processingmodels.instructions.{Fail, Forward, If}
 
-import models.iptables.core.Rule
+import models.iptables.core.{Rule, SeflGenOptions}
 
 case class ContiguousIVD(
     name:  String,
@@ -25,7 +25,7 @@ case class ContiguousIVD(
       //  * 3 - towards its corresponding user-defined chain
       //  * 4 - next contiguous IVD
     5,
-    rules) {
+    rules) { self =>
 
   def inputPort:   Port = inputPort(0)
   def acceptPort:  Port = outputPort(0)
@@ -34,11 +34,36 @@ case class ContiguousIVD(
   def jumpPort:    Port = outputPort(3)
   def nextIVDport: Port = outputPort(4)
 
-  override def portInstructions: Map[Port, Instruction] = List(
-    // Generate input port instructions.
-    // Map(inputPort -> Fork(rules.map(_.seflCode): _*)),
+  override def portInstructions: Map[Port, Instruction] = {
+    val seflGenOptions = new SeflGenOptions {
+      val acceptPort = self.acceptPort
+      val dropPort   = self.dropPort
+      val returnPort = self.returnPort
+      val jumpPort   = self.jumpPort
+    }
 
-    // Fail if the drop port is reached.
-    Map(dropPort -> Fail(s"Packet dropped by $name"))
-  ).flatten.toMap
+    // This function nests multiple Sefl If statements to implement conjuction.
+    val andConstraints = (constraints: List[Instruction],
+                          thenStmnt:   Instruction,
+                          elseStmnt:   Instruction) =>
+      constraints.foldRight(thenStmnt)(
+        (constraint, acc) => If(constraint, acc, elseStmnt))
+
+    // This is the default instruction if no rule matches.
+    val defaultInstr: Instruction = Forward(nextIVDport)
+
+    List(
+      // Generate input port instructions.
+      //
+      // NOTE: The direction of the fold matters here: iptables lookup is done
+      // from top to bottom which maps to right-associativity in our processing.
+      Map(inputPort -> rules.foldRight(defaultInstr)((rule, acc) =>
+        andConstraints(rule.matches.map(_.seflConstrain(seflGenOptions)),
+                       rule.target.seflCode(seflGenOptions),
+                       acc))),
+
+      // Fail if the drop port is reached.
+      Map(dropPort -> Fail(s"Packet dropped by $name"))
+    ).flatten.toMap
+  }
 }
