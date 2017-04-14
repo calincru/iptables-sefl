@@ -11,8 +11,9 @@ import models.iptables.core.Rule
 
 case class ContiguousIVD(
     name: String,
-    rules: List[Rule])
-  extends RegularVirtualDevice[Unit](
+    rules: List[Rule],
+    index: Int)
+  extends RegularVirtualDevice[Int](
     name,
       // single input port
     1,
@@ -23,7 +24,7 @@ case class ContiguousIVD(
       //  * 3 - towards its corresponding user-defined chain
       //  * 4 - next contiguous IVD
     5,
-    ()) {
+    index) {
 
   def inputPort:   Port = inputPort(0)
   def acceptPort:  Port = outputPort(0)

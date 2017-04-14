@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.Assign
+import org.change.v2.analysis.processingmodels.instructions.{Assign, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
 import models.iptables.core.{BuiltinChain, Chain, IPTIndex, Policy, Rule, UserChain}
@@ -113,8 +113,20 @@ class ChainIVD(
   // Set the tag OUT_DISPATCH_TAG_NAME for all jump ports to this chain IVD's
   // index.
   override def compPortInstructions: Map[Port, Instruction] =
-    (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
-      Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(config.index))).toMap
+    List(
+      // Mark this path with this chain IVD's index to know where to return in
+      // case a RETURN target is jumped to.
+      (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
+        Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(config.index))),
+
+      // Reset the tags when accepting a packet.
+      Map(acceptPort -> InstructionBlock(
+        Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(-1)),
+        // TODO: Maybe do this in ContiguousIVD.
+        Assign(IN_DISPATCH_TAG_NAME, ConstantValue(0))
+      ))
+
+    ).flatten.toMap
 }
 
 /** This is a builder for the 'ChainIVD' class.
@@ -140,13 +152,16 @@ class ChainIVDBuilder(
     val inDispatcher   =
       InputTagDispatcher(s"$name-in-dispatcher", subrules.length)
     val contiguousIVDs = subrules.zipWithIndex.map {
-      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules)
+      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules, i)
     }
     val outDispatcher  =
       OutputTagDispatcher(s"$name-out-dispatcher", neighbourChainIndices)
 
     val policy = chain match {
       case bc: BuiltinChain => bc.policy
+
+      // NOTE: This is not officially documented (i.e. a packet shouldn't reach
+      // the end of a user-defined chain).
       case uc: UserChain    => Return
     }
 
