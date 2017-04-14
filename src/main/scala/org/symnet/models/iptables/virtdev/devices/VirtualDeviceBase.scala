@@ -15,11 +15,11 @@ package devices {
 
     def inputPort(which: Int):  Port = {
       assert(which < inputPorts)
-      s"$name-in"
+      s"$name-in-$which"
     }
     def outputPort(which: Int): Port = {
       assert(which < outputPorts)
-      s"$name-out"
+      s"$name-out-$which"
     }
 
     def portInstructions: Map[Port, Instruction]

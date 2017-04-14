@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{Assign, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.{Assign, Fail, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
 import models.iptables.core.{BuiltinChain, Chain, IPTIndex, Policy, Rule, UserChain}
@@ -41,7 +41,7 @@ class ChainIVD(
     2 + config.contiguousIVDs.length + config.outDispatcher.outputPorts,
     config) {
 
-  def inputPort:Port = inputPort(0)
+  def inputPort: Port = inputPort(0)
   def acceptPort: Port = outputPort(0)
   def dropPort: Port = outputPort(1)
   def jumpPort(n: Int): Port = outputPort(2 + n)
@@ -78,12 +78,6 @@ class ChainIVD(
       // Link IVDs' accept ports to this device's ACCEPT output port
       ivds.map(_.acceptPort -> acceptPort),
 
-      // Link IVD' drop ports to this device's DROP output port
-      //
-      // NOTE: The only reason this is done is to forward all drops to the same
-      // port, in case we want to add some common logic at some point.
-      ivds.map(_.dropPort -> dropPort),
-
       // Link all IVDs to the port controlling RETURNs.
       ivds.map(_.returnPort -> outDispatcher.inputPort),
 
@@ -112,6 +106,8 @@ class ChainIVD(
 
   // Set the tag OUT_DISPATCH_TAG_NAME for all jump ports to this chain IVD's
   // index.
+  //
+  // TODO: There should be an 'Allocate' or 'CreateTag' before 'Assign'.
   override def compPortInstructions: Map[Port, Instruction] =
     List(
       // Mark this path with this chain IVD's index to know where to return in
@@ -124,8 +120,10 @@ class ChainIVD(
         Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(-1)),
         // TODO: Maybe do this in ContiguousIVD.
         Assign(IN_DISPATCH_TAG_NAME, ConstantValue(0))
-      ))
+      )),
 
+      // Fail if the drop port is reached.
+      Map(dropPort -> Fail(s"Packet dropped by $name"))
     ).flatten.toMap
 }
 
@@ -149,12 +147,16 @@ class ChainIVDBuilder(
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
-    val inDispatcher   =
+    val inDispatcher =
       InputTagDispatcher(s"$name-in-dispatcher", subrules.length)
     val contiguousIVDs = subrules.zipWithIndex.map {
-      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules, i)
+      case (rules_, i) =>
+        ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
+          val rules = rules_
+          val index = i
+        })
     }
-    val outDispatcher  =
+    val outDispatcher =
       OutputTagDispatcher(s"$name-out-dispatcher", neighbourChainIndices)
 
     val policy = chain match {

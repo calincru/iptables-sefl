@@ -16,5 +16,5 @@ case class LocalProcess(name: String)
   def inputPort: Port = inputPort(0)
 
   override def portInstructions: Map[Port, Instruction] =
-    Map(inputPort -> Fail("Packet dropped"))
+    Map(inputPort -> Fail("Packet dropped by local process"))
 }
