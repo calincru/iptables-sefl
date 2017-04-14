@@ -7,10 +7,10 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Deallocate, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
-/** 'tagValues' is the list of values expected for the OUT_DISPATCH_TAG_NAME.
+/** 'tagValues' is the list of values expected for the OutputDispatchTagName.
  *
  *  NOTE: Packets are forwarded to the output ports according to the order in
  *  this list (aka order matters).
@@ -33,7 +33,18 @@ case class OutputTagDispatcher(
 
   override def portInstructions: Map[Port, Instruction] = {
     val portIdToInstr = (tagValue: Int, portId: Int) => InstructionBlock(
-      Constrain(OUT_DISPATCH_TAG_NAME, :==:(ConstantValue(tagValue))),
+      // Make sure we only forward to the chain IVD that performed the jump to
+      // this one.
+      Constrain(OutputDispatchTag, :==:(ConstantValue(tagValue))),
+
+      // This pops the last value of this tag from the stack.
+      //
+      // We are guaranteed this makes sense because the only way we might hit a
+      // 'RETURN' is if we have jumped to the chain IVD this tag dispatcher is
+      // part of.
+      Deallocate(OutputDispatchTag),
+
+      // Forward packets to the chain IVD that performed the jump to this one.
       Forward(outputPort(portId))
     )
 

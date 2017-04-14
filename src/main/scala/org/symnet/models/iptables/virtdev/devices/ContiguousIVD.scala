@@ -7,19 +7,14 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.Fail
+import org.change.v2.analysis.processingmodels.instructions.{Fail, Fork}
 
 import models.iptables.core.Rule
 
-trait ContiguousIVDConfig {
-  val rules: List[Rule]
-  val index: Int
-}
-
 case class ContiguousIVD(
-    name:   String,
-    config: ContiguousIVDConfig)
-  extends RegularVirtualDevice[ContiguousIVDConfig](
+    name:  String,
+    rules: List[Rule])
+  extends RegularVirtualDevice[List[Rule]](
     name,
       // single input port
     1,
@@ -30,7 +25,7 @@ case class ContiguousIVD(
       //  * 3 - towards its corresponding user-defined chain
       //  * 4 - next contiguous IVD
     5,
-    config) {
+    rules) {
 
   def inputPort:   Port = inputPort(0)
   def acceptPort:  Port = outputPort(0)
@@ -40,8 +35,10 @@ case class ContiguousIVD(
   def nextIVDport: Port = outputPort(4)
 
   override def portInstructions: Map[Port, Instruction] = List(
-    // TODO: Add port instructions
+    // Generate input port instructions.
+    // Map(inputPort -> Fork(rules.map(_.seflCode): _*)),
 
+    // Fail if the drop port is reached.
     Map(dropPort -> Fail(s"Packet dropped by $name"))
   ).flatten.toMap
 }

@@ -7,8 +7,8 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{Assign, Fail, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
+import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, Fail, InstructionBlock}
 
 import models.iptables.core.{BuiltinChain, Chain, IPTIndex, Policy, Rule, UserChain}
 import Policy._
@@ -59,6 +59,14 @@ class ChainIVD(
     val policy        = config.policy
     val backlinks     = config.outDispatcher.outputPorts
 
+    // This is the port towards which packets are forwarded when no rule
+    // matches.
+    val defaultPort = policy match {
+      case Accept => acceptPort
+      case Return => outDispatcher.inputPort
+      case _      => dropPort
+    }
+
     List(
       ///
       /// input -> tag dispatcher
@@ -71,6 +79,10 @@ class ChainIVD(
       // Link tag dispatcher's outputs to IVDs.
       (0 until ivds.length).map(
         i => inDispatcher.outputPort(i) -> ivds(i).inputPort),
+
+      // The input dispatcher has its last output port reserved for a special
+      // case (described in the builder).
+      Map(inDispatcher.outputPort(ivds.length) -> defaultPort),
 
       ///
       /// Setup output ports for IVDs
@@ -90,11 +102,7 @@ class ChainIVD(
         i => ivds(i).nextIVDport -> ivds(i + 1).inputPort),
 
       // Link the last one according to the policy.
-      Map(ivds.last.nextIVDport -> (policy match {
-        case Accept => acceptPort
-        case Return => outDispatcher.inputPort
-        case _      => dropPort
-      })),
+      Map(ivds.last.nextIVDport -> defaultPort),
 
       ///
       /// return dispatcher -> back link ports
@@ -104,23 +112,35 @@ class ChainIVD(
     ).flatten.toMap
   }
 
-  // Set the tag OUT_DISPATCH_TAG_NAME for all jump ports to this chain IVD's
-  // index.
-  //
-  // TODO: There should be an 'Allocate' or 'CreateTag' before 'Assign'.
   override def compPortInstructions: Map[Port, Instruction] =
     List(
-      // Mark this path with this chain IVD's index to know where to return in
-      // case a RETURN target is jumped to.
+      // Add instructions on jump ports.
       (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
-        Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(config.index))),
+        InstructionBlock(
+          // Push the index of this chain IVD on the stack corresponding to the
+          // output dispatch tag.
+          Allocate(OutputDispatchTag),
+          Assign(OutputDispatchTag, ConstantValue(config.index)),
 
-      // Reset the tags when accepting a packet.
-      Map(acceptPort -> InstructionBlock(
-        Assign(OUT_DISPATCH_TAG_NAME, ConstantValue(-1)),
-        // TODO: Maybe do this in ContiguousIVD.
-        Assign(IN_DISPATCH_TAG_NAME, ConstantValue(0))
-      )),
+          // Push the index of the successor of the contiguous chain IVD which
+          // caused this jump on the stack corresponding to the input dispatch
+          // tag.
+          //
+          // TODO: Is there a way to clear the entire stack before doing this?
+          // It's not guaranteed we will return to have this consumed by the
+          // input dispatcher.
+          Allocate(InputDispatchTag),
+          Assign(InputDispatchTag, ConstantValue(i + 1)),
+
+          // We also have to prepare this variable to be consumed by the next
+          // chain IVD.
+          InputDispatchTagInitializer
+        )
+      ),
+
+      // Prepare the input dispatch tag for a possible next chain IVD, as done
+      // above.
+      Map(acceptPort -> InputDispatchTagInitializer),
 
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))
@@ -147,15 +167,17 @@ class ChainIVDBuilder(
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
+    // NOTE: The '+ 1' here is to handle the case when the last rule is a jump
+    // to a user-defined chain.  If it returns back to the calling contiguous
+    // IVD, we have to be able to do something with that packet; in this case,
+    // to apply the default policy of this Chain IVD.
     val inDispatcher =
-      InputTagDispatcher(s"$name-in-dispatcher", subrules.length)
+      InputTagDispatcher(s"$name-in-dispatcher", subrules.length + 1)
+
     val contiguousIVDs = subrules.zipWithIndex.map {
-      case (rules_, i) =>
-        ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
-          val rules = rules_
-          val index = i
-        })
+      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules)
     }
+
     val outDispatcher =
       OutputTagDispatcher(s"$name-out-dispatcher", neighbourChainIndices)
 

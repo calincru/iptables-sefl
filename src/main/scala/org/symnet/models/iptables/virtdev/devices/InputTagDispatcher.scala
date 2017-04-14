@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Fork, Forward, Constrain, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Deallocate, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
 case class InputTagDispatcher(
@@ -23,11 +23,19 @@ case class InputTagDispatcher(
 
   override def portInstructions: Map[Port, Instruction] = {
     val portIdToInstr = (i: Int) => InstructionBlock(
-      Constrain(IN_DISPATCH_TAG_NAME, :==:(ConstantValue(i))),
+      // Make sure we only forward to the successor contiguous chain IVD of the
+      // one that performed the original jump.
+      Constrain(InputDispatchTag, :==:(ConstantValue(i))),
+
+      // This pops the last value of this tag from the stack.
+      Deallocate(InputDispatchTag),
+
+      // Forward packets to the successor contiguous chain IVD of the one that
+      // performed the original jump.
       Forward(outputPort(i))
     )
 
-    // Forward to the port that matches the value of IN_DISPATCH_TAG_NAME in
+    // Forward to the port that matches the value of the input dispatch tag in
     // packet's metadata.
     Map(inputPort -> Fork((0 until outputPorts).map(portIdToInstr): _*))
   }
