@@ -15,6 +15,7 @@ import Policy._
 
 trait ChainIVDConfig {
   // IVDs
+  val initializer:    ChainIVDInitializer
   val inDispatcher:   InputTagDispatcher
   val contiguousIVDs: List[ContiguousIVD]
   val outDispatcher:  OutputTagDispatcher
@@ -31,8 +32,10 @@ class ChainIVD(
     config: ChainIVDConfig)
   extends CompositeVirtualDevice[ChainIVDConfig](
     name,
-        // 1 input port
-    1,
+        // 2 input ports:
+        //  * 0 - regular input port
+        //  * 1 - initializer input port (see below for use case)
+    2,
         // (2 + n + m) output ports:
         //  * 0 - ACCEPT output port
         //  * 1 - DROP output port
@@ -41,7 +44,12 @@ class ChainIVD(
     2 + config.contiguousIVDs.length + config.outDispatcher.outputPorts,
     config) {
 
-  def inputPort: Port = inputPort(0)
+  // Briefly, the input port is used only when returning from a user-defined
+  // chain to which a jump from this one has been made, to ensure that the
+  // previous value of the input dispatch tag is seen.
+  def initPort: Port = inputPort(0)
+  def inputPort: Port = inputPort(1)
+
   def acceptPort: Port = outputPort(0)
   def dropPort: Port = outputPort(1)
   def jumpPort(n: Int): Port = outputPort(2 + n)
@@ -50,9 +58,10 @@ class ChainIVD(
 
   override def devices: List[VirtualDevice[_]] =
     config.contiguousIVDs ++
-    List(config.inDispatcher, config.outDispatcher)
+    List(config.initializer, config.inDispatcher, config.outDispatcher)
 
   override def newLinks: Map[Port, Port] = {
+    val initializer   = config.initializer
     val inDispatcher  = config.inDispatcher
     val ivds          = config.contiguousIVDs
     val outDispatcher = config.outDispatcher
@@ -68,6 +77,12 @@ class ChainIVD(
     }
 
     List(
+      ///
+      /// initPort -> initializer -> input
+      ///
+      Map(initPort               -> initializer.inputPort,
+          initializer.outputPort -> inputPort),
+
       ///
       /// input -> tag dispatcher
       ///
@@ -130,17 +145,9 @@ class ChainIVD(
           // It's not guaranteed we will return to have this consumed by the
           // input dispatcher.
           Allocate(InputDispatchTag),
-          Assign(InputDispatchTag, ConstantValue(i + 1)),
-
-          // We also have to prepare this variable to be consumed by the next
-          // chain IVD.
-          InputDispatchTagInitializer
+          Assign(InputDispatchTag, ConstantValue(i + 1))
         )
       ),
-
-      // Prepare the input dispatch tag for a possible next chain IVD, as done
-      // above.
-      Map(acceptPort -> InputDispatchTagInitializer),
 
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))
@@ -167,6 +174,8 @@ class ChainIVDBuilder(
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
+    val initializer = ChainIVDInitializer(s"$name-initializer")
+
     // NOTE: The '+ 1' here is to handle the case when the last rule is a jump
     // to a user-defined chain.  If it returns back to the calling contiguous
     // IVD, we have to be able to do something with that packet; in this case,
