@@ -8,10 +8,11 @@ package models.iptables
 package extensions.filter
 
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.Forward
 
 import core._
 
-class FilterTarget(name: String) extends Target {
+abstract class FilterTarget extends Target {
 
   override protected def validateIf(
       rule: Rule,
@@ -26,16 +27,25 @@ class FilterTarget(name: String) extends Target {
         List("INPUT", "FORWARD", "OUTPUT") contains chain.name
       case _ /* UserChain */        => true
     })
-
-  // TODO
-  def seflCode(options: SeflGenOptions): Instruction = null
 }
 
-case object AcceptTarget extends FilterTarget("ACCEPT")
+case object AcceptTarget extends FilterTarget {
 
-case object DropTarget   extends FilterTarget("DROP")
+  def seflCode(options: SeflGenOptions): Instruction =
+    Forward(options.acceptPort)
+}
 
-case object ReturnTarget extends FilterTarget("RETURN")
+case object DropTarget extends FilterTarget {
+
+  def seflCode(options: SeflGenOptions): Instruction =
+    Forward(options.dropPort)
+}
+
+case object ReturnTarget extends FilterTarget {
+
+  def seflCode(options: SeflGenOptions): Instruction =
+    Forward(options.returnPort)
+}
 
 object FilterTarget extends BaseParsers {
   def parser: Parser[Target] =

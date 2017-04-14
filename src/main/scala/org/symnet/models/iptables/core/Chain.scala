@@ -7,6 +7,7 @@ package org.symnet.models.iptables
 package core
 
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.Forward
 
 import scalaz.Maybe
 import scalaz.Maybe.empty
@@ -62,15 +63,6 @@ case class UserChain(
   /// Validation
   ///
 
-  /** Target validation routine: a user-defined chain is a valid target for a
-   *  rule if and only if that rule is not part of the same chain (recursive
-   *  jump).
-   */
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean = chain != this
-
   override protected def validateIf(table: Table): Boolean =
     // A built-in chain is valid if its parent class is valid ...
     super.validateIf(table) &&
@@ -81,12 +73,22 @@ case class UserChain(
            "OUTPUT",
            "POSTROUTING") contains name)
 
+  /** Target validation routine: a user-defined chain is a valid target for a
+   *  rule if and only if that rule is not part of the same chain (recursive
+   *  jump).
+   */
+  override protected def validateIf(
+      rule: Rule,
+      chain: Chain,
+      table: Table): Boolean = chain != this
+
   ///
   /// Sefl code generation (this chain is the target of a rule).
   ///
 
-  // TODO
-  def seflCode(options: SeflGenOptions): Instruction = null
+  // When a user chain is the target of a rule, we forward the packet to the
+  // jump port of the corresponding Iptables Virtual Device (IVD).
+  def seflCode(options: SeflGenOptions): Instruction = Forward(options.jumpPort)
 }
 
 /** iptables built-in chains must have a default policy. */
