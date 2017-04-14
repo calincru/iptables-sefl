@@ -6,6 +6,8 @@
 package org.symnet.models.iptables
 package core
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import scalaz.Maybe
 import scalaz.Maybe.empty
 
@@ -27,7 +29,7 @@ import Policy._
 sealed abstract class Chain(
     val name: String,
     val rules: List[Rule],
-    policy: Option[Policy]) extends Target(name) {
+    policy: Option[Policy]) {
 
   ///
   /// Validation
@@ -53,11 +55,13 @@ sealed abstract class Chain(
 /** A user-defined chain cannot have an implicit policy in iptables. */
 case class UserChain(
     override val name: String,
-    override val rules: List[Rule]) extends Chain(name, rules, None) {
+    override val rules: List[Rule])
+  extends Chain(name, rules, None) with Target {
 
   ///
   /// Validation
   ///
+
   /** Target validation routine: a user-defined chain is a valid target for a
    *  rule if and only if that rule is not part of the same chain (recursive
    *  jump).
@@ -76,6 +80,13 @@ case class UserChain(
            "INPUT",
            "OUTPUT",
            "POSTROUTING") contains name)
+
+  ///
+  /// Sefl code generation (this chain is the target of a rule).
+  ///
+
+  // TODO
+  def seflCode(options: SeflGenOptions): Instruction = null
 }
 
 /** iptables built-in chains must have a default policy. */
@@ -87,17 +98,6 @@ case class BuiltinChain(
   ///
   /// Validation
   ///
-
-  /** Target validation routine: a builtin-chain is not a valid target.
-   *
-   *  NOTE: This could be acheived in a different manner, by making 'Target' a
-   *  trait and making UserChain implement that trait, but it is currently
-   *  easier to check validity in this way.
-   */
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean = false
 
   override protected def validateIf(table: Table): Boolean =
     // A built-in chain is valid if its parent class is valid ...

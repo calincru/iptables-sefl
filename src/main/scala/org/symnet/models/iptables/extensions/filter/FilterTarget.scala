@@ -7,9 +7,11 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import core._
 
-class FilterTarget(name: String) extends Target(name) {
+class FilterTarget(name: String) extends Target {
 
   override protected def validateIf(
       rule: Rule,
@@ -24,6 +26,9 @@ class FilterTarget(name: String) extends Target(name) {
         List("INPUT", "FORWARD", "OUTPUT") contains chain.name
       case _ /* UserChain */        => true
     })
+
+  // TODO
+  def seflCode(options: SeflGenOptions): Instruction = null
 }
 
 case object AcceptTarget extends FilterTarget("ACCEPT")

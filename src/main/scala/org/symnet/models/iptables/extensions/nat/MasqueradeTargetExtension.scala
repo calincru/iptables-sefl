@@ -7,6 +7,8 @@ package org.symnet
 package models.iptables
 package extensions.nat
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import types.net.{Ipv4, Port}
 
 import core._
@@ -14,7 +16,7 @@ import extensions.filter.ProtocolMatch
 
 case class MasqueradeTarget(
     lowerPort: Option[Port],
-    upperPort: Option[Port]) extends Target("MASQUERADE") {
+    upperPort: Option[Port]) extends Target {
 
   /** This target is only valid in the 'nat' table, in the 'POSTROUTING'
    *  chain.
@@ -45,6 +47,9 @@ case class MasqueradeTarget(
     // =>   lowerPort -> tcp/udp  <=> !lowerPort or tcp/udp
     //
     (lowerPort.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
+
+  // TODO
+  def seflCode(options: SeflGenOptions): Instruction = null
 }
 
 object MasqueradeTarget extends BaseParsers {

@@ -11,8 +11,12 @@ import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
-// 3rd party: scalaz
+// 3rd party:
+// -> scalaz
 import scalaz.Maybe._
+
+// -> Symnet
+import org.change.v2.analysis.processingmodels.Instruction
 
 // project
 import types.net.Ipv4
@@ -127,20 +131,35 @@ class CoreValidationSuite extends FunSuite with Matchers {
     }
   }
 
-  val validMatch = new Match {}   // is always valid
-  val validTarget = new Target("validTarget") {} // is always valid
-
+  // is always valid
+  object validMatch extends Match {
+    // this is not used here
+    override def seflConstrain(options: SeflGenOptions): Instruction = null
+  }
+  // is always valid
+  object validTarget extends Target {
+    // this is not used here
+    override def seflCode(options: SeflGenOptions): Instruction = null
+  }
+  // is never valid
   object invalidMatch extends Match {
     override protected def validateIf(
         rule: Rule,
         chain: Chain,
-        table: Table): Boolean = false // is never valid
+        table: Table): Boolean = false
+
+    // this is not used here
+    override def seflConstrain(options: SeflGenOptions): Instruction = null
   }
-  object invalidTarget extends Target("invalidTarget") {
+  // is never valid
+  object invalidTarget extends Target {
     override protected def validateIf(
         rule: Rule,
         chain: Chain,
-        table: Table): Boolean = false // is never valid
+        table: Table): Boolean = false
+
+    // this is not used here
+    override def seflCode(options: SeflGenOptions): Instruction = null
   }
 
   test("1 table/1 chain/1 rule") {

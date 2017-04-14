@@ -7,6 +7,8 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import core._
 
 case class InInterfaceMatch(val interface: String) extends Match {
@@ -20,6 +22,9 @@ case class InInterfaceMatch(val interface: String) extends Match {
         List("INPUT", "FORWARD", "PREROUTING") contains n
       case _ => false
     }
+
+  // TODO
+  def seflConstrain(options: SeflGenOptions): Instruction = null
 }
 
 case class OutInterfaceMatch(val interface: String) extends Match {
@@ -33,6 +38,9 @@ case class OutInterfaceMatch(val interface: String) extends Match {
         List("FORWARD", "OUTPUT", "POSTROUTING") contains n
       case _ => false
     }
+
+  // TODO
+  def seflConstrain(options: SeflGenOptions): Instruction = null
 }
 
 object InterfaceMatch extends BaseParsers {

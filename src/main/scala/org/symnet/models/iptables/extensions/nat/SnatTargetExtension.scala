@@ -7,6 +7,8 @@ package org.symnet
 package models.iptables
 package extensions.nat
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import types.net.{Ipv4, PortRange}
 
 import core._
@@ -15,7 +17,7 @@ import extensions.filter.ProtocolMatch
 case class SnatTarget(
     lowerIp:   Ipv4,
     upperIp:   Option[Ipv4],
-    portRange: Option[PortRange]) extends Target("SNAT") {
+    portRange: Option[PortRange]) extends Target {
 
   override protected def validateIf(
       rule: Rule,
@@ -28,6 +30,9 @@ case class SnatTarget(
     // The existance of the port range implies that '-p tcp/udp' must
     // have been specified.
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
+
+  // TODO
+  def seflCode(options: SeflGenOptions): Instruction = null
 }
 
 object SnatTarget extends BaseParsers {

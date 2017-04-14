@@ -34,9 +34,15 @@ case class Rule(val matches: List[Match], val target: Target) {
       // NOTE: The 'real' target of a rule could be another one than that used
       // when constructing it only if it is a placeholder target which refers a
       // valid (from a 'target' perspective) chain.
-      actualTarget  <- target match {
-        case PlaceholderTarget(name, _) =>
-          Maybe.fromOption(table.chains.find(_.name == name))
+      actualTarget <- target match {
+        case PlaceholderTarget(name, _) => {
+          val matchedChains = table.chains.collect { case uc: UserChain => uc }
+
+          if (matchedChains.length == 1)
+            Just(matchedChains.head)
+          else
+            empty
+        }
         case _ => Just(target)
       }
       vTarget <- actualTarget.validate(this, chain, table)

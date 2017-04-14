@@ -7,12 +7,22 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import core._
 import types.net.Ipv4
 
-case class SourceMatch(val ip: Ipv4) extends Match
+case class SourceMatch(val ip: Ipv4) extends Match {
 
-case class DestinationMatch(val ip: Ipv4) extends Match
+  // TODO
+  def seflConstrain(options: SeflGenOptions): Instruction = null
+}
+
+case class DestinationMatch(val ip: Ipv4) extends Match {
+
+  // TODO
+  def seflConstrain(options: SeflGenOptions): Instruction = null
+}
 
 object IpMatch extends BaseParsers {
   import ParserMP.monadPlusSyntax._

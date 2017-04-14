@@ -7,6 +7,8 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.processingmodels.Instruction
+
 import core._
 
 case class ProtocolMatch(val protocol: String) extends Match {
@@ -20,6 +22,9 @@ case class ProtocolMatch(val protocol: String) extends Match {
     // TODO(calincru): Check if it is a valid numeric protocol or a protocol
     // from /etc/protocols.
     false
+
+  // TODO
+  def seflConstrain(options: SeflGenOptions): Instruction = null
 }
 
 object ProtocolMatch extends BaseParsers {

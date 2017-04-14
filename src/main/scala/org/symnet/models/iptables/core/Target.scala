@@ -10,7 +10,7 @@ import org.change.v2.analysis.processingmodels.Instruction
 import scalaz.Maybe
 import scalaz.Maybe._
 
-abstract class Target(name: String) {
+trait Target {
 
   ///
   /// Validation
@@ -43,7 +43,7 @@ abstract class Target(name: String) {
  */
 case class PlaceholderTarget(
     name: String,
-    goto: Boolean = false) extends Target(name) {
+    goto: Boolean = false) extends Target {
 
   /** We shouldn't get to check the validty of a placeholder target. */
   override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
