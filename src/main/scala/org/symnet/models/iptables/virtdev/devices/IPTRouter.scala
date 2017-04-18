@@ -7,6 +7,7 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
+import ivds._
 import types.net.Ipv4
 
 import models.iptables.core.{IPTIndex, Table}

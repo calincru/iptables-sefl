@@ -6,6 +6,7 @@
 package org.symnet
 package models.iptables.virtdev
 package devices
+package ivds
 
 trait SeqChainIVDConfig {
   val chains: List[ChainIVD]

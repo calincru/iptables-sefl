@@ -6,6 +6,7 @@
 package org.symnet
 package models.iptables.virtdev
 package devices
+package ivds
 
 import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, Fail, InstructionBlock}
@@ -96,7 +97,7 @@ class ChainIVD(
         i => inDispatcher.outputPort(i) -> ivds(i).inputPort),
 
       // The input dispatcher has its last output port reserved for a special
-      // case (described in the builder).
+      // case (described in the builder below).
       Map(inDispatcher.outputPort(ivds.length) -> defaultPort),
 
       ///
