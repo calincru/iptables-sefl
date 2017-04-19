@@ -159,19 +159,22 @@ class ChainIVD(
  *
  *  In order to build a ChainIVD, besides the name and the chain instance we
  *  want to model, the following must be provided:
- *    * 'index' - it uniquely identifies the chain amongst all chains.
- *    * 'subrules' - this chain's rules split after each rule which has as its
+ *    * `index' - it uniquely identifies the chain amongst all chains.
+ *    * `subrules' - this chain's rules split after each rule which has as its
  *    target a user-defined chain.
- *    * 'neighbourChainIndices' - these are the indices of the chains which at
+ *    * `neighbourChainIndices' - these are the indices of the chains which at
  *    some point might jump to this one; we need them in order to build the
  *    output tag dispatcher, in case a RETURN target is jumped to.
+ *    * `portsMap' - a map from real port names of the device being modeled to
+ *    port indices of the model.
  */
 class ChainIVDBuilder(
     name: String,
     chain: Chain,
     index: Int,
     subrules: List[List[Rule]],
-    neighbourChainIndices: List[Int])
+    neighbourChainIndices: List[Int],
+    portsMap: Map[String, Int])
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
@@ -185,7 +188,11 @@ class ChainIVDBuilder(
       InputTagDispatcher(s"$name-in-dispatcher", subrules.length + 1)
 
     val contiguousIVDs = subrules.zipWithIndex.map {
-      case (rules, i) => ContiguousIVD(s"$name-contiguous-$i", rules)
+      case (rules_, i) =>
+        ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
+          val rules = rules_
+          val portsMap = self.portsMap
+        })
     }
 
     val outDispatcher =

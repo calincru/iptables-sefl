@@ -7,7 +7,9 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
 
 import core._
 
@@ -23,8 +25,10 @@ case class InInterfaceMatch(val interface: String) extends Match {
       case _ => false
     }
 
-  // TODO
-  def seflConstrain(options: SeflGenOptions): Instruction = null
+  def seflConstrain(options: SeflGenOptions): Instruction = {
+    import virtdev.InputPortTag
+    Constrain(InputPortTag, :==:(ConstantValue(options.portsMap(interface))))
+  }
 }
 
 case class OutInterfaceMatch(val interface: String) extends Match {
@@ -39,8 +43,10 @@ case class OutInterfaceMatch(val interface: String) extends Match {
       case _ => false
     }
 
-  // TODO
-  def seflConstrain(options: SeflGenOptions): Instruction = null
+  def seflConstrain(options: SeflGenOptions): Instruction = {
+    import virtdev.OutputPortTag
+    Constrain(OutputPortTag, :==:(ConstantValue(options.portsMap(interface))))
+  }
 }
 
 object InterfaceMatch extends BaseParsers {

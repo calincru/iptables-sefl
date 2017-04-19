@@ -12,10 +12,15 @@ import org.change.v2.analysis.processingmodels.instructions.{Fail, Forward, If}
 
 import models.iptables.core.{Rule, SeflGenOptions}
 
+trait ContiguousIVDConfig {
+  val rules:    List[Rule]
+  val portsMap: Map[String, Int]
+}
+
 case class ContiguousIVD(
-    name:  String,
-    rules: List[Rule])
-  extends RegularVirtualDevice[List[Rule]](
+    name:   String,
+    config: ContiguousIVDConfig)
+  extends RegularVirtualDevice[ContiguousIVDConfig](
     name,
       // single input port
     1,
@@ -26,7 +31,7 @@ case class ContiguousIVD(
       //  * 3 - towards its corresponding user-defined chain
       //  * 4 - next contiguous IVD
     5,
-    rules) { self =>
+    config) { self =>
 
   def inputPort:   Port = inputPort(0)
   def acceptPort:  Port = outputPort(0)
@@ -43,6 +48,8 @@ case class ContiguousIVD(
       val dropPort   = self.dropPort
       val returnPort = self.returnPort
       val jumpPort   = self.jumpPort
+
+      val portsMap = config.portsMap
     }
 
     // This function nests multiple Sefl If statements to implement conjuction.
@@ -60,7 +67,7 @@ case class ContiguousIVD(
       //
       // NOTE: The direction of the fold matters here: iptables lookup is done
       // from top to bottom which maps to right-associativity in our processing.
-      Map(inputPort -> rules.foldRight(defaultInstr)((rule, acc) =>
+      Map(inputPort -> config.rules.foldRight(defaultInstr)((rule, acc) =>
         andConstraints(rule.matches.map(_.seflConstrain(seflGenOptions)),
                        rule.target.seflCode(seflGenOptions),
                        acc))),

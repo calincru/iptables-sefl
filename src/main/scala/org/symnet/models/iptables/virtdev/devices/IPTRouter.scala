@@ -137,13 +137,22 @@ class IPTRouter(
 }
 
 class IPTRouterBuilder(
-    name:         String,
-    inputPorts:   Int,
-    outputPorts:  Int,
-    localIps:     List[Ipv4],
-    routingTable: RoutingTable,
-    iptables:     List[Table])
+    name:            String,
+    inputPortNames:  List[String],
+    outputPortNames: List[String],
+    localIps:        List[Ipv4],
+    routingTable:    RoutingTable,
+    iptables:        List[Table])
   extends VirtualDeviceBuilder[IPTRouter](name) { self =>
+
+  // NOTE: The input ports and the output ports should have different names for
+  // now.
+  require({
+    val inPortsSet = inputPortNames.toSet
+    val outPortsSet = outputPortNames.toSet
+
+    inPortsSet.diff(outPortsSet).isEmpty && outPortsSet.diff(inPortsSet).isEmpty
+  })
 
   override def build: IPTRouter =
     new IPTRouter(name, inputPorts, outputPorts, new IPTRouterConfig {
@@ -171,6 +180,7 @@ class IPTRouterBuilder(
     RoutingDecision(s"$name-rd-$id", new RoutingDecisionConfig {
       val localIps = self.localIps
       val routingTable = self.routingTable
+      val portsMap = self.portsMap
     })
 
   protected def makeInSetters: List[InputPortSetter] =
@@ -226,7 +236,14 @@ class IPTRouterBuilder(
           chain,
           idx,
           index.chainsSplitSubrules(chain),
-          chainInNeighsMap(idx)
+          chainInNeighsMap(idx),
+          portsMap
         ).build
     }
+
+  private def inputPorts  = inputPortNames.length
+  private def outputPorts = outputPortNames.length
+
+  private def portsMap = inputPortNames.zipWithIndex.toMap ++
+                         outputPortNames.zipWithIndex.toMap
 }

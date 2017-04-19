@@ -8,8 +8,8 @@ package models.iptables.virtdev
 package devices
 package ivds
 
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Deallocate, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Deallocate, Fork, Forward, Constrain, InstructionBlock}
 
 /** 'tagValues' is the list of values expected for the OutputDispatchTag.
  *

@@ -16,6 +16,7 @@ import types.net.Ipv4
 trait RoutingDecisionConfig {
   val localIps:     List[Ipv4]
   val routingTable: RoutingTable
+  val portsMap:     Map[String, Int]
 }
 
 case class RoutingDecision(
@@ -49,7 +50,7 @@ case class RoutingDecision(
       port => InstructionBlock(
         // Store the output interface this packet will be sent through.
         Allocate(OutputPortTag),
-        Assign(OutputPortTag, ConstantValue(port)),
+        Assign(OutputPortTag, ConstantValue(config.portsMap(port))),
 
         // Forward it to the next step in router's logic.
         Forward(fwdOutputPort)))
@@ -58,9 +59,8 @@ case class RoutingDecision(
     // how to identify if the packet is headed to one of router's local IPs.
     //
     // NOTE: The port ID is not important here, as we already know the name of
-    // the port we are forwarding this packet to (see below); 0 has been chosen
-    // as it is the ID of the local output port.
-    val localRoutingTable = config.localIps.map((_, 0))
+    // the port we are forwarding this packet to (see below).
+    val localRoutingTable = config.localIps.map((_, "unused"))
 
     // Finally, assign the input port the responsibility to do the IP lookup, by
     // first checking local IPs and falling back to the forwarding table.
@@ -74,7 +74,7 @@ case class RoutingDecision(
   private def buildIpLookup(
       routingTable: RoutingTable,
       defaultInstr: Instruction,
-      getThenInstr: (Int) => Instruction): Instruction =
+      getThenInstr: (String) => Instruction): Instruction =
     routingTable.foldRight(defaultInstr)((rtEntry, acc) => {
       val (prefix, port) = rtEntry
       val (lower, upper) = prefix.toHostRange

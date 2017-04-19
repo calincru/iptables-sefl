@@ -13,4 +13,6 @@ trait SeflGenOptions {
   val dropPort:   Interface
   val returnPort: Interface
   val jumpPort:   Interface
+
+  val portsMap: Map[String, Int]
 }
