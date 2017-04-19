@@ -10,7 +10,7 @@ package devices
 import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, InstructionBlock}
 
-class InputPortSetter(
+case class InputPortSetter(
     name:   String,
     portId: Int)
   extends RegularVirtualDevice[Int](

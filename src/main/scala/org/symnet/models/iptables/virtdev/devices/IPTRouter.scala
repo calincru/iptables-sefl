@@ -57,6 +57,13 @@ trait IPTRouterConfig {
   val localIVD:       SeqChainIVD
   val postroutingIVD: SeqChainIVD
   val outDispatcher:  OutputPortDispatcher
+
+  // The UserChainsLinker is a virtual device that links together ChainIVDs
+  // (jump/return ports).
+  //
+  // NOTE: It doesn't have any input or output ports, it just defines links
+  // between existing ChainIVDs.
+  val chainsLinker: UserChainsLinker
 }
 
 class IPTRouter(
@@ -72,17 +79,23 @@ class IPTRouter(
 
   override def devices: List[VirtualDevice[_]] =
     List(
-      // Usual router implementation components.
-      config.localProcess,
-      config.preFwdRD,
-      config.postFwdRD,
+      config.inPortSetters,
 
-      // iptables specific.
-      config.preroutingIVD,
-      config.forwardingIVD,
-      config.localIVD,
-      config.postroutingIVD,
-      config.outDispatcher) ++ config.inPortSetters
+      List(
+        // Usual router implementation components.
+        config.localProcess,
+        config.preFwdRD,
+        config.postFwdRD,
+
+        // iptables specific.
+        config.preroutingIVD,
+        config.forwardingIVD,
+        config.localIVD,
+        config.postroutingIVD,
+        config.outDispatcher,
+
+        config.chainsLinker)
+    ).flatten
 
   override def newLinks: Map[Port, Port] = {
     List(
@@ -143,6 +156,8 @@ class IPTRouterBuilder(
       val localIVD       = makeChainsIVD(Nil)
       val postroutingIVD = makeChainsIVD(Nil)
       val outDispatcher  = makeOutDispatcher
+
+      val chainsLinker = makeChainsLinker
     })
 
   protected lazy val index = new IPTIndex(iptables)
@@ -155,8 +170,15 @@ class IPTRouterBuilder(
       val routingTable = self.routingTable
     })
 
-  // TODO: Implement these.
-  protected def makeInSetters: List[InputPortSetter] = Nil
+  protected def makeInSetters: List[InputPortSetter] =
+    (0 until inputPorts).map(InputPortSetter(s"$name-port-setter", _)).toList
+
+  // TODO: Implement this.
   protected def makeChainsIVD(chains: List[Chain]): SeqChainIVD = null
-  protected def makeOutDispatcher: OutputPortDispatcher = null
+
+  protected def makeOutDispatcher: OutputPortDispatcher =
+    OutputPortDispatcher(s"$name-output-dispatcher", outputPorts)
+
+  // TODO: Implement this.
+  protected def makeChainsLinker: UserChainsLinker = null
 }

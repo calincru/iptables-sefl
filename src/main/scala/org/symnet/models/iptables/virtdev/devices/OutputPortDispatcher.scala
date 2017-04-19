@@ -10,7 +10,7 @@ package devices
 import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain, Fork, Forward, InstructionBlock}
 
-class OutputPortDispatcher(
+case class OutputPortDispatcher(
     name:        String,
     outputPorts: Int)
   extends RegularVirtualDevice[Unit](
