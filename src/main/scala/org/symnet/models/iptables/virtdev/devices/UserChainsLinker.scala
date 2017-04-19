@@ -24,15 +24,34 @@ case class UserChainsLinker(
     config: UserChainsLinkerConfig)
   extends CompositeVirtualDevice[UserChainsLinkerConfig](
     name,
-      // no input/output ports
+      // no input ports
     0,
+      // no output ports
     0,
     config) {
 
   // This Virtual Device only owns the user defined chains.
   override def devices: List[VirtualDevice[_]] =
-    config.userChainIVDIndices.map(config.chainIVDsMap(_))
+    config.userChainIVDIndices.map(i => config.chainIVDsMap(i))
 
-  // TODO: Add links
-  override def newLinks: Map[Port, Port] = Map.empty
+  // NOTE: There is no need to check whether a jumped-to chain is a user-defined
+  // one as that is ensured as part of the validation.
+  override def newLinks: Map[Port, Port] =
+    List(
+      // Add jump ports.
+      config.chainIVDsMap.map {
+        case (idx, ivd) => config.chainOutNeighsMap(idx).zipWithIndex.map {
+          case (neighIdx, portId) =>
+            ivd.jumpPort(portId) -> config.chainIVDsMap(neighIdx).initPort
+        }.toMap
+      }.flatten.toMap,
+
+      // Add backlink (RETURN) ports.
+      config.chainIVDsMap.map {
+        case (idx, ivd) => config.chainInNeighsMap(idx).zipWithIndex.map {
+          case (neighIdx, portId) =>
+            ivd.backlinkPort(portId) -> config.chainIVDsMap(neighIdx).inputPort
+        }.toMap
+      }.flatten.toMap
+    ).flatten.toMap
 }

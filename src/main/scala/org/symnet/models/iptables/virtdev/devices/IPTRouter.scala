@@ -189,7 +189,7 @@ class IPTRouterBuilder(
 
   protected def makeChainsLinker: UserChainsLinker =
     UserChainsLinker(s"$name-chains-linker", new UserChainsLinkerConfig {
-      val userChainIVDIndices = index.userChains.map(chainIndices(_))
+      val userChainIVDIndices = index.userChains.map(c => chainIndices(c))
 
       val chainInNeighsMap  = self.chainInNeighsMap
       val chainOutNeighsMap = self.chainOutNeighsMap
@@ -208,13 +208,13 @@ class IPTRouterBuilder(
   protected val chainInNeighsMap: Map[Int, List[Int]] =
     chainIndices map {
       case (chain, idx) =>
-        idx -> index.inAdjacencyLists(chain).map(chainIndices(_)).toList
+        idx -> index.inAdjacencyLists(chain).map(c => chainIndices(c)).toList
     }
 
   protected val chainOutNeighsMap: Map[Int, List[Int]] =
     chainIndices map {
       case (chain, idx) =>
-        idx -> index.outAdjacencyLists(chain).map(chainIndices(_)).toList
+        idx -> index.outAdjacencyLists(chain).map(c => chainIndices(c)).toList
     }
 
   protected val chainIVDsMap: Map[Int, ChainIVD] =
