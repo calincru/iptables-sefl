@@ -7,23 +7,35 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.{:&:, :>=:, :<=:, Constrain}
+import org.change.v2.util.canonicalnames.{IPDst, IPSrc}
 
 import core._
 import types.net.Ipv4
 
 case class SourceMatch(val ip: Ipv4) extends Match {
 
-  // TODO
-  def seflConstrain(options: SeflGenOptions): Instruction = null
+  def seflConstrain(options: SeflGenOptions): Instruction = {
+    val (lower, upper) = ip.toHostRange
+
+    Constrain(IPSrc, :&:(:>=:(ConstantValue(lower.host)),
+                         :<=:(ConstantValue(upper.host))))
+  }
 }
 
 case class DestinationMatch(val ip: Ipv4) extends Match {
 
-  // TODO
-  def seflConstrain(options: SeflGenOptions): Instruction = null
+  def seflConstrain(options: SeflGenOptions): Instruction = {
+    val (lower, upper) = ip.toHostRange
+
+    Constrain(IPDst, :&:(:>=:(ConstantValue(lower.host)),
+                         :<=:(ConstantValue(upper.host))))
+  }
 }
 
+// NOTE: Address specified by hostname is not supported; it cannot be modeled.
 object IpMatch extends BaseParsers {
   import ParserMP.monadPlusSyntax._
 
