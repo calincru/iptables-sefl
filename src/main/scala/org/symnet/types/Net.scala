@@ -8,6 +8,10 @@ package org.symnet.types
 package object net {
   // Network related types.
   final class Ipv4(val host: Long, val mask: Option[Int] = None) {
+    // TODO: Use mask to return a host range, as done in Symnet's representation
+    // conversion.
+    def toHostRange: (Ipv4, Ipv4) = (null, null)
+
     override def toString: String =
       List((host & 0xff000000) >>> 24,
            (host & 0x00ff0000) >>> 16,

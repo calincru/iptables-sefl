@@ -11,7 +11,7 @@ package ivds
 import org.change.v2.analysis.processingmodels.instructions.{:==:, Deallocate, Fork, Forward, Constrain, InstructionBlock}
 import org.change.v2.analysis.expression.concrete.ConstantValue
 
-/** 'tagValues' is the list of values expected for the OutputDispatchTagName.
+/** 'tagValues' is the list of values expected for the OutputDispatchTag.
  *
  *  NOTE: Packets are forwarded to the output ports according to the order in
  *  this list (aka order matters).

@@ -69,11 +69,11 @@ class ChainIVD(
     val policy        = config.policy
     val backlinks     = config.outDispatcher.outputPorts
 
-    // This is the port towards which packets are forwarded when no rule
-    // matches.
+    // This is the port towards to packets are forwarded when no rule matches.
     val defaultPort = policy match {
       case Accept => acceptPort
       case Return => outDispatcher.inputPort
+      // NOTE: This case also includes the QUEUE policy.
       case _      => dropPort
     }
 
@@ -92,7 +92,7 @@ class ChainIVD(
       ///
       /// tag dispatcher -> IVDs
       ///
-      // Link tag dispatcher's outputs to IVDs.
+      // Link input tag dispatcher's outputs to IVDs.
       (0 until ivds.length).map(
         i => inDispatcher.outputPort(i) -> ivds(i).inputPort),
 
@@ -161,7 +161,7 @@ class ChainIVD(
  *  want to model, the following must be provided:
  *    * 'index' - it uniquely identifies the chain amongst all chains.
  *    * 'subrules' - this chain's rules split after each rule which has as its
- *    target an user-defined chain.
+ *    target a user-defined chain.
  *    * 'neighbourChainIndices' - these are the indices of the chains which at
  *    some point might jump to this one; we need them in order to build the
  *    output tag dispatcher, in case a RETURN target is jumped to.

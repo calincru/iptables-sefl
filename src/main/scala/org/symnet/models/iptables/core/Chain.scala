@@ -64,7 +64,7 @@ case class UserChain(
   ///
 
   override protected def validateIf(table: Table): Boolean =
-    // A built-in chain is valid if its parent class is valid ...
+    // A user-defined chain is valid if its parent class is valid ...
     super.validateIf(table) &&
     // ... and its name is not one of the reserved ones.
     !(List("PREROUTING",
@@ -80,7 +80,7 @@ case class UserChain(
   override protected def validateIf(
       rule: Rule,
       chain: Chain,
-      table: Table): Boolean = chain != this
+      table: Table): Boolean = chain != this && table.chains.contains(this)
 
   ///
   /// Sefl code generation (this chain is the target of a rule).
