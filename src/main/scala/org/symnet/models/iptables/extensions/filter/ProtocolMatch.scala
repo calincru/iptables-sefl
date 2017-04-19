@@ -26,17 +26,16 @@ case class ProtocolMatch(val protocol: String) extends Match {
     // from /etc/protocols.
     false
 
-  def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
-    val protoMap = Map("tcp" -> TCPProto,
-                       "udp" -> UDPProto,
-                       "icmp" -> ICMPProto)
-
+  def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     if (protocol == "all") {
       None
     } else {
+      val protoMap = Map("tcp" -> TCPProto,
+                         "udp" -> UDPProto,
+                         "icmp" -> ICMPProto)
+
       Some(Constrain(Proto, :==:(ConstantValue(protoMap(protocol)))))
     }
-  }
 }
 
 object ProtocolMatch extends BaseParsers {

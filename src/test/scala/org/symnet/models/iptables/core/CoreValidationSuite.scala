@@ -134,7 +134,8 @@ class CoreValidationSuite extends FunSuite with Matchers {
   // is always valid
   object validMatch extends Match {
     // this is not used here
-    override def seflConstrain(options: SeflGenOptions): Instruction = null
+    override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
+      None
   }
   // is always valid
   object validTarget extends Target {
@@ -149,7 +150,8 @@ class CoreValidationSuite extends FunSuite with Matchers {
         table: Table): Boolean = false
 
     // this is not used here
-    override def seflConstrain(options: SeflGenOptions): Instruction = null
+    override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
+      None
   }
   // is never valid
   object invalidTarget extends Target {
