@@ -36,6 +36,9 @@ case class UserChainsLinker(
 
   // NOTE: There is no need to check whether a jumped-to chain is a user-defined
   // one as that is ensured as part of the validation.
+  //
+  // See classes `ChainIVD', `InputTagDispatcher' and `OutputTagDispatcher' from
+  // the `ivds/' subdir.
   override def newLinks: Map[Port, Port] =
     List(
       // Add jump ports.

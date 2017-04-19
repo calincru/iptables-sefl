@@ -94,6 +94,7 @@ class IPTRouter(
         config.postroutingIVD,
         config.outDispatcher,
 
+        // The chains linker.
         config.chainsLinker)
     ).flatten
 

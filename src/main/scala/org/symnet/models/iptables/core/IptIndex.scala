@@ -12,8 +12,14 @@ final class IPTIndex(iptables: List[Table]) {
   ///
   /// Miscellanea
   ///
+  private val tablesOrdering: List[String] =
+    List("raw", "mangle", "nat", "filter")
 
-  val allChains: List[Chain] = iptables.flatMap(_.chains)
+  private def sortByTablesOrdering(lhs: Table, rhs: Table) =
+    tablesOrdering.indexOf(lhs.name) < tablesOrdering.indexOf(rhs.name)
+
+  val allChains: List[Chain] =
+    iptables.sortWith(sortByTablesOrdering).flatMap(_.chains)
 
   val userChains: List[UserChain] =
     allChains.collect { case chain: UserChain => chain }
