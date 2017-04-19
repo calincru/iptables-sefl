@@ -68,7 +68,7 @@ case class ContiguousIVD(
       // NOTE: The direction of the fold matters here: iptables lookup is done
       // from top to bottom which maps to right-associativity in our processing.
       Map(inputPort -> config.rules.foldRight(defaultInstr)((rule, acc) =>
-        andConstraints(rule.matches.map(_.seflConstrain(seflGenOptions)),
+        andConstraints(rule.matches.flatMap(_.seflConstrain(seflGenOptions)),
                        rule.target.seflCode(seflGenOptions),
                        acc))),
 

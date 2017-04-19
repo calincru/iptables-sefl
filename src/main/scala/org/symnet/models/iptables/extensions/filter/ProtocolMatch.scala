@@ -7,7 +7,10 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
+import org.change.v2.util.canonicalnames.{Proto, ICMPProto, UDPProto, TCPProto}
 
 import core._
 
@@ -23,8 +26,17 @@ case class ProtocolMatch(val protocol: String) extends Match {
     // from /etc/protocols.
     false
 
-  // TODO
-  def seflConstrain(options: SeflGenOptions): Instruction = null
+  def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
+    val protoMap = Map("tcp" -> TCPProto,
+                       "udp" -> UDPProto,
+                       "icmp" -> ICMPProto)
+
+    if (protocol == "all") {
+      None
+    } else {
+      Some(Constrain(Proto, :==:(ConstantValue(protoMap(protocol)))))
+    }
+  }
 }
 
 object ProtocolMatch extends BaseParsers {

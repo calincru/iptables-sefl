@@ -31,17 +31,17 @@ abstract class Match {
   ///
 
   /** Generates SEFL constraints corresponding to its semantics. */
-  def seflConstrain(options: SeflGenOptions): Instruction
+  def seflConstrain(options: SeflGenOptions): Option[Instruction]
 }
 
 case class NegatedMatch(m: Match) extends Match {
   override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
     m.validate(rule, chain, table)
 
-  override def seflConstrain(options: SeflGenOptions): Instruction =
+  override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     m.seflConstrain(options) match {
-      case ConstrainNamedSymbol(what, withWhat, _) =>
-        Constrain(what, :~:(withWhat))
+      case Some(ConstrainNamedSymbol(what, withWhat, _)) =>
+        Some(Constrain(what, :~:(withWhat)))
       case i @ _ => i
     }
 }
