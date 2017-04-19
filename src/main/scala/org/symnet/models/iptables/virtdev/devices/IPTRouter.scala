@@ -151,16 +151,18 @@ class IPTRouterBuilder(
       val postFwdRD    = makeRoutingDecision("postfwd")
 
       val inPortSetters  = makeInSetters
-      val preroutingIVD  = makeChainsIVD(Nil)
-      val forwardingIVD  = makeChainsIVD(Nil)
-      val localIVD       = makeChainsIVD(Nil)
-      val postroutingIVD = makeChainsIVD(Nil)
+      val preroutingIVD  = makeSeqChains("PREROUTING")
+      val forwardingIVD  = makeSeqChains("FORWARDING")
+      val localIVD       = makeSeqChains("LOCAL")
+      val postroutingIVD = makeSeqChains("POSTROUTING")
       val outDispatcher  = makeOutDispatcher
 
       val chainsLinker = makeChainsLinker
     })
 
-  protected lazy val index = new IPTIndex(iptables)
+  ///
+  /// Helper methods.
+  ///
 
   protected def makeLocalProcess = LocalProcess(s"$name-local-proc")
 
@@ -173,12 +175,57 @@ class IPTRouterBuilder(
   protected def makeInSetters: List[InputPortSetter] =
     (0 until inputPorts).map(InputPortSetter(s"$name-port-setter", _)).toList
 
-  // TODO: Implement this.
-  protected def makeChainsIVD(chains: List[Chain]): SeqChainIVD = null
+  protected def makeSeqChains(chainName: String): SeqChainIVD = {
+    val chains = index.chainsByName(chainName)
+
+    new SeqChainIVDBuilder(
+      s"$name-seq-$chainName",
+      chains.map(c => chainIVDsMap(chainIndices(c)))
+    ).build
+  }
 
   protected def makeOutDispatcher: OutputPortDispatcher =
     OutputPortDispatcher(s"$name-output-dispatcher", outputPorts)
 
-  // TODO: Implement this.
-  protected def makeChainsLinker: UserChainsLinker = null
+  protected def makeChainsLinker: UserChainsLinker =
+    UserChainsLinker(s"$name-chains-linker", new UserChainsLinkerConfig {
+      val userChainIVDIndices = index.userChains.map(chainIndices(_))
+
+      val chainInNeighsMap  = self.chainInNeighsMap
+      val chainOutNeighsMap = self.chainOutNeighsMap
+      val chainIVDsMap      = self.chainIVDsMap
+    })
+
+  ///
+  /// Helper data structures.
+  ///
+
+  protected val index: IPTIndex = new IPTIndex(iptables)
+
+  protected val chainIndices: Map[Chain, Int] =
+    index.allChains.zipWithIndex.toMap
+
+  protected val chainInNeighsMap: Map[Int, List[Int]] =
+    chainIndices map {
+      case (chain, idx) =>
+        idx -> index.inAdjacencyLists(chain).map(chainIndices(_)).toList
+    }
+
+  protected val chainOutNeighsMap: Map[Int, List[Int]] =
+    chainIndices map {
+      case (chain, idx) =>
+        idx -> index.outAdjacencyLists(chain).map(chainIndices(_)).toList
+    }
+
+  protected val chainIVDsMap: Map[Int, ChainIVD] =
+    chainIndices map {
+      case (chain, idx) => idx ->
+        new ChainIVDBuilder(
+          String.format("%s-chainIVD-%s", name, chain.name),
+          chain,
+          idx,
+          index.chainsSplitSubrules(chain),
+          chainInNeighsMap(idx)
+        ).build
+    }
 }

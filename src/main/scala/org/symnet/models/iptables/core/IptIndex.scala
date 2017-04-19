@@ -13,16 +13,17 @@ final class IPTIndex(iptables: List[Table]) {
   /// Miscellanea
   ///
 
-  val tableToUserChains: Map[Table, List[UserChain]] =
-    iptables.map(table => table ->
-      table.chains.collect { case chain: UserChain => chain }).toMap
-
-  val tableToBuiltinChains: Map[Table, List[BuiltinChain]] =
-    iptables.map(table => table ->
-      table.chains.collect { case chain: BuiltinChain => chain }).toMap
-
   val allChains: List[Chain] = iptables.flatMap(_.chains)
 
+  val userChains: List[UserChain] =
+    allChains.collect { case chain: UserChain => chain }
+
+  val builtinChains: List[BuiltinChain] =
+    allChains.collect { case chain: BuiltinChain => chain }
+
+  /** Collects the chains with the given name from all tables. */
+  def chainsByName(chainName: String): List[Chain] =
+    allChains.filter(_.name == chainName)
 
   ///
   /// Quick access to relations between chains given by jumps.
