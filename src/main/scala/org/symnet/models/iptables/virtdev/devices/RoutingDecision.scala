@@ -48,11 +48,7 @@ case class RoutingDecision(
       // The function that tells how to use the port to generate a 'then'
       // instruction, when a prefix matches.
       port => InstructionBlock(
-        // Store the output interface this packet will be sent through.
-        Allocate(OutputPortTag),
         Assign(OutputPortTag, ConstantValue(config.portsMap(port))),
-
-        // Forward it to the next step in router's logic.
         Forward(fwdOutputPort)))
 
     // Build a 'routing table' (list of prefixes and output ports) which knows

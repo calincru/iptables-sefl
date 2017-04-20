@@ -8,7 +8,7 @@ package models.iptables.virtdev
 package devices
 
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.Assign
 
 case class InputPortSetter(
     name:   String,
@@ -25,8 +25,5 @@ case class InputPortSetter(
   def outputPort: Port = outputPort(0)
 
   override def portInstructions: Map[Port, Instruction] =
-    Map(inputPort ->
-        InstructionBlock(
-          Allocate(InputPortTag),
-          Assign(InputPortTag, ConstantValue(portId))))
+    Map(inputPort -> Assign(InputPortTag, ConstantValue(portId)))
 }

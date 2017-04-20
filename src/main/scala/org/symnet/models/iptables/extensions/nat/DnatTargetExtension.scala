@@ -8,6 +8,7 @@ package models.iptables
 package extensions.nat
 
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions._
 
 import types.net.{Ipv4, PortRange}
 
@@ -32,8 +33,17 @@ case class DnatTarget(
     // have been specified.
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 
-  // TODO
-  def seflCode(options: SeflGenOptions): Instruction = null
+  override def seflCode(options: SeflGenOptions): Instruction = {
+    // If the upper bound is not given, we simply constrain on [lower, lower].
+    val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
+
+    InstructionBlock(
+      // TODO: Do DNAT.
+
+      // In the end, we accept the packet.
+      Forward(options.acceptPort)
+    )
+  }
 }
 
 object DnatTarget extends BaseParsers {

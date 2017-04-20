@@ -31,19 +31,19 @@ abstract class FilterTarget extends Target {
 
 case object AcceptTarget extends FilterTarget {
 
-  def seflCode(options: SeflGenOptions): Instruction =
+  override def seflCode(options: SeflGenOptions): Instruction =
     Forward(options.acceptPort)
 }
 
 case object DropTarget extends FilterTarget {
 
-  def seflCode(options: SeflGenOptions): Instruction =
+  override def seflCode(options: SeflGenOptions): Instruction =
     Forward(options.dropPort)
 }
 
 case object ReturnTarget extends FilterTarget {
 
-  def seflCode(options: SeflGenOptions): Instruction =
+  override def seflCode(options: SeflGenOptions): Instruction =
     Forward(options.returnPort)
 }
 

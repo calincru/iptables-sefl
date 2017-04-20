@@ -18,7 +18,7 @@ import types.net.Ipv4
  *  --o|->111-----+             ^                   +----->|o--
  *     |          |       +--->444<----+            |      |
  *     |          v       |            |            |      |
- *  --o|->111--->222-->333+-->555-->666+-->777-->888+----->|o--
+ *  --o|->111--->222-->333*-->555-->666*-->777-->888*----->|o--
  *   . |          ^                                 .  .   | .
  *   . |          |                                 .  .   | .
  *  --o|->111-----+                                 +----->|o--
@@ -232,7 +232,7 @@ class IPTRouterBuilder(
     chainIndices map {
       case (chain, idx) => idx ->
         new ChainIVDBuilder(
-          String.format("%s-chainIVD-%s", name, chain.name),
+          s"$name-chainIVD-${chain.name}",
           chain,
           idx,
           index.chainsSplitSubrules(chain),

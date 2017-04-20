@@ -32,13 +32,13 @@ class SeqChainIVD(
     val chains = config.chains
 
     List(
-      // Add link from its input port to the input port of the first chain IVD.
-      Map(inputPort -> chains(0).inputPort),
+      // Add link from its input port to the init port of the first chain IVD.
+      Map(inputPort -> chains(0).initPort),
 
       // Add links from the accept port of a chain IVD to the next, except for
       // the last one.
       (0 until chains.length - 1).map(
-        i => chains(i).acceptPort -> chains(i + 1).inputPort),
+        i => chains(i).acceptPort -> chains(i + 1).initPort),
 
       // Add a link from the accept port of the last one to the output port of
       // this IVD.

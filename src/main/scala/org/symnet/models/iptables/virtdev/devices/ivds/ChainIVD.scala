@@ -48,6 +48,8 @@ class ChainIVD(
   // Briefly, the input port is used only when returning from a user-defined
   // chain to which a jump from this one has been made, to ensure that the
   // previous value of the input dispatch tag is seen.
+  //
+  // TODO: Consider renaming them.
   def initPort: Port = inputPort(0)
   def inputPort: Port = inputPort(1)
 

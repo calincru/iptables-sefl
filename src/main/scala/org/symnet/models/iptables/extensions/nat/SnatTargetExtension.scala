@@ -7,7 +7,11 @@ package org.symnet
 package models.iptables
 package extensions.nat
 
+import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
+import org.change.v2.analysis.expression.concrete.nonprimitive.:@
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions._
+import org.change.v2.util.canonicalnames.{IPSrc, TcpSrc}
 
 import types.net.{Ipv4, PortRange}
 
@@ -31,8 +35,59 @@ case class SnatTarget(
     // have been specified.
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 
-  // TODO
-  def seflCode(options: SeflGenOptions): Instruction = null
+  // TODO: It is currently assumed that both TCP and UDP store the port address
+  // at the same offset.
+  // TODO: Parameterize the names of the tags on the device that does this.
+  override def seflCode(options: SeflGenOptions): Instruction = {
+    // If the upper bound is not given, we simply constrain on [lower, lower].
+    val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
+
+    InstructionBlock(
+      // Save original addresses.
+      Assign(OriginalIP, :@(IPSrc)),
+      Assign(OriginalPort, :@(TcpSrc)),
+
+      // Mangle IP address.
+      Assign(IPSrc, SymbolicValue()),
+      Constrain(IPSrc, :&:(:>=:(ConstantValue(lower.host)),
+                           :<=:(ConstantValue(upper.host)))),
+
+      // Mangle TCP/UDP port address.
+      Assign(TcpSrc, SymbolicValue()),
+      if (portRange.isDefined) {
+        // If a port range was specified, use it.
+        val (lowerPort, upperPort) = portRange.get
+
+        Constrain(IPSrc, :&:(:>=:(ConstantValue(lowerPort)),
+                             :<=:(ConstantValue(upperPort))))
+      } else {
+        // Otherwise (from docs):
+        //
+        //    If no port range is specified, then source ports below 512 will be
+        //    mapped to other ports below 512: those between 512 and 1023
+        //    inclusive will be mapped to ports below 1024, and other ports will
+        //    be mapped to 1024 or above. Where possible, no port alteration
+        //    will occur.
+        If(Constrain(OriginalPort, :<:(ConstantValue(512))),
+           // then
+           Constrain(TcpSrc, :<:(ConstantValue(512))),
+           // else
+           If(Constrain(OriginalPort, :<:(ConstantValue(1024))),
+              // then
+              Constrain(TcpSrc, :&:(:>=:(ConstantValue(512)),
+                                    :<:(ConstantValue(1024)))),
+              // else
+              Constrain(TcpSrc, :>=:(ConstantValue(1024)))))
+      },
+
+      // Save the new addresses.
+      Assign(NewIP, :@(IPSrc)),
+      Assign(NewPort, :@(TcpSrc)),
+
+      // In the end, we accept the packet.
+      Forward(options.acceptPort)
+    )
+  }
 }
 
 object SnatTarget extends BaseParsers {

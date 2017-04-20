@@ -8,7 +8,7 @@ package models.iptables.virtdev
 package devices
 
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain, Deallocate, Fork, Forward, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain, Fork, Forward, InstructionBlock}
 
 case class OutputPortDispatcher(
     name:        String,
@@ -29,9 +29,6 @@ case class OutputPortDispatcher(
           // Make sure packets are only sent through the specified output
           // interface.
           Constrain(OutputPortTag, :==:(ConstantValue(i))),
-
-          // Pop the previous output port tag from its corresponding stack.
-          Deallocate(OutputPortTag),
 
           // Forward packets on the designated output interface.
           Forward(outputPort(i))

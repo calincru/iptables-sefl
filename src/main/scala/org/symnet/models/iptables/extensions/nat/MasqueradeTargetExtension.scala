@@ -8,6 +8,7 @@ package models.iptables
 package extensions.nat
 
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions._
 
 import types.net.{Ipv4, Port}
 
@@ -48,8 +49,13 @@ case class MasqueradeTarget(
     //
     (lowerPort.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 
-  // TODO
-  def seflCode(options: SeflGenOptions): Instruction = null
+  def seflCode(options: SeflGenOptions): Instruction =
+    InstructionBlock(
+      // TODO: Do MASQUERADE.
+
+      // In the end, we accept the packet.
+      Forward(options.acceptPort)
+    )
 }
 
 object MasqueradeTarget extends BaseParsers {

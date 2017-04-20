@@ -26,7 +26,7 @@ case class ProtocolMatch(val protocol: String) extends Match {
     // from /etc/protocols.
     false
 
-  def seflConstrain(options: SeflGenOptions): Option[Instruction] =
+  override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     if (protocol == "all") {
       None
     } else {
