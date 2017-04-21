@@ -13,7 +13,6 @@ import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.util.canonicalnames.{IPDst, TcpDst}
 
-
 import types.net.{Ipv4, PortRange}
 
 import core._

@@ -8,7 +8,7 @@ package models.iptables.virtdev
 package devices
 
 import ivds._
-import models.iptables.core.{Chain, IPTIndex, Table}
+import models.iptables.core.{Chain, Table}
 import types.net.Ipv4
 
 /** An iptables enhanced router is built as follows:
@@ -33,7 +33,7 @@ import types.net.Ipv4
  *  333 -- this is the first routing decision; it either sends the packets to a
  *         local process or determines the output interface of the packet and
  *         stores it as a metadata.
- *  444 -- this is the LOCAL chain.
+ *  444 -- this is the INPUT chain.
  *  LLL -- this is the local process; it usually acts as a sink (simply drops
  *         the packets)
  *  555 -- this is the FORWARDING chain.
@@ -54,7 +54,7 @@ trait IPTRouterConfig {
   val inPortSetters:  List[InputPortSetter]
   val preroutingIVD:  IVDSequencer
   val forwardingIVD:  IVDSequencer
-  val localIVD:       IVDSequencer
+  val inputIVD:       IVDSequencer
   val postroutingIVD: IVDSequencer
   val outDispatcher:  OutputPortDispatcher
 
@@ -90,7 +90,7 @@ class IPTRouter(
         // iptables specific.
         config.preroutingIVD,
         config.forwardingIVD,
-        config.localIVD,
+        config.inputIVD,
         config.postroutingIVD,
         config.outDispatcher,
 
@@ -113,17 +113,17 @@ class IPTRouter(
         config.preroutingIVD.outputPort -> config.preFwdRD.inputPort,
 
         // Link the first routing decision as expected.
-        config.preFwdRD.localOutputPort -> config.localIVD.inputPort,
+        config.preFwdRD.localOutputPort -> config.inputIVD.inputPort,
         config.preFwdRD.fwdOutputPort   -> config.forwardingIVD.inputPort,
 
-        // Link the LOCAL chain to the local process
-        config.localIVD.inputPort -> config.localProcess.inputPort,
+        // Link the INPUT chain to the local process
+        config.inputIVD.inputPort -> config.localProcess.inputPort,
 
         // Link the FORWARDING chain to the next routing decision.
         config.forwardingIVD.outputPort -> config.postFwdRD.inputPort,
 
         // Link the second routing decision as expected.
-        config.postFwdRD.localOutputPort -> config.localIVD.inputPort,
+        config.postFwdRD.localOutputPort -> config.inputIVD.inputPort,
         config.postFwdRD.fwdOutputPort   -> config.postroutingIVD.inputPort,
 
         // Link the POSTROUTING chain to the output dispatcher.
@@ -157,7 +157,7 @@ class IPTRouterBuilder(
       val inPortSetters  = makeInSetters
       val preroutingIVD  = makeSeqChains("PREROUTING")
       val forwardingIVD  = makeSeqChains("FORWARDING")
-      val localIVD       = makeSeqChains("LOCAL")
+      val inputIVD       = makeSeqChains("INPUT")
       val postroutingIVD = makeSeqChains("POSTROUTING")
       val outDispatcher  = makeOutDispatcher
 

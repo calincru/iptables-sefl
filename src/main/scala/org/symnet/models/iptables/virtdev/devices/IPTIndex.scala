@@ -4,8 +4,10 @@
 // information regarding copyright ownership.
 
 package org.symnet
-package models.iptables
-package core
+package models.iptables.virtdev
+package devices
+
+import models.iptables.core._
 
 final class IPTIndex(iptables: List[Table]) {
 
