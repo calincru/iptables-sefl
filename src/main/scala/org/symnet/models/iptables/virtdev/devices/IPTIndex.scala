@@ -42,6 +42,8 @@ final class IPTIndex(iptables: List[Table]) {
 
   type AdjacencyLists = Map[Chain, Set[Chain]]
 
+  // TODO: Skip those with `goto' set to true; however, only do this once
+  // everything else is tested, to make sure it doesn't break anything.
   val outAdjacencyLists: AdjacencyLists = allChains.map(chain => chain ->
     chain.rules.flatMap(_.target match {
       case uc: UserChain => Some(uc: Chain)

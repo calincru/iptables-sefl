@@ -78,3 +78,6 @@ test.txt
 
 # Coveralls
 .coveralls_token
+
+# Symnet output
+*.json

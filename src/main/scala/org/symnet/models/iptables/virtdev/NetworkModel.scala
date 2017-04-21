@@ -5,7 +5,6 @@
 
 package org.symnet
 package models.iptables.virtdev
-package visitors
 
 import devices.VirtualDevice
 

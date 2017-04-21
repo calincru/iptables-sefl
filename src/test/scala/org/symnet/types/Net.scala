@@ -32,4 +32,18 @@ class NetSuite extends FunSuite with Matchers {
   test("ipv4 inequality") {
     Ipv4(10, 10, 10, 10, Some(10)) should not be (Ipv4(10, 10, 10, 0))
   }
+
+  test("host range") {
+    val (lower, upper) = Ipv4(192, 168, 0, 0, Some(24)).toHostRange
+
+    lower shouldBe Ipv4(192, 168, 0, 0)
+    upper shouldBe Ipv4(192, 168, 0, 255)
+  }
+
+  test("host range - host part does not matter") {
+    val (lower, upper) = Ipv4(192, 168, 0, 12, Some(26)).toHostRange
+
+    lower shouldBe Ipv4(192, 168, 0, 0)
+    upper shouldBe Ipv4(192, 168, 0, 63)
+  }
 }
