@@ -7,7 +7,6 @@ package org.symnet.models.iptables
 package core
 
 import scalaz.Maybe
-import scalaz.Maybe._
 
 case class Table(val name: String, val chains: List[Chain]) {
 
@@ -25,5 +24,5 @@ case class Table(val name: String, val chains: List[Chain]) {
         vChains <- traverse(chains)(_.validate(this))
       } yield Table(name, vChains)
     else
-      empty
+      Maybe.empty
 }

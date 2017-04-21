@@ -30,8 +30,8 @@ case class ChainIVDInitializer(
       // one input port
     1,
       // two output ports:
-      //  * 0 - ACCEPT
-      //  * 1 - DROP
+      //  * 0 - continue
+      //  * 1 - skip
     2,
     config) {
 

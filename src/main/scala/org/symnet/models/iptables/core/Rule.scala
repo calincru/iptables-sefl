@@ -9,7 +9,7 @@ package core
 import scalaz.Maybe
 import scalaz.Maybe._
 
-case class Rule(matches: List[Match], target: Target) {
+case class Rule(matches: List[Match], target: Target, goto: Boolean = false) {
 
   ///
   /// Validation
@@ -34,17 +34,17 @@ case class Rule(matches: List[Match], target: Target) {
       // NOTE: The 'real' target of a rule could be another one than that used
       // when constructing it only if it is a placeholder target which refers a
       // valid (from a 'target' perspective) chain.
-      actualTarget <- target match {
-        case PlaceholderTarget(name, _) => {
+      actualResult <- target match {
+        case PlaceholderTarget(name, goto) => {
           val matchedChains = table.chains.collect { case uc: UserChain => uc }
 
           if (matchedChains.length == 1)
-            Just(matchedChains.head)
+            Just((matchedChains.head, goto))
           else
             empty
         }
-        case _ => Just(target)
+        case _ => Just((target, false))
       }
-      vTarget <- actualTarget.validate(this, chain, table)
-    } yield Rule(vMatches, vTarget)
+      vTarget <- actualResult._1.validate(this, chain, table)
+    } yield Rule(vMatches, vTarget, actualResult._2)
 }

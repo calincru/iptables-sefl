@@ -54,7 +54,7 @@ case class MasqueradeTarget(
 
   // NOTE: This is almost identical to SNAT; it differs only in that it uses the
   // saved ip of the output port, instead of a specified port (range).
-  def seflCode(options: SeflGenOptions): Instruction = {
+  override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
     val fromIp = virtdev.snatFromIp(options.id)
     val fromPort = virtdev.snatFromPort(options.id)

@@ -11,7 +11,7 @@ import org.change.v2.analysis.processingmodels.instructions.{:~:, Constrain, Con
 import scalaz.Maybe
 import scalaz.Maybe._
 
-abstract class Match {
+trait Match {
 
   ///
   /// Validation

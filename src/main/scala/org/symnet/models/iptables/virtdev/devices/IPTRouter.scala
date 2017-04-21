@@ -146,12 +146,7 @@ class IPTRouterBuilder(
 
   // NOTE: The input ports and the output ports should have different names for
   // now.
-  require({
-    val inPortsSet = inputIpsMap.keySet
-    val outPortsSet = outputIpsMap.keySet
-
-    inPortsSet.diff(outPortsSet).isEmpty && outPortsSet.diff(inPortsSet).isEmpty
-  })
+  require((inputIpsMap.keySet & outputIpsMap.keySet).isEmpty)
 
   override def build: IPTRouter =
     new IPTRouter(name, inputPorts, outputPorts, new IPTRouterConfig {

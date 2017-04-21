@@ -10,7 +10,6 @@ import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions.Forward
 
 import scalaz.Maybe
-import scalaz.Maybe.empty
 
 object Policy extends Enumeration {
   type Policy = Value
@@ -50,7 +49,7 @@ sealed abstract class Chain(
         vRules <- traverse(rules)(_.validate(this, table))
       } yield Chain(name, vRules, policy)
     else
-      empty
+      Maybe.empty
 }
 
 /** A user-defined chain cannot have an implicit policy in iptables. */
@@ -88,7 +87,8 @@ case class UserChain(
 
   // When a user chain is the target of a rule, we forward the packet to the
   // jump port of the corresponding Iptables Virtual Device (IVD).
-  def seflCode(options: SeflGenOptions): Instruction = Forward(options.jumpPort)
+  override def seflCode(options: SeflGenOptions): Instruction =
+    Forward(options.jumpPort)
 }
 
 /** iptables built-in chains must have a default policy. */

@@ -18,5 +18,5 @@ trait TargetExtension extends BaseParsers {
 }
 
 object ChainTargetExtension extends TargetExtension {
-  val targetParser = iptParsers.chainTargetParser
+  override val targetParser = iptParsers.chainTargetParser
 }

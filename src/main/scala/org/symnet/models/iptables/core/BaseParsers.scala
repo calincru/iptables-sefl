@@ -113,7 +113,7 @@ trait BaseParsers {
     } yield Ipv4(b0, b1, b2, b3, optionalMask)
 
   ///
-  /// Object private functions.
+  /// Private functions.
   ///
 
   private def toInt(digits: List[Int]): Int = {
