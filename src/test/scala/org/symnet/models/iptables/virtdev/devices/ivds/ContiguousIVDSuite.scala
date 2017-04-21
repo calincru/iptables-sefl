@@ -5,7 +5,8 @@
 
 package org.symnet
 package models.iptables
-package virtdev.devices.ivds
+package virtdev.devices
+package ivds
 
 // scala
 import org.junit.runner.RunWith
@@ -15,8 +16,6 @@ import org.scalatest.junit.JUnitRunner
 // 3rd party:
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.memory.State
-import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.executor.clickabstractnetwork.ClickExecutionContext
 import org.change.v2.executor.clickabstractnetwork.executionlogging.JsonLogger
@@ -46,7 +45,7 @@ class ContiguousIVDSuite extends FunSuite with Matchers { self =>
     val result = new ClickExecutionContext(
       model.instructions,
       model.links,
-      List(State.bigBang.forwardTo(contIVD.inputPort)),
+      List(initState.forwardTo(contIVD.inputPort)),
       Nil,
       Nil,
       logger = JsonLogger).untilDone(true)
@@ -89,7 +88,9 @@ class ContiguousIVDSuite extends FunSuite with Matchers { self =>
          Forward(contig.nextIVDport))
 
     val (success, fail) = symExec(contig)
-    // TODO: Do something with this.
+    // TODO: Do something more interesting with this.
+    assert(success.length == 2) // 1 if => 2 paths
+    assert(fail.isEmpty)
   }
 
   test("one rule, match src ip") {
@@ -97,17 +98,16 @@ class ContiguousIVDSuite extends FunSuite with Matchers { self =>
       rule("-s 192.168.0.1 -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(192, 168, 0, 1).host)
-
-    assert(contig.links.isEmpty)
-    assert(!contig.portInstructions.isEmpty)
-
     val inputInstr = contig.portInstructions(contig.inputPort)
+
     inputInstr shouldBe
       If(Constrain(IPSrc, :&:(:>=:(ip), :<=:(ip))),
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
     val (success, fail) = symExec(contig)
-    // TODO: Do something with this.
+    // TODO: Do something more interesting with this.
+    assert(success.length == 2) // 1 if => 2 paths
+    assert(fail.isEmpty)
   }
 }
