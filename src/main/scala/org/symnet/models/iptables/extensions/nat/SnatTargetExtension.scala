@@ -37,15 +37,20 @@ case class SnatTarget(
 
   // TODO: It is currently assumed that both TCP and UDP store the port address
   // at the same offset.
-  // TODO: Parameterize the names of the tags on the device that does this.
   override def seflCode(options: SeflGenOptions): Instruction = {
+    // Get the name of the metadata tags.
+    val fromIp = virtdev.snatFromIp(options.id)
+    val fromPort = virtdev.snatFromPort(options.id)
+    val toIp = virtdev.snatToIp(options.id)
+    val toPort = virtdev.snatToPort(options.id)
+
     // If the upper bound is not given, we simply constrain on [lower, lower].
     val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
 
     InstructionBlock(
       // Save original addresses.
-      Assign(OriginalIP, :@(IPSrc)),
-      Assign(OriginalPort, :@(TcpSrc)),
+      Assign(fromIp, :@(IPSrc)),
+      Assign(fromPort, :@(TcpSrc)),
 
       // Mangle IP address.
       Assign(IPSrc, SymbolicValue()),
@@ -58,8 +63,8 @@ case class SnatTarget(
         // If a port range was specified, use it.
         val (lowerPort, upperPort) = portRange.get
 
-        Constrain(IPSrc, :&:(:>=:(ConstantValue(lowerPort)),
-                             :<=:(ConstantValue(upperPort))))
+        Constrain(TcpSrc, :&:(:>=:(ConstantValue(lowerPort)),
+                              :<=:(ConstantValue(upperPort))))
       } else {
         // Otherwise (from docs):
         //
@@ -68,11 +73,11 @@ case class SnatTarget(
         //    inclusive will be mapped to ports below 1024, and other ports will
         //    be mapped to 1024 or above. Where possible, no port alteration
         //    will occur.
-        If(Constrain(OriginalPort, :<:(ConstantValue(512))),
+        If(Constrain(fromPort, :<:(ConstantValue(512))),
            // then
            Constrain(TcpSrc, :<:(ConstantValue(512))),
            // else
-           If(Constrain(OriginalPort, :<:(ConstantValue(1024))),
+           If(Constrain(fromPort, :<:(ConstantValue(1024))),
               // then
               Constrain(TcpSrc, :&:(:>=:(ConstantValue(512)),
                                     :<:(ConstantValue(1024)))),
@@ -81,8 +86,8 @@ case class SnatTarget(
       },
 
       // Save the new addresses.
-      Assign(NewIP, :@(IPSrc)),
-      Assign(NewPort, :@(TcpSrc)),
+      Assign(toIp, :@(IPSrc)),
+      Assign(toPort, :@(TcpSrc)),
 
       // In the end, we accept the packet.
       Forward(options.acceptPort)

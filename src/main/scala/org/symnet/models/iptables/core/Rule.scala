@@ -9,7 +9,7 @@ package core
 import scalaz.Maybe
 import scalaz.Maybe._
 
-case class Rule(val matches: List[Match], val target: Target) {
+case class Rule(matches: List[Match], target: Target) {
 
   ///
   /// Validation

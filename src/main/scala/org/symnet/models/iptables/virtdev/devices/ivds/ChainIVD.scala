@@ -11,7 +11,7 @@ package ivds
 import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, Fail, InstructionBlock}
 
-import models.iptables.core.{BuiltinChain, Chain, IPTIndex, Policy, Rule, UserChain}
+import models.iptables.core._
 import Policy._
 
 trait ChainIVDConfig {
@@ -83,8 +83,9 @@ class ChainIVD(
       ///
       /// initPort -> initializer -> input
       ///
-      Map(initPort               -> initializer.inputPort,
-          initializer.outputPort -> inputPort),
+      Map(initPort                 -> initializer.inputPort,
+          initializer.continuePort -> inputPort,
+          initializer.skipPort     -> acceptPort),
 
       ///
       /// input -> tag dispatcher
@@ -173,6 +174,7 @@ class ChainIVD(
 class ChainIVDBuilder(
     name: String,
     chain: Chain,
+    table: Table,
     index: Int,
     subrules: List[List[Rule]],
     neighbourChainIndices: List[Int],
@@ -180,7 +182,12 @@ class ChainIVDBuilder(
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
-    val initializer = ChainIVDInitializer(s"$name-initializer")
+    val initializer =
+      ChainIVDInitializer(s"$name-initializer", new ChainIVDInitializerConfig {
+        val id = self.name
+        val chain = self.chain
+        val table = self.table
+      })
 
     // NOTE: The '+ 1' here is to handle the case when the last rule is a jump
     // to a user-defined chain.  If it returns back to the calling contiguous
@@ -192,6 +199,7 @@ class ChainIVDBuilder(
     val contiguousIVDs = subrules.zipWithIndex.map {
       case (rules_, i) =>
         ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
+          val id = self.name
           val rules = rules_
           val portsMap = self.portsMap
         })

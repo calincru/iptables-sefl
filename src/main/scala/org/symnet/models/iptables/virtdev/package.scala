@@ -19,4 +19,18 @@ package object virtdev {
 
   val InputPortTag  = "input-port"
   val OutputPortTag = "output-port"
+
+  // Holds the IP of the interface a packet will be sent through.
+  val OutputIpTag = "output-ip"
+
+  // Functions used to build unique tag names for NAT handling.
+  def snatFromIp(id: String): String = s"$id-snat-from-ip"
+  def snatFromPort(id: String): String = s"$id-snat-from-port"
+  def snatToIp(id: String): String = s"$id-snat-to-ip"
+  def snatToPort(id: String): String = s"$id-snat-to-port"
+
+  def dnatFromIp(id: String): String = s"$id-dnat-from-ip"
+  def dnatFromPort(id: String): String = s"$id-dnat-from-port"
+  def dnatToIp(id: String): String = s"$id-dnat-to-ip"
+  def dnatToPort(id: String): String = s"$id-dnat-to-port"
 }

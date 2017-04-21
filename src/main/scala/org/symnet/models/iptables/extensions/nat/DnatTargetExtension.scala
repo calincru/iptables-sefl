@@ -7,8 +7,12 @@ package org.symnet
 package models.iptables
 package extensions.nat
 
+import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
+import org.change.v2.analysis.expression.concrete.nonprimitive.:@
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
+import org.change.v2.util.canonicalnames.{IPDst, TcpDst}
+
 
 import types.net.{Ipv4, PortRange}
 
@@ -34,11 +38,40 @@ case class DnatTarget(
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
 
   override def seflCode(options: SeflGenOptions): Instruction = {
+    // Get the name of the metadata tags.
+    val fromIp = virtdev.dnatFromIp(options.id)
+    val fromPort = virtdev.dnatFromPort(options.id)
+    val toIp = virtdev.dnatToIp(options.id)
+    val toPort = virtdev.dnatToPort(options.id)
+
     // If the upper bound is not given, we simply constrain on [lower, lower].
     val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
 
     InstructionBlock(
-      // TODO: Do DNAT.
+      // Save original addresses.
+      Assign(fromIp, :@(IPDst)),
+      Assign(fromPort, :@(TcpDst)),
+
+      // Mangle IP address.
+      Assign(IPDst, SymbolicValue()),
+      Constrain(IPDst, :&:(:>=:(ConstantValue(lower.host)),
+                           :<=:(ConstantValue(upper.host)))),
+
+      // Mangle TCP/UDP port address.
+      Assign(TcpDst, SymbolicValue()),
+      if (portRange.isDefined) {
+        // If a port range was specified, use it.
+        val (lowerPort, upperPort) = portRange.get
+
+        Constrain(TcpDst, :&:(:>=:(ConstantValue(lowerPort)),
+                              :<=:(ConstantValue(upperPort))))
+      } else {
+        NoOp
+      },
+
+      // Save the new addresses.
+      Assign(toIp, :@(IPDst)),
+      Assign(toPort, :@(TcpDst)),
 
       // In the end, we accept the packet.
       Forward(options.acceptPort)

@@ -6,16 +6,17 @@
 package org.symnet
 package models.iptables.virtdev
 package devices
-package ivds
 
-trait SeqChainIVDConfig {
-  val chains: List[ChainIVD]
+import ivds.ChainIVD
+
+trait IVDSequencerConfig {
+  val chainIVDs: List[ChainIVD]
 }
 
-class SeqChainIVD(
+class IVDSequencer(
     name:   String,
-    config: SeqChainIVDConfig)
-  extends CompositeVirtualDevice[SeqChainIVDConfig](
+    config: IVDSequencerConfig)
+  extends CompositeVirtualDevice[IVDSequencerConfig](
     name,
       // input port
     1,
@@ -26,33 +27,34 @@ class SeqChainIVD(
   def inputPort:  Port = inputPort(0)
   def outputPort: Port = outputPort(0)
 
-  override def devices: List[VirtualDevice[_]] = config.chains
+  override def devices: List[VirtualDevice[_]] = config.chainIVDs
 
   override def newLinks: Map[Port, Port] = {
-    val chains = config.chains
+    val chainIVDs = config.chainIVDs
 
     List(
       // Add link from its input port to the init port of the first chain IVD.
-      Map(inputPort -> chains(0).initPort),
+      Map(inputPort -> chainIVDs(0).initPort),
 
       // Add links from the accept port of a chain IVD to the next, except for
       // the last one.
-      (0 until chains.length - 1).map(
-        i => chains(i).acceptPort -> chains(i + 1).initPort),
+      (0 until chainIVDs.length - 1).map(
+        i => chainIVDs(i).acceptPort -> chainIVDs(i + 1).initPort),
 
       // Add a link from the accept port of the last one to the output port of
       // this IVD.
-      Map(chains.last.acceptPort -> outputPort)
+      Map(chainIVDs.last.acceptPort -> outputPort)
     ).flatten.toMap
   }
 }
 
-class SeqChainIVDBuilder(
+class IVDSequencerBuilder(
     name: String,
-    chains: List[ChainIVD])
-  extends VirtualDeviceBuilder[SeqChainIVD](name) { self =>
+    chainIVDs: List[ChainIVD])
+  extends VirtualDeviceBuilder[IVDSequencer](name) { self =>
 
-  override def build: SeqChainIVD = new SeqChainIVD(name, new SeqChainIVDConfig {
-    val chains = self.chains
-  })
+  override def build: IVDSequencer =
+    new IVDSequencer(name, new IVDSequencerConfig {
+      val chainIVDs = self.chainIVDs
+    })
 }

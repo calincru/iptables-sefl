@@ -52,10 +52,10 @@ trait IPTRouterConfig {
 
   // iptables specific.
   val inPortSetters:  List[InputPortSetter]
-  val preroutingIVD:  SeqChainIVD
-  val forwardingIVD:  SeqChainIVD
-  val localIVD:       SeqChainIVD
-  val postroutingIVD: SeqChainIVD
+  val preroutingIVD:  IVDSequencer
+  val forwardingIVD:  IVDSequencer
+  val localIVD:       IVDSequencer
+  val postroutingIVD: IVDSequencer
   val outDispatcher:  OutputPortDispatcher
 
   // The UserChainsLinker is a virtual device that links together ChainIVDs
@@ -137,19 +137,18 @@ class IPTRouter(
 }
 
 class IPTRouterBuilder(
-    name:            String,
-    inputPortNames:  List[String],
-    outputPortNames: List[String],
-    localIps:        List[Ipv4],
-    routingTable:    RoutingTable,
-    iptables:        List[Table])
+    name:         String,
+    inputIpsMap:  Map[String, Ipv4],
+    outputIpsMap: Map[String, Ipv4],
+    routingTable: RoutingTable,
+    iptables:     List[Table])
   extends VirtualDeviceBuilder[IPTRouter](name) { self =>
 
   // NOTE: The input ports and the output ports should have different names for
   // now.
   require({
-    val inPortsSet = inputPortNames.toSet
-    val outPortsSet = outputPortNames.toSet
+    val inPortsSet = inputIpsMap.keySet
+    val outPortsSet = outputIpsMap.keySet
 
     inPortsSet.diff(outPortsSet).isEmpty && outPortsSet.diff(inPortsSet).isEmpty
   })
@@ -178,7 +177,7 @@ class IPTRouterBuilder(
 
   protected def makeRoutingDecision(id: String) =
     RoutingDecision(s"$name-rd-$id", new RoutingDecisionConfig {
-      val localIps = self.localIps
+      val localIpsMap = self.inputIpsMap ++ self.outputIpsMap
       val routingTable = self.routingTable
       val portsMap = self.portsMap
     })
@@ -186,10 +185,10 @@ class IPTRouterBuilder(
   protected def makeInSetters: List[InputPortSetter] =
     (0 until inputPorts).map(InputPortSetter(s"$name-port-setter", _)).toList
 
-  protected def makeSeqChains(chainName: String): SeqChainIVD = {
+  protected def makeSeqChains(chainName: String): IVDSequencer = {
     val chains = index.chainsByName(chainName)
 
-    new SeqChainIVDBuilder(
+    new IVDSequencerBuilder(
       s"$name-seq-$chainName",
       chains.map(c => chainIVDsMap(chainIndices(c)))
     ).build
@@ -234,6 +233,7 @@ class IPTRouterBuilder(
         new ChainIVDBuilder(
           s"$name-chainIVD-${chain.name}",
           chain,
+          index.chainsToTables(chain),
           idx,
           index.chainsSplitSubrules(chain),
           chainInNeighsMap(idx),
@@ -241,9 +241,12 @@ class IPTRouterBuilder(
         ).build
     }
 
-  private def inputPorts  = inputPortNames.length
-  private def outputPorts = outputPortNames.length
+  private val inputPortNames = inputIpsMap.keys.toList
+  private val outputPortNames = outputIpsMap.keys.toList
 
-  private def portsMap = inputPortNames.zipWithIndex.toMap ++
+  private val inputPorts  = inputPortNames.length
+  private val outputPorts = outputPortNames.length
+
+  private val portsMap = inputPortNames.zipWithIndex.toMap ++
                          outputPortNames.zipWithIndex.toMap
 }

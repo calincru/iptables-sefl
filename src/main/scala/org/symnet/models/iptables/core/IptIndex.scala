@@ -21,6 +21,9 @@ final class IPTIndex(iptables: List[Table]) {
   val allChains: List[Chain] =
     iptables.sortWith(sortByTablesOrdering).flatMap(_.chains)
 
+  val chainsToTables: Map[Chain, Table] =
+    allChains.map(c => c -> iptables.find(_.chains.contains(c)).get).toMap
+
   val userChains: List[UserChain] =
     allChains.collect { case chain: UserChain => chain }
 

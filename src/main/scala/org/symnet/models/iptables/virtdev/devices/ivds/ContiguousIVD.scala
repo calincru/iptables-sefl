@@ -13,6 +13,7 @@ import org.change.v2.analysis.processingmodels.instructions.{Fail, Forward, If}
 import models.iptables.core.{Rule, SeflGenOptions}
 
 trait ContiguousIVDConfig {
+  val id:       String
   val rules:    List[Rule]
   val portsMap: Map[String, Int]
 }
@@ -44,6 +45,8 @@ case class ContiguousIVD(
   // code.
   override def portInstructions: Map[Port, Instruction] = {
     val seflGenOptions = new SeflGenOptions {
+      val id = config.id
+
       val acceptPort = self.acceptPort
       val dropPort   = self.dropPort
       val returnPort = self.returnPort

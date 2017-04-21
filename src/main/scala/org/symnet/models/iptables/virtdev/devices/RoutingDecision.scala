@@ -14,7 +14,7 @@ import org.change.v2.util.canonicalnames.IPDst
 import types.net.Ipv4
 
 trait RoutingDecisionConfig {
-  val localIps:     List[Ipv4]
+  val localIpsMap:  Map[String, Ipv4]
   val routingTable: RoutingTable
   val portsMap:     Map[String, Int]
 }
@@ -49,6 +49,7 @@ case class RoutingDecision(
       // instruction, when a prefix matches.
       port => InstructionBlock(
         Assign(OutputPortTag, ConstantValue(config.portsMap(port))),
+        Assign(OutputIpTag, ConstantValue(config.localIpsMap(port).host)),
         Forward(fwdOutputPort)))
 
     // Build a 'routing table' (list of prefixes and output ports) which knows
@@ -56,7 +57,9 @@ case class RoutingDecision(
     //
     // NOTE: The port ID is not important here, as we already know the name of
     // the port we are forwarding this packet to (see below).
-    val localRoutingTable = config.localIps.map((_, "unused"))
+    val localRoutingTable = config.localIpsMap.map {
+      case (_, ip) => (ip, "unused")
+    }.toList
 
     // Finally, assign the input port the responsibility to do the IP lookup, by
     // first checking local IPs and falling back to the forwarding table.

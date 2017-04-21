@@ -9,6 +9,8 @@ package core
 import virtdev.{Port => Interface}
 
 trait SeflGenOptions {
+  val id: String
+
   val acceptPort: Interface
   val dropPort:   Interface
   val returnPort: Interface
