@@ -7,25 +7,6 @@ package org.symnet
 package models.iptables
 package core
 
-/** The parsing context.
- *
- *  Example usage before initiating the parsing.
- *
- *  {{{
- *  implicit val context = new ParsingContext {
- *    matchExtensions  = List(...)
- *    targetExtensions = List(...)
- *  }
- *  }}}
- *
- *  If support for jump's/goto's to user defined chains, the predefined
- *  ChainTargetExtension should be added last in the target extensions list.
- */
-abstract class ParsingContext {
-  val matchExtensions:  List[MatchExtension]
-  val targetExtensions: List[TargetExtension]
-}
-
 object iptParsers extends BaseParsers {
   import ParserMP.monadPlusSyntax._
 
@@ -57,7 +38,7 @@ object iptParsers extends BaseParsers {
   def chainTargetParser: Parser[Target] =
     for {
       jump       <- oneOf(jumpOptionParser, gotoOptionParser)
-      targetName <- someSpacesParser >> stringParser
+      targetName <- someSpacesParser >> identifierParser
     } yield PlaceholderTarget(targetName, List("-g", "--goto").contains(jump))
 
   /** Helper implementation of a optionless target parser.
@@ -70,7 +51,7 @@ object iptParsers extends BaseParsers {
       nameToTarget: Map[String, Target]): Parser[Target] = {
     for {
       _          <- jumpOptionParser
-      targetName <- someSpacesParser >> stringParser
+      targetName <- someSpacesParser >> identifierParser
         if nameToTarget contains targetName
     } yield nameToTarget(targetName)
   }
@@ -87,15 +68,17 @@ object iptParsers extends BaseParsers {
 
   def chainParser(implicit context: ParsingContext): Parser[Chain] =
     for {
-      chainName   <- spacesParser >> parseChar('<') >> stringParser
-      maybePolicy <- optional(parseChar(':') >> stringParser)
+      chainName   <- spacesParser >> parseChar('<') >> identifierParser
+      maybePolicy <- optional(parseChar(':') >> identifierParser)
       _           <- parseChar('>')
       rules       <- many(ruleParser)
     } yield Chain(chainName, rules, Policy(maybePolicy getOrElse ""))
 
   def tableParser(implicit context: ParsingContext): Parser[Table] =
     for {
-      tableName <- spacesParser >> stringParser
+      _ <- spacesParser >> parseString("<<")
+      tableName <- identifierParser
+      _ <- spacesParser >> parseString(">>")
       chains    <- many(chainParser)
     } yield Table(tableName, chains)
 }

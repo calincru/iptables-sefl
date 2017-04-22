@@ -103,7 +103,7 @@ object SnatTarget extends BaseParsers {
       _ <- iptParsers.jumpOptionParser
 
       // Parse the actual target.
-      targetName <- someSpacesParser >> stringParser if targetName == "SNAT"
+      targetName <- someSpacesParser >> identifierParser if targetName == "SNAT"
 
       // Parse the mandatory '--to-source' target option.
       _ <- someSpacesParser >> parseString("--to-source")

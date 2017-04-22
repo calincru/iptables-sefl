@@ -53,6 +53,6 @@ object ProtocolMatch extends BaseParsers {
       _        <- spacesParser >> oneOf(parseString("-p"),
                                         parseString("--protocol"))
       neg      <- optional(someSpacesParser >> parseChar('!'))
-      protocol <- someSpacesParser >> stringParser
+      protocol <- someSpacesParser >> identifierParser
   } yield Match.maybeNegated(ProtocolMatch(protocol), neg)
 }

@@ -59,7 +59,7 @@ object InterfaceMatch extends BaseParsers {
       _   <- spacesParser >> oneOf(parseString("-i"),
                                    parseString("--in-interface"))
       neg <- optional(someSpacesParser >> parseChar('!'))
-      int <- someSpacesParser >> stringParser
+      int <- someSpacesParser >> identifierParser
     } yield Match.maybeNegated(InInterfaceMatch(int), neg)
 
   def outParser: Parser[Match] =
@@ -67,6 +67,6 @@ object InterfaceMatch extends BaseParsers {
       _   <- spacesParser >> oneOf(parseString("-o"),
                                    parseString("--out-interface"))
       neg <- optional(someSpacesParser >> parseChar('!'))
-      int <- someSpacesParser >> stringParser
+      int <- someSpacesParser >> identifierParser
     } yield Match.maybeNegated(OutInterfaceMatch(int), neg)
 }

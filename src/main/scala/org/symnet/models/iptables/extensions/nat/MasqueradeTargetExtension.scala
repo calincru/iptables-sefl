@@ -116,7 +116,7 @@ object MasqueradeTarget extends BaseParsers {
       _ <- iptParsers.jumpOptionParser
 
       // Parse the actual  target
-      targetName <- someSpacesParser >> stringParser
+      targetName <- someSpacesParser >> identifierParser
         if targetName == "MASQUERADE"
 
       // Parse the optional '--to-ports' target option

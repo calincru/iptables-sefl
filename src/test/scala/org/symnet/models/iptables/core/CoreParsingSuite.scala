@@ -268,10 +268,12 @@ class CoreParsingSuite extends FunSuite with Matchers with BaseParsers {
       Just(PlaceholderTarget("name"))
     chainTargetParser.eval(" --jump NamE") shouldBe
       Just(PlaceholderTarget("NamE"))
-    chainTargetParser.eval(" --goto some$name") shouldBe
-      Just(PlaceholderTarget("some$name", true))
     chainTargetParser.eval(" -g sOmeName") shouldBe
       Just(PlaceholderTarget("sOmeName", true))
+
+    // It only parses until the first invalid char.
+    chainTargetParser.eval(" --goto some$name") shouldBe
+      Just(PlaceholderTarget("some", true))
 
     chainTargetParser.eval(" --jumpname") shouldBe empty
     chainTargetParser.eval(" --jum pname") shouldBe empty

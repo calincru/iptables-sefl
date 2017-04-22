@@ -86,7 +86,7 @@ object DnatTarget extends BaseParsers {
       _ <- iptParsers.jumpOptionParser
 
       // Parse the actual target.
-      targetName <- someSpacesParser >> stringParser if targetName == "DNAT"
+      targetName <- someSpacesParser >> identifierParser if targetName == "DNAT"
 
       // Parse the mandatory '--to-destination' target option.
       _ <- someSpacesParser >> parseString("--to-destination")

@@ -69,7 +69,9 @@ trait BaseParsers {
     else
       parseChar(s.head) >> parseString(s.tail) >>= (t => pure(s.head +: t))
 
-  def stringParser: Parser[String] = some(parseCharIf(!_.isWhitespace))
+  // TODO: Make sure this conforms to the real implementation.
+  def identifierParser: Parser[String] =
+    some(parseCharIf(c => c.isLetterOrDigit || c == '_' || c == '-'))
 
   def digitParser: Parser[Int] = parseCharIf(_.isDigit).map(_.asDigit)
 

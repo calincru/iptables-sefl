@@ -1,3 +1,4 @@
+
 // Copyright (C) 2017 Calin Cruceru <calin.cruceru@stud.acs.upb.ro>.
 //
 // See the LICENCE file distributed with this work for additional
@@ -13,8 +14,9 @@ import org.change.v2.analysis.memory.TagExp._
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.util.canonicalnames._
 
-package object devices {
-  val initState: State = InstructionBlock(
+object SymnetMisc {
+  /** The `initial state' as needed by our iptables model. */
+  def initState(otherInstr: Instruction): State = InstructionBlock(
     CreateTag("START",0),
     CreateTag("L3", 0),
 
@@ -34,6 +36,9 @@ package object devices {
 
     Allocate(TcpDst, 16),
     Assign(TcpDst, SymbolicValue()),
+
+    // Add here the additional instruction.
+    otherInstr,
 
     CreateTag("END", L4Tag + 12000)
   )(State())._1.head

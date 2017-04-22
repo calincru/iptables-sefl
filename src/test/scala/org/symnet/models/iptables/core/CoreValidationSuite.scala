@@ -250,4 +250,9 @@ class CoreValidationSuite extends FunSuite with Matchers {
       table.validate shouldBe empty
     }
   }
+
+  test("prerouting chain in filter table is invalid") {
+    val table = Table("filter", List(Chain("PREROUTING", Nil, None)))
+    table.validate shouldBe empty
+  }
 }

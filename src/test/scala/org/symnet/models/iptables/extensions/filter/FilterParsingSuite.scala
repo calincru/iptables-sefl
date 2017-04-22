@@ -18,7 +18,7 @@ import scalaz.Maybe._
 // project
 // -> core
 import core.{BaseParsers, ChainTargetExtension, NegatedMatch, ParsingContext}
-import core.iptParsers.{ruleParser, chainParser}
+import core.iptParsers.{chainParser, ruleParser, tableParser}
 
 // -> types
 import types.net.Ipv4
@@ -171,5 +171,31 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
                                 -d 172.19.8.0/24
                                 -j otherChain""").isJust)
     }
+  }
+
+  // TODO: Add more chain/table tests.
+
+  test("empty chain correctly parsed") {
+    chainParser.eval("<PREROUTING:DROP>") shouldBe a [Just[_]]
+    chainParser.eval("<my_chain>") shouldBe a [Just[_]]
+
+    // This parses, but is invalid, so it should be caught by validation.
+    chainParser.eval("<my_chain:ACCEPT>") shouldBe a [Just[_]]
+  }
+
+  test("empty table correctly parsed") {
+    tableParser.eval("""
+      <<filter>>
+        <PREROUTING:DROP>
+        <OUTPUT:DROP>
+        <POSTROUTING:DROP>
+    """) shouldBe a [Just[_]]
+
+    tableParser.eval("""
+      <<filter>
+        <PREROUTING:DROP>
+        <OUTPUT:DROP>
+        <POSTROUTING:DROP>
+    """) shouldBe empty
   }
 }
