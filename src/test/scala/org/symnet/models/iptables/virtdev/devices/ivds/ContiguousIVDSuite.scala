@@ -17,8 +17,6 @@ import org.scalatest.junit.JUnitRunner
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
 import org.change.v2.analysis.processingmodels.instructions._
-import org.change.v2.executor.clickabstractnetwork.ClickExecutionContext
-import org.change.v2.executor.clickabstractnetwork.executionlogging.JsonLogger
 import org.change.v2.util.canonicalnames._
 
 // project
@@ -35,7 +33,6 @@ import extensions.nat.SnatTargetExtension
 
 // -> virtdev
 import virtdev.{InputPortTag, OutputIpTag}
-import virtdev.NetworkModel
 
 @RunWith(classOf[JUnitRunner])
 class ContiguousIVDSuite
@@ -44,19 +41,6 @@ class ContiguousIVDSuite
                    with SymnetCustomMatchers { self =>
 
   private val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
-
-  private def symExec(contIVD: ContiguousIVD, otherInstr: Instruction = NoOp) = {
-    val model = NetworkModel(contIVD)
-    val result = new ClickExecutionContext(
-      model.instructions,
-      model.links,
-      List(SymnetMisc.initState(otherInstr).forwardTo(contIVD.inputPort)),
-      Nil,
-      Nil,
-      logger = JsonLogger).untilDone(true)
-
-    (result.stuckStates, result.failedStates)
-  }
 
   private def buildIt(rs: Rule*) =
     ContiguousIVD("contig-ivd", new ContiguousIVDConfig {
@@ -103,7 +87,7 @@ class ContiguousIVDSuite
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
-    val (success, fail) = symExec(contig)
+    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
     assert(success.length == 2) // 1 if => 2 paths
     assert(fail.isEmpty)
   }
@@ -120,7 +104,7 @@ class ContiguousIVDSuite
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
-    val (success, fail) = symExec(contig)
+    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
     success should (
       have length (2) and
       containPath (contig.inputPort, contig.acceptPort) and
@@ -148,7 +132,11 @@ class ContiguousIVDSuite
     // paths.
     {
       val (success, fail) =
-        symExec(contig, Assign(InputPortTag, SymbolicValue()))
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          Assign(InputPortTag, SymbolicValue())
+        )
       success should (
         have length (3) and
         containPath (contig.inputPort, contig.returnPort) and
@@ -161,7 +149,11 @@ class ContiguousIVDSuite
     // input interface, we have 2 success paths and 1 failure path
     {
       val (success, fail) =
-        symExec(contig, Assign(InputPortTag, ConstantValue(portsMap("eth0"))))
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          Assign(InputPortTag, ConstantValue(portsMap("eth0")))
+        )
       success should (
         have length (2) and
         containPath (contig.inputPort, contig.returnPort) and
@@ -178,7 +170,11 @@ class ContiguousIVDSuite
     // path ('Symbol `input-port' cannot be equal to `eth1'').
     {
       val (success, fail) =
-        symExec(contig, Assign(InputPortTag, ConstantValue(portsMap("eth1"))))
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          Assign(InputPortTag, ConstantValue(portsMap("eth1")))
+        )
       success should (
         have length (1) and
         containPath (contig.inputPort, contig.nextIVDport)
@@ -249,14 +245,18 @@ class ContiguousIVDSuite
     // If the source matches (i.e. its symbolic by default), or, more precisely,
     // *could* match, then there must be a path in which it gets rewritten ...
     {
-      val (success, fail) = symExec(contig)
+      val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
       success should containConstrain (rewriteConstrain)
     }
 
     // ... otherwise, it shouldn't.
     {
       val (success, fail) =
-        symExec(contig, Assign(IPSrc, ConstantValue(Ipv4(192, 168, 3, 20).host)))
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          Assign(IPSrc, ConstantValue(Ipv4(192, 168, 3, 20).host))
+        )
       success should not (containConstrain (rewriteConstrain))
     }
   }
