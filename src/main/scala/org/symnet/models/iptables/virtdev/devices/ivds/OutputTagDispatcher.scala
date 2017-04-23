@@ -28,6 +28,8 @@ case class OutputTagDispatcher(
     tagValues.length,
     tagValues) {
 
+  require(outputPorts >= 0)
+
   def outputPorts: Int = tagValues.length
 
   def inputPort: Port = inputPort(0)

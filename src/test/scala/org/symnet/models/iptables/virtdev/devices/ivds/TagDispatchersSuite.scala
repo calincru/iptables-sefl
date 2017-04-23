@@ -13,8 +13,108 @@ import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
-class TagDispatchersSuite extends FunSuite with Matchers {
+// 3rd party:
+// -> Symnet
+import org.change.v2.analysis.expression.concrete.ConstantValue
+import org.change.v2.analysis.processingmodels.instructions._
 
-  // TODO: Add test suite for InputTagDispatcher and OutputTagDispatcher.
+@RunWith(classOf[JUnitRunner])
+class TagDispatchersSuite
+  extends FunSuite with Matchers
+                   with SymnetCustomMatchers {
+
+  test("validate arguments") {
+    an [IllegalArgumentException] should be thrownBy
+      InputTagDispatcher("in-dispatcher", 0)
+
+    noException should be thrownBy InputTagDispatcher("in-dispatcher", 1)
+    noException should be thrownBy OutputTagDispatcher("out-dispatcher", Nil)
+  }
+
+  test("out: no returns, no instructions") {
+    val outDisp = OutputTagDispatcher("out-dispatcher", Nil)
+    val (success, fail) = SymnetMisc.symExec(outDisp, outDisp.inputPort)
+
+    success shouldBe empty
+    fail shouldBe empty
+  }
+
+  test("out: tag not set fails") {
+    val outDisp = OutputTagDispatcher("out-dispatcher", List(1, 3))
+    val (success, fail) = SymnetMisc.symExec(outDisp, outDisp.inputPort)
+
+    success shouldBe empty
+    fail should have length (2)
+  }
+
+  test("in: tag not set fails") {
+    val inDisp = InputTagDispatcher("in-dispatcher", 2)
+    val (success, fail) = SymnetMisc.symExec(inDisp, inDisp.inputPort)
+
+    success shouldBe empty
+    fail should have length (2)
+  }
+
+  test("out: one option, one matched, is forwarded") {
+    val outDisp = OutputTagDispatcher("out-dispatcher", List(1))
+    val (success, fail) =
+      SymnetMisc.symExec(
+        outDisp,
+        outDisp.inputPort,
+        Assign(OutputDispatchTag, ConstantValue(1))
+      )
+
+    fail shouldBe empty
+    success should (
+      have length (1) and
+      containPath (outDisp.inputPort, outDisp.outputPort(0))
+    )
+  }
+
+  test("in: one option, one matched, is forwarded") {
+    val inDisp = InputTagDispatcher("in-dispatcher", 1)
+    val (success, fail) = SymnetMisc.symExec(
+      inDisp,
+      inDisp.inputPort,
+      Assign(InputDispatchTag, ConstantValue(0))
+    )
+
+    fail shouldBe empty
+    success should (
+      have length (1) and
+      containPath (inDisp.inputPort, inDisp.outputPort(0))
+    )
+  }
+
+  test("out: two options, one matched") {
+    val outDisp = OutputTagDispatcher("out-dispatcher", List(1, 2))
+    val (success, fail) =
+      SymnetMisc.symExec(
+        outDisp,
+        outDisp.inputPort,
+        Assign(OutputDispatchTag, ConstantValue(2))
+      )
+
+    fail should have length (1)
+    success should (
+      have length (1) and
+      containPath (outDisp.inputPort, outDisp.outputPort(1))
+    )
+  }
+
+  test("in: three ivds, forward to 3rd") {
+    val inDisp = InputTagDispatcher("in-dispatcher", 3)
+    val (success, fail) =
+      SymnetMisc.symExec(
+        inDisp,
+        inDisp.inputPort,
+        Assign(InputDispatchTag, ConstantValue(2))
+      )
+
+    fail should have length (2)
+    success should (
+      have length (1) and
+      containPath (inDisp.inputPort, inDisp.outputPort(2))
+    )
+  }
 }

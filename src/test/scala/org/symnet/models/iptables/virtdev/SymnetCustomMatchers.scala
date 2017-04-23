@@ -60,8 +60,8 @@ trait SymnetCustomMatchers {
 
           case _ => false
         },
-        s"""Constrain $c found""",
-        s"""Constrain $c not found"""
+        s"""Constrain $c not found""",
+        s"""Constrain $c found"""
       )
     }
 

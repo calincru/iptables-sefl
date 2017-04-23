@@ -1,7 +1,7 @@
 organization := "org.symnet"
 version := "0.1"
 
-scalaVersion := "2.12.1"
+scalaVersion := "2.11.1"
 scalacOptions := Seq(
   "-deprecation",
   "-feature",
@@ -19,7 +19,6 @@ val scalazVersion = "7.2.9"
 
 libraryDependencies ++= {
   Seq(
-    "io.spray" %%  "spray-json" % "1.3.2",
     "junit" % "junit" % "4.4" % "test",
     "org.scalactic" %% "scalactic" % "3.0.1",
     "org.scalatest" %% "scalatest" % "3.0.1" % "test",

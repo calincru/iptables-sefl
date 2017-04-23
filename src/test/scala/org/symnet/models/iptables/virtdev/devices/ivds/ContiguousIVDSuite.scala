@@ -66,8 +66,8 @@ class ContiguousIVDSuite
   test("empty rules, default instruction") {
     val contig = buildIt()
 
-    assert(contig.links.isEmpty)
-    assert(!contig.portInstructions.isEmpty)
+    contig.links shouldBe empty
+    contig.portInstructions should not be empty
 
     val inputInstr = contig.portInstructions(contig.inputPort)
     inputInstr shouldBe Forward(contig.nextIVDport)
@@ -78,8 +78,8 @@ class ContiguousIVDSuite
       rule("-p tcp -j ACCEPT")
     )
 
-    assert(contig.links.isEmpty)
-    assert(!contig.portInstructions.isEmpty)
+    contig.links shouldBe empty
+    contig.portInstructions should not be empty
 
     val inputInstr = contig.portInstructions(contig.inputPort)
     inputInstr shouldBe

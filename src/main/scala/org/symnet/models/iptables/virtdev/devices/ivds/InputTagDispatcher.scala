@@ -20,6 +20,8 @@ case class InputTagDispatcher(
     outputPorts,
     ()) {
 
+  require(outputPorts > 0)
+
   def inputPort: Port = inputPort(0)
 
   override def portInstructions: Map[Port, Instruction] = {
