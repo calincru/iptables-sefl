@@ -28,7 +28,7 @@ object SymnetMisc {
   def symExec[T <: VirtualDevice[_]](
       vd: T,
       initPort: String,
-      otherInstr: Instruction = NoOp) = {
+      otherInstr: Instruction = NoOp) = this.synchronized {
     val model = Model(vd)
     val result = new ClickExecutionContext(
       model.instructions,
