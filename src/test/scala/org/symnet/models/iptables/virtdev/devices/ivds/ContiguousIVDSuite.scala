@@ -134,6 +134,7 @@ class ContiguousIVDSuite
           contig.inputPort,
           Assign(InputPortTag, ConstantValue(portsMap("eth0")))
         )
+
       success should (
         have length (2) and
         containPath (contig.inputPort, contig.returnPort) and

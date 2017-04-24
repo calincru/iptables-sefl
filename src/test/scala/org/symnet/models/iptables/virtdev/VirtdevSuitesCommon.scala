@@ -28,8 +28,36 @@ object VirtdevSuitesCommon {
            ChainTargetExtension)
   }
 
-  def toRule(ruleStr: String) = ruleParser.eval(ruleStr).toOption.get
-  def toChain(chainStr: String) = chainParser.eval(chainStr).toOption.get
-  def toTable(tableStr: String) =
-    tableParser.eval(tableStr).flatMap(_.validate).toOption.get
+  def toRule(ruleStr: String) = {
+    val maybeResult = ruleParser.apply(ruleStr).toOption
+    assert(maybeResult.isDefined)
+
+    val (state, result) = maybeResult.get
+    assert(state.trim.isEmpty)
+
+    result
+  }
+
+  def toChain(chainStr: String) = {
+    val maybeResult = chainParser.apply(chainStr).toOption
+    assert(maybeResult.isDefined)
+
+    val (state, result) = maybeResult.get
+    assert(state.trim.isEmpty)
+
+    result
+  }
+
+  def toTable(tableStr: String) = {
+    val maybeResult = tableParser.apply(tableStr).toOption
+    assert(maybeResult.isDefined)
+
+    val (state, result) = maybeResult.get
+    assert(state.trim.isEmpty)
+
+    val validatedResult = result.validate.toOption
+    assert(validatedResult.isDefined)
+
+    validatedResult.get
+  }
 }

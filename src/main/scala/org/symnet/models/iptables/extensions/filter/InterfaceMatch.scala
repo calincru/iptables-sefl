@@ -22,7 +22,7 @@ case class InInterfaceMatch(val interface: String) extends Match {
     chain match {
       case BuiltinChain(n, _, _) =>
         List("INPUT", "FORWARD", "PREROUTING") contains n
-      case _ => false
+      case _ /* UserChain */ => true
     }
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
@@ -41,7 +41,7 @@ case class OutInterfaceMatch(val interface: String) extends Match {
     chain match {
       case BuiltinChain(n, _, _) =>
         List("FORWARD", "OUTPUT", "POSTROUTING") contains n
-      case _ => false
+      case _ /* UserChain */ => true
     }
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {

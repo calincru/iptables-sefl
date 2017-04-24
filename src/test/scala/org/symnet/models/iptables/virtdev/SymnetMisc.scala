@@ -35,8 +35,8 @@ object SymnetMisc {
       model.links,
       List(initState(otherInstr).forwardTo(initPort)),
       Nil,
-      Nil,
-      logger = JsonLogger).untilDone(true)
+      Nil
+    ).untilDone(true)
 
     (result.stuckStates, result.failedStates)
   }
