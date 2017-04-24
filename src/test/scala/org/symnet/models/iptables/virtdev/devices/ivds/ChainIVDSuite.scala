@@ -23,7 +23,6 @@ import org.change.v2.util.canonicalnames._
 // project
 // -> core
 import core._
-import core.iptParsers.{chainParser, ruleParser, tableParser}
 
 // -> types
 import types.net.Ipv4
@@ -232,8 +231,41 @@ class ChainIVDSuite
         -d 8.8.8.8 -j RETURN
     """)
     val ivd = buildIt(filterTable, List(5))
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, _) = SymnetMisc.symExec(ivd, ivd.initPort)
 
     success shouldBe empty
+  }
+
+  test("multiple jumps to user-defined chains") {
+    val filterTable = toTable("""
+      <<filter>>
+      <FORWARD:DROP>
+        -p tcp -j CHAIN0
+        -p udp -j CHAIN1
+        -p icmp -j CHAIN2
+        -p all -j ACCEPT
+      <CHAIN0>
+      <CHAIN1>
+      <CHAIN2>
+    """)
+    val ivd = buildIt(filterTable)
+    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val toConstrain = (proto: Int) => :==:(ConstantValue(proto))
+
+    success should (
+      have length (4) and
+
+      // Reach 3 different jump ports.
+      reachPort (ivd.jumpPort(0)) and
+      reachPort (ivd.jumpPort(1)) and
+      reachPort (ivd.jumpPort(2)) and
+
+      // Reach the accept port, with the contraint that it doesn't match any of
+      // the given input interfaces.
+      reachPort (ivd.acceptPort) and
+      containConstrain (Constrain(Proto, :~:(toConstrain(TCPProto)))) and
+      containConstrain (Constrain(Proto, :~:(toConstrain(UDPProto)))) and
+      containConstrain (Constrain(Proto, :~:(toConstrain(ICMPProto))))
+    )
   }
 }

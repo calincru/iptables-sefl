@@ -36,8 +36,12 @@ case class Rule(matches: List[Match], target: Target, goto: Boolean = false) {
       // valid (from a 'target' perspective) chain.
       actualResult <- target match {
         case PlaceholderTarget(name, goto) => {
-          val matchedChains = table.chains.collect { case uc: UserChain => uc }
+          // Find the user-defined chains that match this placeholder's name.
+          val matchedChains = table.chains.collect {
+            case uc @ UserChain(chainName, _) if chainName == name => uc
+          }
 
+          // If more than 1 or 0 have been found, it is an error.
           if (matchedChains.length == 1)
             Just((matchedChains.head, goto))
           else
