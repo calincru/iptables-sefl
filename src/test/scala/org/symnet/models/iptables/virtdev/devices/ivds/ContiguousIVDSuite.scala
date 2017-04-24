@@ -22,43 +22,23 @@ import org.change.v2.util.canonicalnames._
 // project
 // -> core
 import core._
-import core.iptParsers.{ruleParser, tableParser}
 
 // -> types
 import types.net.Ipv4
-
-// -> extensions
-import extensions.filter.FilteringExtension
-import extensions.nat.SnatTargetExtension
-
-// -> virtdev
-import virtdev.{InputPortTag, OutputIpTag}
 
 @RunWith(classOf[JUnitRunner])
 class ContiguousIVDSuite
   extends FunSuite with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>
-
-  private val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
+  import VirtdevSuitesCommon._
 
   private def buildIt(rs: Rule*) =
     ContiguousIVD("contig-ivd", new ContiguousIVDConfig {
       val id = "ipt-router"
-      val portsMap = self.portsMap
+      val portsMap = VirtdevSuitesCommon.portsMap
       val rules = rs.toList
     })
-
-  private implicit def parsingContext = new ParsingContext {
-    override val matchExtensions  =
-      List(FilteringExtension)
-    override val targetExtensions =
-      List(SnatTargetExtension,
-           FilteringExtension,
-           ChainTargetExtension)
-  }
-
-  private def rule(ruleStr: String) = ruleParser.eval(ruleStr).toOption.get
 
   ///
   /// Simple tests
@@ -75,7 +55,7 @@ class ContiguousIVDSuite
 
   test("one rule, match TCP proto") {
     val contig = buildIt(
-      rule("-p tcp -j ACCEPT")
+      toRule("-p tcp -j ACCEPT")
     )
 
     contig.links shouldBe empty
@@ -94,7 +74,7 @@ class ContiguousIVDSuite
 
   test("one rule, match src ip") {
     val contig = buildIt(
-      rule("-s 192.168.0.1 -j ACCEPT")
+      toRule("-s 192.168.0.1 -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(192, 168, 0, 1).host)
 
@@ -115,7 +95,7 @@ class ContiguousIVDSuite
 
   test("one rule, match interface and ip and then return") {
     val contig = buildIt(
-      rule("-i eth0 -d 10.10.10.0/24 -j RETURN")
+      toRule("-i eth0 -d 10.10.10.0/24 -j RETURN")
     )
     val (lo, up) = Ipv4(10, 10, 10, 0, Some(24)).toHostRange
     val (loIp, upIp) = (ConstantValue(lo.host), ConstantValue(up.host))
@@ -188,8 +168,8 @@ class ContiguousIVDSuite
 
   test("two rules, drop/accept") {
     val contig = buildIt(
-      rule("-o eth1 -p udp -s 172.16.0.171 -j DROP"),
-      rule("-i eth2 -p all -j ACCEPT")
+      toRule("-o eth1 -p udp -s 172.16.0.171 -j DROP"),
+      toRule("-i eth2 -p all -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(172, 16, 0, 171).host)
     val secondInstr =
@@ -219,7 +199,7 @@ class ContiguousIVDSuite
 
   test("one rule, source nat") {
     val contig = buildIt(
-      rule("-s 192.168.2.0/24 -j SNAT --to-source 15.15.15.15-15.15.15.138")
+      toRule("-s 192.168.2.0/24 -j SNAT --to-source 15.15.15.15-15.15.15.138")
     )
     val inputInstr = contig.portInstructions(contig.inputPort)
     val rewriteConstrain =
@@ -265,13 +245,13 @@ class ContiguousIVDSuite
     // NOTE: We have to call `validate' here to ensure that the jump is
     // correctly set up as part of the target, as the user-defined chain comes
     // after the jump.
-    val filterTable = tableParser.eval("""
+    val filterTable = toTable("""
       <<filter>>
         <FORWARD:DROP>
           -i eth0 -j MY_CHAIN
         <MY_CHAIN>
           -s 192.168.1.0/30 -j RETURN
-    """).flatMap(_.validate).toOption.get
+    """)
 
     val forwardRules = filterTable.chains.collect {
       case BuiltinChain("FORWARD", rules, _) => rules

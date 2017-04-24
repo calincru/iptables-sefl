@@ -10,7 +10,7 @@ package devices.ivds
 
 // scala
 import org.junit.runner.RunWith
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
 // 3rd party:

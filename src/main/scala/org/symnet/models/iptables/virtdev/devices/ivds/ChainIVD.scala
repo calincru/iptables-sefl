@@ -121,7 +121,11 @@ class ChainIVD(
         i => ivds(i).nextIVDport -> ivds(i + 1).inputPort),
 
       // Link the last one according to the policy.
-      Map(ivds.last.nextIVDport -> defaultPort),
+      if (!ivds.isEmpty) {
+        Map(ivds.last.nextIVDport -> defaultPort)
+      } else {
+        Map()
+      },
 
       ///
       /// return dispatcher -> back link ports
