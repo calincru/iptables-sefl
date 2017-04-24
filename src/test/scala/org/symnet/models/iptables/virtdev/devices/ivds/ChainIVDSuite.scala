@@ -201,7 +201,7 @@ class ChainIVDSuite
         // should have jumped from somewhere else (and that's where this is
         // set in the real code).
         //
-        // NOTE: It should match the `5' from above.
+        // NOTE: It matches the `5' from above.
         Assign(OutputDispatchTag, ConstantValue(5))
       )
 
@@ -223,5 +223,17 @@ class ChainIVDSuite
 
     // No packet should be dropped as far as this chain is concerned.
     dropped(fail, ivd) shouldBe empty
+  }
+
+  test("return without OutputDispatchTag set fails") {
+    val filterTable = toTable("""
+      <<filter>>
+      <MY_CHAIN>
+        -d 8.8.8.8 -j RETURN
+    """)
+    val ivd = buildIt(filterTable, List(5))
+    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+
+    success shouldBe empty
   }
 }

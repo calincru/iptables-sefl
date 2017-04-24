@@ -198,6 +198,45 @@ class ContiguousIVDSuite
     contig.portInstructions(contig.inputPort) shouldBe firstInstr
   }
 
+  test("second rule is not reachable") {
+    val contig = buildIt(
+      toRule("-s 192.168.0.0/24 -j DROP"),
+      toRule("-s 192.168.0.5 -j ACCEPT")
+    )
+    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
+
+    success should not (reachPort (contig.acceptPort))
+    fail should reachPort (contig.dropPort)
+  }
+
+  test("rl lecture - unreachable example") {
+    val contig = buildIt(
+      toRule("-s 192.168.1.0/24 -j SNAT --to-source 141.85.200.2-141.85.200.6"),
+      toRule("-s 192.168.1.100 -j SNAT --to-source 141.85.200.1")
+    )
+    val rewriteConstrain1 =
+      Constrain(IPSrc, :&:(:>=:(ConstantValue(Ipv4(141, 85, 200, 2).host)),
+                           :<=:(ConstantValue(Ipv4(141, 85, 200, 6).host))))
+    val rewriteConstrain2 =
+      Constrain(IPSrc, :&:(:>=:(ConstantValue(Ipv4(141, 85, 200, 1).host)),
+                           :<=:(ConstantValue(Ipv4(141, 85, 200, 1).host))))
+
+    val (success, _) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        Assign(IPSrc, ConstantValue(Ipv4(192, 168, 1, 100).host))
+      )
+
+    success should (
+      // Well, this is not what he expected :(...
+      not (containConstrain (rewriteConstrain2)) and
+
+      // It does match the first one, though
+      containConstrain (rewriteConstrain1)
+    )
+  }
+
   test("one rule, source nat") {
     val contig = buildIt(
       toRule("-s 192.168.2.0/24 -j SNAT --to-source 15.15.15.15-15.15.15.138")
@@ -226,13 +265,13 @@ class ContiguousIVDSuite
     // If the source matches (i.e. its symbolic by default), or, more precisely,
     // *could* match, then there must be a path in which it gets rewritten ...
     {
-      val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
+      val (success, _) = SymnetMisc.symExec(contig, contig.inputPort)
       success should containConstrain (rewriteConstrain)
     }
 
     // ... otherwise, it shouldn't.
     {
-      val (success, fail) =
+      val (success, _) =
         SymnetMisc.symExec(
           contig,
           contig.inputPort,
