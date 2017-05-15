@@ -36,7 +36,7 @@ trait Match {
 
 case class NegatedMatch(m: Match) extends Match {
   override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
-    m.validate(rule, chain, table)
+    m.validate(rule, chain, table).map(vM => NegatedMatch(vM))
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     m.seflConstrain(options) match {

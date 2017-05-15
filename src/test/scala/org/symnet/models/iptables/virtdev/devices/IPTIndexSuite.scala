@@ -126,7 +126,7 @@ class IPTIndexSuite extends FunSuite with Matchers with SymnetCustomMatchers {
     <<filter>>
       <FORWARD:DROP>
         -p tcp -j CHAIN1
-        -p icmp -j CHAIN2
+        -p ! icmp -j CHAIN2
       <CHAIN1>
       <CHAIN2>
     """)
@@ -145,7 +145,7 @@ class IPTIndexSuite extends FunSuite with Matchers with SymnetCustomMatchers {
     val filterTable = toTable("""
     <<filter>>
       <FORWARD:DROP>
-        -p tcp -j ACCEPT
+        -p ! tcp -j ACCEPT
         -p icmp -j ACCEPT
       <CHAIN1>
       <CHAIN2>

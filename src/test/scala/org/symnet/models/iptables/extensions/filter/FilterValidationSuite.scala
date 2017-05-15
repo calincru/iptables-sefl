@@ -75,7 +75,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
 
   test("interface match") {
     val inIntMatch = InInterfaceMatch("eth0")
-    val outIntMatch = OutInterfaceMatch("eth1")
+    val outIntMatch = NegatedMatch(OutInterfaceMatch("eth1"))
 
     // Success
     {
@@ -122,7 +122,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
   }
 
   test("ip match always true") {
-    val srcIpMatch = SourceMatch(Ipv4(192, 168, 0, 1))
+    val srcIpMatch = NegatedMatch(SourceMatch(Ipv4(192, 168, 0, 1)))
     val dstIpMatch = DestinationMatch(Ipv4(10, 10, 10, 1))
 
     // Success

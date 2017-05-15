@@ -167,7 +167,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
   test("1 table/1 chain/1 rule") {
     // Success
     {
-      val rule = Rule(List(validMatch), validTarget)
+      val rule = Rule(List(NegatedMatch(validMatch)), validTarget)
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
@@ -216,7 +216,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
     }
     {
       // Invalid target.
-      val rule = Rule(List(validMatch), invalidTarget)
+      val rule = Rule(List(NegatedMatch(validMatch)), invalidTarget)
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
@@ -273,5 +273,13 @@ class CoreValidationSuite extends FunSuite with Matchers {
 
     val ucTarget = validTable.chains(0).rules(0).target.asInstanceOf[UserChain]
     ucTarget.rules(0).target shouldBe a [UserChain]
+  }
+
+  test("negation is kept after validation too") {
+    val rule = Rule(List(NegatedMatch(validMatch)), validTarget)
+    val chain = BuiltinChain("FORWARD", List(rule), Drop)
+    val table = Table("filter", List(chain))
+
+    table.validate shouldBe Just(table)
   }
 }
