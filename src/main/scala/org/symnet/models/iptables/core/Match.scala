@@ -6,7 +6,7 @@
 package org.symnet.models.iptables.core
 
 import org.change.v2.analysis.processingmodels.Instruction
-import org.change.v2.analysis.processingmodels.instructions.{:~:, Constrain, ConstrainNamedSymbol}
+import org.change.v2.analysis.processingmodels.instructions.{:~:, Constrain, ConstrainNamedSymbol, ConstrainRaw}
 
 import scalaz.Maybe
 import scalaz.Maybe._
@@ -40,8 +40,12 @@ case class NegatedMatch(m: Match) extends Match {
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     m.seflConstrain(options) match {
+      // TODO: Duplicate code, not nice :(.
       case Some(ConstrainNamedSymbol(what, withWhat, _)) =>
         Some(Constrain(what, :~:(withWhat)))
+      case Some(ConstrainRaw(what, withWhat, _)) =>
+        Some(Constrain(what, :~:(withWhat)))
+
       case i @ _ => i
     }
 }

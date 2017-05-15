@@ -72,15 +72,15 @@ class ContiguousIVDSuite
     assert(fail.isEmpty)
   }
 
-  test("one rule, match src ip") {
+  test("one rule, match negated src ip") {
     val contig = buildIt(
-      toRule("-s 192.168.0.1 -j ACCEPT")
+      toRule("-s ! 192.168.0.1 -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(192, 168, 0, 1).host)
 
     val inputInstr = contig.portInstructions(contig.inputPort)
     inputInstr shouldBe
-      If(Constrain(IPSrc, :&:(:>=:(ip), :<=:(ip))),
+      If(Constrain(IPSrc, :~:(:&:(:>=:(ip), :<=:(ip)))),
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
@@ -170,12 +170,12 @@ class ContiguousIVDSuite
   test("two rules, drop/accept") {
     val contig = buildIt(
       toRule("-o eth1 -p udp -s 172.16.0.171 -j DROP"),
-      toRule("-i eth2 -p all -j ACCEPT")
+      toRule("-i ! eth2 -p all -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(172, 16, 0, 171).host)
     val secondInstr =
       // NOTE: '-p all' doesn't add any constraints.
-      If(Constrain(InputPortTag, :==:(ConstantValue(portsMap("eth2")))),
+      If(Constrain(InputPortTag, :~:(:==:(ConstantValue(portsMap("eth2"))))),
          // matched
          Forward(contig.acceptPort),
          // default instr
