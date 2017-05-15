@@ -25,12 +25,12 @@ case class UserChainsLinker(
   extends CompositeVirtualDevice[UserChainsLinkerConfig](name, 0, 0, config) {
 
   // This Virtual Device only owns the user defined chains.
-  override def devices: List[VirtualDevice[_]] =
+  protected override def devices: List[VirtualDevice[_]] =
     config.userChainIVDIndices.map(i => config.chainIVDsMap(i))
 
   // See also classes `ChainIVD', `InputTagDispatcher' and `OutputTagDispatcher'
   // from the `ivds/' subdir.
-  override def newLinks: Map[Port, Port] =
+  protected override def newLinks: Map[Port, Port] =
     List(
       // Add jump ports.
       config.chainIVDsMap.map {

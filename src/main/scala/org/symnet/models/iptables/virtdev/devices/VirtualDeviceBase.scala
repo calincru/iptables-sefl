@@ -41,7 +41,6 @@ abstract class RegularVirtualDevice[+Config](
   override def links: Map[Port, Port] = Map.empty
 }
 
-// TODO: Make the added methods protected in subclasses too.
 abstract class CompositeVirtualDevice[+Config](
     name:         String,
     inputPorts:   Int,

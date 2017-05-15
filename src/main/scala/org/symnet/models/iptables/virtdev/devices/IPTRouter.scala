@@ -77,7 +77,7 @@ class IPTRouter(
     outputPorts,
     config) {
 
-  override def devices: List[VirtualDevice[_]] =
+  protected override def devices: List[VirtualDevice[_]] =
     List(
       config.inPortSetters,
 
@@ -98,7 +98,7 @@ class IPTRouter(
         config.chainsLinker)
     ).flatten
 
-  override def newLinks: Map[Port, Port] = {
+  protected override def newLinks: Map[Port, Port] = {
     List(
       // Add links from router's input ports to the input port setters.
       (0 until inputPorts).map(i =>

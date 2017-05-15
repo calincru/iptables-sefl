@@ -27,9 +27,9 @@ class IVDSequencer(
   def inputPort:  Port = inputPort(0)
   def outputPort: Port = outputPort(0)
 
-  override def devices: List[VirtualDevice[_]] = config.chainIVDs
+  protected override def devices: List[VirtualDevice[_]] = config.chainIVDs
 
-  override def newLinks: Map[Port, Port] = {
+  protected override def newLinks: Map[Port, Port] = {
     val chainIVDs = config.chainIVDs
 
     List(

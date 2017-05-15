@@ -283,4 +283,8 @@ class ChainIVDSuite
     dropped(fail, ivd) shouldBe empty
     success should have length (1)
   }
+
+  test("nat'ed packet is skiped") {
+    // TODO: Add this.
+  }
 }

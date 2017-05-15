@@ -59,11 +59,11 @@ class ChainIVD(
   def backlinkPort(n: Int): Port =
     outputPort(2 + config.contiguousIVDs.length + n)
 
-  override def devices: List[VirtualDevice[_]] =
+  protected override def devices: List[VirtualDevice[_]] =
     config.contiguousIVDs ++
     List(config.initializer, config.inDispatcher, config.outDispatcher)
 
-  override def newLinks: Map[Port, Port] = {
+  protected override def newLinks: Map[Port, Port] = {
     val initializer   = config.initializer
     val inDispatcher  = config.inDispatcher
     val ivds          = config.contiguousIVDs
@@ -140,7 +140,7 @@ class ChainIVD(
     ).flatten.toMap
   }
 
-  override def compPortInstructions: Map[Port, Instruction] =
+  protected override def compPortInstructions: Map[Port, Instruction] =
     List(
       // Add instructions on jump ports.
       (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
