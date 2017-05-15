@@ -210,7 +210,7 @@ class ContiguousIVDSuite
   }
 
   test("rl lecture - unreachable example") {
-    val contig = buildIt(
+    val postChain = buildIt(
       toRule("-s 192.168.1.0/24 -j SNAT --to-source 141.85.200.2-141.85.200.6"),
       toRule("-s 192.168.1.100 -j SNAT --to-source 141.85.200.1")
     )
@@ -223,8 +223,8 @@ class ContiguousIVDSuite
 
     val (success, _) =
       SymnetMisc.symExec(
-        contig,
-        contig.inputPort,
+        postChain,
+        postChain.inputPort,
         Assign(IPSrc, ConstantValue(Ipv4(192, 168, 1, 100).host))
       )
 
@@ -276,6 +276,52 @@ class ContiguousIVDSuite
           contig,
           contig.inputPort,
           Assign(IPSrc, ConstantValue(Ipv4(192, 168, 3, 20).host))
+        )
+      success should not (containConstrain (rewriteConstrain))
+    }
+  }
+
+  test("one rule, destination nat") {
+    val preroutingNat = buildIt(
+      toRule("-d 2.5.2.0/24 -j DNAT --to-destination 192.168.2.5-192.168.2.100")
+    )
+    val inputInstr = preroutingNat.portInstructions(preroutingNat.inputPort)
+    val rewriteConstrain =
+      Constrain(IPDst, :&:(:>=:(ConstantValue(Ipv4(192, 168, 2, 5).host)),
+                           :<=:(ConstantValue(Ipv4(192, 168, 2, 100).host))))
+
+    inside (inputInstr) { case If(testInstr, thenInstr, elseInstr) =>
+      inside (testInstr) { case ConstrainRaw(what, withWhat, _) =>
+        what shouldBe IPDst
+        withWhat shouldBe :&:(:>=:(ConstantValue(Ipv4(2, 5, 2, 0).host)),
+                              :<=:(ConstantValue(Ipv4(2, 5, 2, 255).host)))
+      }
+      inside (thenInstr) { case InstructionBlock(instrs) =>
+        // This ensures NAT correctly rewrites the destination address.
+        instrs should contain allOf (
+          Assign(IPDst, SymbolicValue()),
+          rewriteConstrain
+        )
+      }
+      elseInstr shouldBe Forward(preroutingNat.nextIVDport)
+    }
+
+    // If the destination matches (i.e. its symbolic by default), or, more
+    // precisely, *could* match, then there must be a path in which it gets
+    // rewritten ...
+    {
+      val (success, _) =
+        SymnetMisc.symExec(preroutingNat, preroutingNat.inputPort)
+      success should containConstrain (rewriteConstrain)
+    }
+
+    // ... otherwise, it shouldn't.
+    {
+      val (success, _) =
+        SymnetMisc.symExec(
+          preroutingNat,
+          preroutingNat.inputPort,
+          Assign(IPDst, ConstantValue(Ipv4(2, 5, 3, 100).host))
         )
       success should not (containConstrain (rewriteConstrain))
     }

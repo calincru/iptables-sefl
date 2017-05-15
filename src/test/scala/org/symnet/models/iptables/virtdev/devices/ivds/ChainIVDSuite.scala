@@ -74,11 +74,11 @@ class ChainIVDSuite
   }
 
   test("empty chain with default accept") {
-    val natTable = toTable("""
+    val preroutingTable = toTable("""
       <<nat>>
       <PREROUTING:ACCEPT>
     """)
-    val ivd = buildIt(natTable)
+    val ivd = buildIt(preroutingTable)
     val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
 
     fail shouldBe empty

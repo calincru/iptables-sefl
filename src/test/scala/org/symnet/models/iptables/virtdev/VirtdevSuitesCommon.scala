@@ -14,7 +14,7 @@ import iptParsers.{chainParser, ruleParser, tableParser}
 
 // -> extensions
 import extensions.filter.FilteringExtension
-import extensions.nat.{SnatTargetExtension}
+import extensions.nat._
 
 object VirtdevSuitesCommon {
   val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
@@ -23,8 +23,8 @@ object VirtdevSuitesCommon {
     override val matchExtensions  =
       List(FilteringExtension)
     override val targetExtensions =
-      List(SnatTargetExtension,
-           FilteringExtension,
+      List(FilteringExtension,
+           SnatTargetExtension, DnatTargetExtension,
            ChainTargetExtension)
   }
 
