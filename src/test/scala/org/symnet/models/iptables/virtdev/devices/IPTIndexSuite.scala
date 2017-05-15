@@ -13,6 +13,13 @@ import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
+// 3rd party: scalaz
+import scalaz.Maybe._
+
+// project
+// -> core
+import core._
+
 @RunWith(classOf[JUnitRunner])
 class IPTIndexSuite extends FunSuite with Matchers with SymnetCustomMatchers {
   import VirtdevSuitesCommon._
@@ -80,7 +87,6 @@ class IPTIndexSuite extends FunSuite with Matchers with SymnetCustomMatchers {
         "CHAIN2" -> Set("CHAIN3"),
         "CHAIN3" -> Set()
       )
-
     index.inAdjacencyLists.map {
       case (c, cs) => (c.name, cs.map(_.name)) } shouldBe Map(
         "CHAIN1" -> Set("FORWARD"),
@@ -90,5 +96,65 @@ class IPTIndexSuite extends FunSuite with Matchers with SymnetCustomMatchers {
         "INPUT" -> Set(),
         "FORWARD" -> Set()
       )
+  }
+
+  test("chain's rules are split on user chains boundaries x1") {
+    val filterTable = toTable("""
+    <<filter>>
+      <FORWARD:DROP>
+        -p tcp -j CHAIN1
+        -p udp -j ACCEPT
+        -p icmp -j CHAIN2
+        -p all -j ACCEPT
+      <CHAIN1>
+      <CHAIN2>
+    """)
+    val index = new IPTIndex(List(filterTable))
+
+    val fwdChain = index.chainsByName("FORWARD").head
+    val rs = fwdChain.rules
+
+    index.chainsSplitSubrules(fwdChain) shouldBe List(
+      List(rs(0)),
+      List(rs(1), rs(2)),
+      List(rs(3))
+    )
+  }
+
+  test("chain's rules are split on user chains boundaries x2") {
+    val filterTable = toTable("""
+    <<filter>>
+      <FORWARD:DROP>
+        -p tcp -j CHAIN1
+        -p icmp -j CHAIN2
+      <CHAIN1>
+      <CHAIN2>
+    """)
+    val index = new IPTIndex(List(filterTable))
+
+    val fwdChain = index.chainsByName("FORWARD").head
+    val rs = fwdChain.rules
+
+    index.chainsSplitSubrules(fwdChain) shouldBe List(
+      List(rs(0)),
+      List(rs(1))
+    )
+  }
+
+  test("chain's rules are split on user chains boundaries x3") {
+    val filterTable = toTable("""
+    <<filter>>
+      <FORWARD:DROP>
+        -p tcp -j ACCEPT
+        -p icmp -j ACCEPT
+      <CHAIN1>
+      <CHAIN2>
+    """)
+    val index = new IPTIndex(List(filterTable))
+
+    val fwdChain = index.chainsByName("FORWARD").head
+    val rs = fwdChain.rules
+
+    index.chainsSplitSubrules(fwdChain) shouldBe List(rs)
   }
 }
