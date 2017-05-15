@@ -110,7 +110,12 @@ class ChainIVD(
       ivds.map(_.acceptPort -> acceptPort),
 
       // Link all IVDs to the port controlling RETURNs.
-      ivds.map(_.returnPort -> outDispatcher.inputPort),
+      //
+      // NOTE: If there are no backlinks, this must be a built-in chain and the
+      // default policy should be applied. Also, in this case, the default
+      // policy *should not* be RETURN.
+      ivds.map(_.returnPort ->
+        (if (backlinks == 0) defaultPort else outDispatcher.inputPort)),
 
       // Link all IVDs to their corresponding jump ports.
       (0 until ivds.length).map(

@@ -229,7 +229,7 @@ class ContiguousIVDSuite
       )
 
     success should (
-      // Well, this is not what he expected :(...
+      // Well, this is not what we expected :(...
       not (containConstrain (rewriteConstrain2)) and
 
       // It does match the first one, though

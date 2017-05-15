@@ -30,6 +30,8 @@ import types.net.Ipv4
 // -> devices
 import devices.IPTIndex
 
+// TODO: Multiple tests in this suite assume that the chain traversal is
+// implemented as a big If/Then/Else statement.
 @RunWith(classOf[JUnitRunner])
 class ChainIVDSuite
   extends FunSuite with Inside
@@ -198,7 +200,7 @@ class ChainIVDSuite
 
         // It's important to set this because in order to execute a 'RETURN' we
         // should have jumped from somewhere else (and that's where this is
-        // set in the real code).
+        // set in the real code). See next test.
         //
         // NOTE: It matches the `5' from above.
         Assign(OutputDispatchTag, ConstantValue(5))
@@ -267,5 +269,18 @@ class ChainIVDSuite
       containConstrain (Constrain(Proto, :~:(toConstrain(UDPProto)))) and
       containConstrain (Constrain(Proto, :~:(toConstrain(ICMPProto))))
     )
+  }
+
+  test("return in built-in chain should apply chain policy") {
+    val filterTable = toTable("""
+      <<filter>>
+      <FORWARD:ACCEPT>
+        -p all -j RETURN
+    """)
+    val ivd = buildIt(filterTable)
+    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+
+    dropped(fail, ivd) shouldBe empty
+    success should have length (1)
   }
 }

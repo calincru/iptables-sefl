@@ -1,4 +1,3 @@
-
 // Copyright (C) 2017 Calin Cruceru <calin.cruceru@stud.acs.upb.ro>.
 //
 // See the LICENCE file distributed with this work for additional
@@ -15,7 +14,7 @@ import org.change.v2.analysis.memory.State
 import org.change.v2.analysis.memory.TagExp._
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.executor.clickabstractnetwork.ClickExecutionContext
-import org.change.v2.executor.clickabstractnetwork.executionlogging.JsonLogger
+import org.change.v2.executor.clickabstractnetwork.executionlogging.{JsonLogger, NoLogging}
 import org.change.v2.util.canonicalnames._
 
 // project
@@ -28,14 +27,16 @@ object SymnetMisc {
   def symExec[T <: VirtualDevice[_]](
       vd: T,
       initPort: String,
-      otherInstr: Instruction = NoOp) = this.synchronized {
+      otherInstr: Instruction = NoOp,
+      log: Boolean = false) = this.synchronized {
     val model = Model(vd)
     val result = new ClickExecutionContext(
       model.instructions,
       model.links,
       List(initState(otherInstr).forwardTo(initPort)),
       Nil,
-      Nil
+      Nil,
+      logger = if (log) JsonLogger else NoLogging
     ).untilDone(true)
 
     (result.stuckStates, result.failedStates)
