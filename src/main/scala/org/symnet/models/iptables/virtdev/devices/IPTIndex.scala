@@ -59,7 +59,7 @@ final class IPTIndex(iptables: List[Table]) {
   /// chain.
 
   /** A rule is a 'boundary rule' if it jumps to a user defined chain. */
-  def isBoundaryRule(rule: Rule): Boolean = rule.target match {
+  private def isBoundaryRule(rule: Rule): Boolean = rule.target match {
       case uc: UserChain => true
       case _             => false
   }

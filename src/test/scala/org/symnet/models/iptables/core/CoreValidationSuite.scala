@@ -255,4 +255,23 @@ class CoreValidationSuite extends FunSuite with Matchers {
     val table = Table("filter", List(Chain("PREROUTING", Nil, None)))
     table.validate shouldBe empty
   }
+
+  test("indirected jump should still replace PlaceholderTarget") {
+    val rule1 = Rule(List(validMatch), PlaceholderTarget("CHAIN2"))
+    val rule2 = Rule(List(validMatch), PlaceholderTarget("CHAIN3"))
+    val chain1 = UserChain("CHAIN1", List(rule1))
+    val chain2 = UserChain("CHAIN2", List(rule2))
+    val chain3 = UserChain("CHAIN3", Nil)
+    val table = Table("filter", List(chain1, chain2, chain3))
+
+    val maybeValidTable = table.validate
+    maybeValidTable shouldBe a [Just[_]]
+
+    val validTable = maybeValidTable.toOption.get
+    validTable.chains(0).name shouldBe "CHAIN1"
+    validTable.chains(0).rules(0).target shouldBe a [UserChain]
+
+    val ucTarget = validTable.chains(0).rules(0).target.asInstanceOf[UserChain]
+    ucTarget.rules(0).target shouldBe a [UserChain]
+  }
 }

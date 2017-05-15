@@ -76,10 +76,14 @@ case class UserChain(
    *  rule if and only if that rule is not part of the same chain (recursive
    *  jump).
    */
-  override protected def validateIf(
+  override def validate(
       rule: Rule,
       chain: Chain,
-      table: Table): Boolean = chain != this && table.chains.contains(this)
+      table: Table): Maybe[Target] =
+    if (chain != this && table.chains.contains(this))
+      super.validate(table).asInstanceOf[Maybe[UserChain]]
+    else
+      Maybe.empty
 
   ///
   /// Sefl code generation (this chain is the target of a rule).
