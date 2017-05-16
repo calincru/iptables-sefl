@@ -13,6 +13,11 @@ import scalaz.Maybe._
 
 trait Match {
 
+  /** A match could enable other match extensions.  This method returns them as
+   *  a list.
+   */
+  def extensionsEnabled: List[MatchExtension] = Nil
+
   ///
   /// Validation
   ///

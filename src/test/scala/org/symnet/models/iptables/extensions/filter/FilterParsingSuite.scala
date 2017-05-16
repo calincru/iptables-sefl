@@ -84,10 +84,10 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
 
   // Construct an implicit ParsingContext consisting only of the filtering
   // parser.
-  implicit val context = new ParsingContext {
-    val matchExtensions  = List(FilteringExtension)
-    val targetExtensions = List(FilteringExtension)
-  }
+  implicit val context = ParsingContext(
+    List(FilteringExtension),
+    List(FilteringExtension)
+  )
 
   test("src/dst ip filter parsing") {
     // Success.
@@ -101,9 +101,11 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
                                -d 172.0.1.1/5
                                -j RETURN""").isJust)
 
+    // Specifying just the target is accepted.
+    assert(ruleParser.eval("-j ACCEPT").isJust)
+
     // Failure.
     assert(ruleParser.eval("-s 8.8.8.8/10").isEmpty) // no target
-    assert(ruleParser.eval("-j ACCEPT").isEmpty) // just target
     assert(ruleParser.eval("-s 8.8.8.8/10 -j retunr").isEmpty) // invalid target
   }
 
@@ -160,10 +162,10 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
 
     // Once we add that to the target extensions, it doesn't fail anymore.
     {
-      implicit val context = new ParsingContext {
-        val targetExtensions = List(FilteringExtension, ChainTargetExtension)
-        val matchExtensions = List(FilteringExtension)
-      }
+      implicit val context = ParsingContext(
+        List(FilteringExtension),
+        List(FilteringExtension, ChainTargetExtension)
+      )
 
       assert(ruleParser.eval("""-i eth0
                                 -s 192.168.0.1

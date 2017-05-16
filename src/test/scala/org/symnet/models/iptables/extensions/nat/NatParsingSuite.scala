@@ -28,10 +28,10 @@ import types.net._
 class NatParsingSuite extends FunSuite with Matchers {
 
   test("source nat test") {
-    implicit val context = new ParsingContext {
-      val matchExtensions  = List(FilteringExtension)
-      val targetExtensions = List(SnatTargetExtension, FilteringExtension)
-    }
+    implicit val context = ParsingContext(
+      List(FilteringExtension),
+      List(SnatTargetExtension, FilteringExtension)
+    )
 
     // Success
     ruleParser.eval("""-s 192.168.0.5
@@ -59,10 +59,10 @@ class NatParsingSuite extends FunSuite with Matchers {
   }
 
   test("destination nat test") {
-    implicit val context = new ParsingContext {
-      val matchExtensions  = List(FilteringExtension)
-      val targetExtensions = List(DnatTargetExtension, FilteringExtension)
-    }
+    implicit val context = ParsingContext(
+      List(FilteringExtension),
+      List(DnatTargetExtension, FilteringExtension)
+    )
 
     // Success
     ruleParser.eval("""-d 141.85.200.1
@@ -88,10 +88,10 @@ class NatParsingSuite extends FunSuite with Matchers {
   }
 
   test("masquerade test") {
-    implicit val context = new ParsingContext {
-      val matchExtensions  = List(FilteringExtension)
-      val targetExtensions = List(MasqueradeTargetExtension, FilteringExtension)
-    }
+    implicit val context = ParsingContext(
+      List(FilteringExtension),
+      List(MasqueradeTargetExtension, FilteringExtension)
+    )
 
     // Success
     ruleParser.eval("-o eth0 -p tcp -j MASQUERADE").isJust

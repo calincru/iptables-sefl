@@ -21,7 +21,13 @@ package core
  *  If support for jump's/goto's to user defined chains, the predefined
  *  ChainTargetExtension should be added last in the target extensions list.
  */
-abstract class ParsingContext {
-  val matchExtensions:  List[MatchExtension]
-  val targetExtensions: List[TargetExtension]
+case class ParsingContext(
+    matchExtensions:  List[MatchExtension],
+    targetExtensions: List[TargetExtension]) {
+
+  def addMatchExtension(me: MatchExtension): ParsingContext =
+    ParsingContext(matchExtensions :+ me, targetExtensions)
+
+  def targetExtensions(te: TargetExtension): ParsingContext =
+    ParsingContext(matchExtensions, targetExtensions :+ te)
 }

@@ -19,14 +19,12 @@ import extensions.nat._
 object VirtdevSuitesCommon {
   val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
 
-  private implicit def parsingContext = new ParsingContext {
-    override val matchExtensions  =
-      List(FilteringExtension)
-    override val targetExtensions =
-      List(FilteringExtension,
-           SnatTargetExtension, DnatTargetExtension,
-           ChainTargetExtension)
-  }
+  private implicit def parsingContext = ParsingContext(
+    List(FilteringExtension),
+    List(FilteringExtension,
+         SnatTargetExtension, DnatTargetExtension,
+         ChainTargetExtension)
+  )
 
   def toRule(ruleStr: String) = {
     val maybeResult = ruleParser.apply(ruleStr).toOption
