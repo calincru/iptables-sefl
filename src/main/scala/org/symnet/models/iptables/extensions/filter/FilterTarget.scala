@@ -7,9 +7,12 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
+// 3rd-party
+// -> Symnet
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions.Forward
 
+// project
 import core._
 
 abstract class FilterTarget extends Target {

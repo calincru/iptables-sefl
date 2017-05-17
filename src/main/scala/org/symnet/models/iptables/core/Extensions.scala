@@ -17,6 +17,15 @@ trait TargetExtension extends BaseParsers {
   val targetParser: Parser[Target]
 }
 
+/** A trait for classes implementing the parser which enables other match
+ *  extensions.
+ */
+trait ModuleLoader extends MatchExtension {
+  final override val matchParsers: List[Parser[Match]] = List(loaderParser)
+
+  val loaderParser: Parser[Match]
+}
+
 object ChainTargetExtension extends TargetExtension {
   override val targetParser = iptParsers.chainTargetParser
 }

@@ -56,6 +56,12 @@ object iptParsers extends BaseParsers {
     } yield nameToTarget(targetName)
   }
 
+  def moduleLoaderParser[T <: Match](moduleName: String, t: T): Parser[Match] =
+    for {
+      _ <- spacesParser >> parseString("-m") >> someSpacesParser >>
+            parseString(moduleName)
+    } yield t
+
   // TODO: Change the way it works to support 'matches' that enable other ones,
   // such as '-m mark' or '-p tcp'. It can be implemented by adding a new method
   // to the 'Match' class to return a list of extensions enabled, which will

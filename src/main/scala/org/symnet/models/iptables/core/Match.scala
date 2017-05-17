@@ -27,6 +27,11 @@ trait Match extends IptElement {
   def seflConstrain(options: SeflGenOptions): Option[Instruction]
 }
 
+trait ModuleLoaderMatch extends Match {
+  final override def seflConstrain(
+      options: SeflGenOptions): Option[Instruction] = None
+}
+
 case class NegatedMatch(m: Match) extends Match {
   type Self = NegatedMatch
 

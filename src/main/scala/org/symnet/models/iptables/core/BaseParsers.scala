@@ -60,6 +60,9 @@ trait BaseParsers {
       _     <- put(input.tail)
     } yield input.head
 
+  def parseUntil(c: Char): Parser[String] =
+    many(parseCharIf(_ != c))
+
   def parseChar(c: Char): Parser[Char] = parseCharIf(_ == c)
 
   def spacesParser: Parser[String] = many(parseCharIf(_.isWhitespace))
