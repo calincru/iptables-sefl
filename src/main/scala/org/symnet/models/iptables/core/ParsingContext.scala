@@ -12,10 +12,10 @@ package core
  *  Example usage before initiating the parsing.
  *
  *  {{{
- *  implicit val context = new ParsingContext {
- *    matchExtensions  = List(...)
- *    targetExtensions = List(...)
- *  }
+ *  implicit val context = ParsingContext(
+ *    List(...),
+ *    List(...)
+ *  )
  *  }}}
  *
  *  If support for jump's/goto's to user defined chains, the predefined

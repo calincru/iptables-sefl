@@ -53,7 +53,7 @@ object VirtdevSuitesCommon {
     val (state, result) = maybeResult.get
     assert(state.trim.isEmpty)
 
-    val validatedResult = result.validate.toOption
+    val validatedResult = result.validate(ValidationContext.empty).toOption
     assert(validatedResult.isDefined)
 
     validatedResult.get

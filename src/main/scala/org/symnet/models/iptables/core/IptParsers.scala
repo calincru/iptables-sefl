@@ -76,7 +76,12 @@ object iptParsers extends BaseParsers {
       maybePolicy <- optional(parseChar(':') >> identifierParser)
       _           <- parseChar('>')
       rules       <- many(ruleParser)
-    } yield Chain(chainName, rules, Policy(maybePolicy getOrElse ""))
+    } yield (maybePolicy match {
+      case Some(p) if Policy(p).isDefined =>
+        BuiltinChain(chainName, rules, Policy(p).get)
+      case None =>
+        UserChain(chainName, rules)
+    })
 
   def tableParser(implicit context: ParsingContext): Parser[Table] =
     for {

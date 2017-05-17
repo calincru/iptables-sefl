@@ -6,16 +6,63 @@
 package org.symnet.models.iptables
 package core
 
+// 3rd-party
+// -> scalaz
 import scalaz.Maybe
 import scalaz.Maybe._
+import scalaz.Maybe.maybeInstance.traverse
 
-case class Rule(matches: List[Match], target: Target, goto: Boolean = false) {
+// project
+import virtdev.{Port => Interface}
+
+case class Rule(
+    matches: List[Match],
+    target: Target,
+    goto: Boolean = false) extends IptElement {
+  type Self = Rule
+
+  /** One rule could generate a few others (see below for an example).
+   *
+   *  NOTE: This list should include this rule, if after 'mutation' it is still
+   *  meaningful.  This method gets called right before validation.
+   *
+   *  Examples:
+   *    -i qr-+ -j ACCEPT
+   *    -o eth+ -j DROP
+   */
+  def mutate(interfaces: List[Interface]): List[Rule] = {
+    import extensions.filter.{InInterfaceMatch, OutInterfaceMatch}
+
+    val (regexMatches, nonregexMatches) = matches.partition(_ match {
+      case InInterfaceMatch(_, true) | OutInterfaceMatch(_, true) => true
+      case _ => false
+    })
+
+    if (regexMatches.isEmpty) {
+      List(this)
+    } else {
+      val inInterfaces = regexMatches.collect {
+        case inMatch @ InInterfaceMatch(name, true) =>
+          interfaces.filter(_.startsWith(name))
+      }
+      val outInterfaces = regexMatches.collect {
+        case outMatch @ OutInterfaceMatch(name, true) =>
+          interfaces.filter(_.startsWith(name))
+      }
+      val inCombinations: List[List[Match]] = cartesianJoin(
+        inInterfaces.map(_.map(in => InInterfaceMatch(in, false))))
+      val outCombinations: List[List[Match]] = cartesianJoin(
+        outInterfaces.map(_.map(out => OutInterfaceMatch(out, false))))
+      val allCombinations: List[List[Match]] =
+        inCombinations.map(ins => outCombinations.map(_ ++ ins)).flatten
+
+      allCombinations.map(combs => Rule(nonregexMatches ++ combs, target))
+    }
+  }
 
   ///
   /// Validation
   ///
-
-  import scalaz.Maybe.maybeInstance.traverse
 
   /** The `traverse' combinator is the equivalent to `mapM' in Haskell.  It maps
    *  each element of a structure to a monadic action, evaluates these actions
@@ -23,11 +70,14 @@ case class Rule(matches: List[Match], target: Target, goto: Boolean = false) {
    *
    *  NOTE: The `v' in `v[Name]' stands for `validated'.
    */
+  override def validate(context: ValidationContext): Maybe[Rule] = {
+    val chain = context.chain.get
+    val table = context.table.get
 
-  def validate(chain: Chain, table: Table): Maybe[Rule] =
     for {
       // A rule is valid if all its matches are valid ...
-      vMatches <- traverse(matches)(_.validate(this, chain, table))
+      vMatches <- traverse(matches)(
+        _.validate(context.setRule(this)).asInstanceOf[Maybe[Match]])
 
       // ... and its 'real' target is valid.
       //
@@ -49,6 +99,7 @@ case class Rule(matches: List[Match], target: Target, goto: Boolean = false) {
         }
         case _ => Just((target, false))
       }
-      vTarget <- actualResult._1.validate(this, chain, table)
+      vTarget <- actualResult._1.validate(context.setRule(this))
     } yield Rule(vMatches, vTarget, actualResult._2)
+  }
 }

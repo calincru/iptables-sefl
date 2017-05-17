@@ -22,11 +22,13 @@ case class SnatTarget(
     lowerIp:   Ipv4,
     upperIp:   Option[Ipv4],
     portRange: Option[PortRange]) extends Target {
+  type Self = SnatTarget
 
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val chain = context.chain.get
+    val table = context.table.get
+    val rule = context.rule.get
+
     // Check the table/chain in which this target is valid.
     table.name == "nat" && chain.name == "POSTROUTING" &&
     // Check that 'tcp' or 'udp' is specified when given the port range.
@@ -34,6 +36,7 @@ case class SnatTarget(
     // The existance of the port range implies that '-p tcp/udp' must
     // have been specified.
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
+  }
 
   // TODO: It is currently assumed that both TCP and UDP store the port address
   // at the same offset.

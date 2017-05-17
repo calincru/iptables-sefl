@@ -10,20 +10,8 @@ import org.change.v2.analysis.processingmodels.Instruction
 import scalaz.Maybe
 import scalaz.Maybe._
 
-trait Target {
-
-  ///
-  /// Validation
-  ///
-
-  protected def validateIf(rule: Rule, chain: Chain, table: Table): Boolean =
-    true
-
-  def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
-    if (validateIf(rule, chain, table))
-      Just(this)
-    else
-      empty
+trait Target extends IptElement {
+  type Self <: Target
 
   ///
   /// Sefl code generation
@@ -45,8 +33,10 @@ case class PlaceholderTarget(
     name: String,
     goto: Boolean = false) extends Target {
 
+  type Self = PlaceholderTarget
+
   /** We shouldn't get to check the validty of a placeholder target. */
-  override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Target] =
+  override def validate(context: ValidationContext): Maybe[PlaceholderTarget] =
     empty
   override def seflCode(options: SeflGenOptions): Instruction = null
 }

@@ -6,50 +6,42 @@
 package org.symnet.models.iptables
 package core
 
+// 3rd-party
+// -> Symnet
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions.Forward
 
+// -> scalaz
 import scalaz.Maybe
+import scalaz.Maybe.maybeInstance.traverse
 
-object Policy extends Enumeration {
-  type Policy = Value
-  val Accept, Drop, Return = Value
-
-  // TODO(calincru): There is also a QUEUE policy; is it relevant?
-  def apply(s: String): Option[Policy] =
-    s match {
-      case "ACCEPT" => Some(Accept)
-      case "DROP"   => Some(Drop)
-      case "RETURN" => Some(Return)
-      case _        => None
-    }
-}
+// project
+import virtdev.{Port => Interface}
 import Policy._
 
 sealed abstract class Chain(
     val name: String,
     val rules: List[Rule],
-    policy: Option[Policy]) {
+    policy: Option[Policy]) extends IptElement {
+  type Self <: Chain
+
+  /** Some rules could generate other rules to enable us to model them in SEFL
+   *  (see @Rule#mutate for an example).
+   */
+  protected def mutatedRules(interfaces: List[Interface]): List[Rule] =
+    rules.flatMap(_.mutate(interfaces))
 
   ///
   /// Validation
   ///
 
-  import scalaz.Maybe.maybeInstance.traverse
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val table = context.table.get
 
-  protected def validateIf(table: Table): Boolean =
     // An abstract chain is valid if its name is unique across all chains in
     // this table ...
     table.chains.count(_.name == name) == 1
-
-  def validate(table: Table): Maybe[Chain] =
-    if (validateIf(table))
-      // ... and all its rules are valid.
-      for {
-        vRules <- traverse(rules)(_.validate(this, table))
-      } yield Chain(name, vRules, policy)
-    else
-      Maybe.empty
+  }
 }
 
 /** A user-defined chain cannot have an implicit policy in iptables. */
@@ -58,30 +50,36 @@ case class UserChain(
     override val rules: List[Rule])
   extends Chain(name, rules, None) with Target {
 
+  type Self = UserChain
+
   ///
   /// Validation
   ///
 
-  override protected def validateIf(table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean =
     // A user-defined chain is valid if its parent class is valid ...
-    super.validateIf(table) &&
-    // ... and its name is not one of the reserved ones.
-    !(List("PREROUTING",
-           "FORWARD",
-           "INPUT",
-           "OUTPUT",
-           "POSTROUTING") contains name)
+    super.validateIf(context) && (
+    // dispatch on whether this is validated as a target or as a chain
+    if (context.chain.isDefined) {
+      val chain = context.chain.get
+      val table = context.table.get
 
-  /** Target validation routine: a user-defined chain is a valid target for a
-   *  rule if and only if that rule is not part of the same chain (recursive
-   *  jump).
-   */
-  override def validate(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Maybe[Target] =
-    if (chain != this && table.chains.contains(this))
-      super.validate(table).asInstanceOf[Maybe[UserChain]]
+      chain != this && table.chains.contains(this)
+    } else {
+      // ... and its name is not one of the reserved ones.
+      !(List("PREROUTING",
+             "FORWARD",
+             "INPUT",
+             "OUTPUT",
+             "POSTROUTING") contains name)
+    })
+
+  override def validate(context: ValidationContext): Maybe[UserChain] =
+    if (validateIf(context))
+      for {
+        vRules <- traverse(mutatedRules(context.interfaces))(
+          _.validate(context.setChain(this)))
+      } yield UserChain(name, vRules)
     else
       Maybe.empty
 
@@ -100,14 +98,17 @@ case class BuiltinChain(
     override val name: String,
     override val rules: List[Rule],
     val policy: Policy) extends Chain(name, rules, Some(policy)) {
+  type Self = BuiltinChain
 
   ///
   /// Validation
   ///
 
-  override protected def validateIf(table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val table = context.table.get
+
     // A built-in chain is valid if its parent class is valid ...
-    super.validateIf(table) &&
+    super.validateIf(context) &&
     // ... and it conforms to the chain/table restrictions.
     ((name match {
       case "PREROUTING"  => List("nat", "mangle")
@@ -117,12 +118,14 @@ case class BuiltinChain(
       case "POSTROUTING" => List("nat", "mangle")
       case _             => Nil
     }) contains table.name)
-}
+  }
 
-object Chain {
-  def apply(name: String, rules: List[Rule], policy: Option[Policy]): Chain =
-    policy match {
-      case Some(p) => new BuiltinChain(name, rules, p)
-      case None    => new UserChain(name, rules)
-    }
+  override def validate(context: ValidationContext): Maybe[BuiltinChain] =
+    if (validateIf(context))
+      for {
+        vRules <- traverse(mutatedRules(context.interfaces))(
+          _.validate(context.setChain(this)))
+      } yield BuiltinChain(name, vRules, policy)
+    else
+      Maybe.empty
 }

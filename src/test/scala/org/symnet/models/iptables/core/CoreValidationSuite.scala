@@ -25,29 +25,31 @@ import Policy._
 @RunWith(classOf[JUnitRunner])
 class CoreValidationSuite extends FunSuite with Matchers {
 
+  private val emptyCtx = ValidationContext.empty
+
   test("simple table validation") {
     // Success
     {
       val filterTable = Table("filter", Nil)
-      filterTable.validate shouldBe Just(filterTable)
+      filterTable.validate(emptyCtx) shouldBe Just(filterTable)
     }
     {
       val natTable = Table("nat", Nil)
-      natTable.validate shouldBe Just(natTable)
+      natTable.validate(emptyCtx) shouldBe Just(natTable)
     }
     {
       val mangleTable = Table("mangle", Nil)
-      mangleTable.validate shouldBe Just(mangleTable)
+      mangleTable.validate(emptyCtx) shouldBe Just(mangleTable)
     }
     {
       val rawTable = Table("raw", Nil)
-      rawTable.validate shouldBe Just(rawTable)
+      rawTable.validate(emptyCtx) shouldBe Just(rawTable)
     }
 
     // Failure
     {
       val almostFilterTable = Table("filtre", Nil)
-      almostFilterTable.validate shouldBe empty
+      almostFilterTable.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -60,7 +62,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("filter", chains)
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       // Capitalization matters.
@@ -70,7 +72,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("filter", chains)
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       // Order of chains in the list doesn't matter.
@@ -83,7 +85,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("nat", chains)
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -96,7 +98,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("filter", chains)
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // A (builtin) chain cannot appear multiple times in the same table.
@@ -106,7 +108,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("filter", chains)
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // A (user-defined) chain cannot appear multiple times in the same table.
@@ -116,7 +118,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("filter", chains)
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // We cannot name a user-defined chain using one of the reserved names for
@@ -127,27 +129,31 @@ class CoreValidationSuite extends FunSuite with Matchers {
       )
       val table = Table("mangle", chains)
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
   // is always valid
   object validMatch extends Match {
+    type Self = this.type
+
     // this is not used here
     override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
       None
   }
   // is always valid
   object validTarget extends Target {
+    type Self = this.type
+
     // this is not used here
     override def seflCode(options: SeflGenOptions): Instruction = null
   }
   // is never valid
   object invalidMatch extends Match {
-    override protected def validateIf(
-        rule: Rule,
-        chain: Chain,
-        table: Table): Boolean = false
+    type Self = this.type
+
+    override protected def validateIf(context: ValidationContext): Boolean =
+      false
 
     // this is not used here
     override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
@@ -155,10 +161,10 @@ class CoreValidationSuite extends FunSuite with Matchers {
   }
   // is never valid
   object invalidTarget extends Target {
-    override protected def validateIf(
-        rule: Rule,
-        chain: Chain,
-        table: Table): Boolean = false
+    type Self = this.type
+
+    override protected def validateIf(context: ValidationContext): Boolean =
+      false
 
     // this is not used here
     override def seflCode(options: SeflGenOptions): Instruction = null
@@ -171,7 +177,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule  = Rule(List(validMatch), PlaceholderTarget("MY_CHAIN"))
@@ -179,12 +185,12 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain, myChain))
 
-      // The model after the rule is validated.
+      // The model after the rule is validate(emptyCtx)d.
       val vRule = Rule(List(validMatch), myChain)
       val vChain = BuiltinChain("FORWARD", List(vRule), Drop)
       val vTable = Table("filter", List(vChain, myChain))
 
-      table.validate shouldBe Just(vTable)
+      table.validate(emptyCtx) shouldBe Just(vTable)
       vTable should not equal (table)
     }
 
@@ -196,7 +202,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", Nil, Drop)
       val table = Table("filter", List(chain, myChain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Recursive jumps are not allowed.
@@ -204,7 +210,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = UserChain("MY_CHAIN", List(rule))
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Invalid match.
@@ -212,7 +218,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Invalid target.
@@ -220,7 +226,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -233,10 +239,10 @@ class CoreValidationSuite extends FunSuite with Matchers {
 
       // The order of chains is not important.
       val table1 = Table("nat", List(chain, dstChain))
-      table1.validate shouldBe Just(table1)
+      table1.validate(emptyCtx) shouldBe Just(table1)
 
       val table2 = Table("nat", List(dstChain, chain))
-      table2.validate shouldBe Just(table2)
+      table2.validate(emptyCtx) shouldBe Just(table2)
     }
 
     // Failure
@@ -247,13 +253,13 @@ class CoreValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("INPUT", List(rule), Accept)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
   test("prerouting chain in filter table is invalid") {
-    val table = Table("filter", List(Chain("PREROUTING", Nil, None)))
-    table.validate shouldBe empty
+    val table = Table("filter", List(BuiltinChain("PREROUTING", Nil, Drop)))
+    table.validate(emptyCtx) shouldBe empty
   }
 
   test("indirected jump should still replace PlaceholderTarget") {
@@ -264,7 +270,7 @@ class CoreValidationSuite extends FunSuite with Matchers {
     val chain3 = UserChain("CHAIN3", Nil)
     val table = Table("filter", List(chain1, chain2, chain3))
 
-    val maybeValidTable = table.validate
+    val maybeValidTable = table.validate(emptyCtx)
     maybeValidTable shouldBe a [Just[_]]
 
     val validTable = maybeValidTable.toOption.get
@@ -280,6 +286,6 @@ class CoreValidationSuite extends FunSuite with Matchers {
     val chain = BuiltinChain("FORWARD", List(rule), Drop)
     val table = Table("filter", List(chain))
 
-    table.validate shouldBe Just(table)
+    table.validate(emptyCtx) shouldBe Just(table)
   }
 }

@@ -24,6 +24,8 @@ import Policy._
 @RunWith(classOf[JUnitRunner])
 class NatValidationSuite extends FunSuite with Matchers {
 
+  private val emptyCtx = ValidationContext.empty
+
   test("SNAT: table and chain should be nat/POSTROUTING") {
     // Success
     {
@@ -32,7 +34,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       // With optional upper bound
@@ -43,7 +45,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -53,7 +55,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       val target = SnatTarget(Ipv4(8, 8, 8, 8), None, None)
@@ -61,7 +63,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -76,7 +78,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -88,7 +90,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -100,7 +102,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       // With optional upper bound
@@ -111,7 +113,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -121,7 +123,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       val target = DnatTarget(Ipv4(8, 8, 8, 8), None, None)
@@ -129,7 +131,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("INPUT", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -144,7 +146,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -156,7 +158,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -168,7 +170,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -179,7 +181,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Invalid chain.
@@ -189,7 +191,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -203,7 +205,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       // With optional port range
@@ -213,7 +215,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -225,7 +227,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Protocol match not specified even though port is specified.
@@ -234,7 +236,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Protocol match not specified even though port range is specified.
@@ -243,7 +245,7 @@ class NatValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 }

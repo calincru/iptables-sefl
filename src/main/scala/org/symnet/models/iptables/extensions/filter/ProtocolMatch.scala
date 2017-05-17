@@ -14,12 +14,10 @@ import org.change.v2.util.canonicalnames.{Proto, ICMPProto, UDPProto, TCPProto}
 
 import core._
 
-case class ProtocolMatch(val protocol: String) extends Match {
+case class ProtocolMatch(protocol: String) extends Match {
+  type Self = ProtocolMatch
 
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean =
     // Check if it is one of the 'named' protocols
     (List("tcp", "udp", "icmp", "all") contains protocol) ||
     // TODO(calincru): Check if it is a valid numeric protocol or a protocol

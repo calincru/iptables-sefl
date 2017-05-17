@@ -21,6 +21,7 @@ import extensions.filter.ProtocolMatch
 case class MasqueradeTarget(
     lowerPort: Option[Port],
     upperPort: Option[Port]) extends Target {
+  type Self = MasqueradeTarget
 
   /** This target is only valid in the 'nat' table, in the 'POSTROUTING'
    *  chain.
@@ -28,10 +29,11 @@ case class MasqueradeTarget(
    *  The '--to-ports' option is only valid if the rule also specifies
    *  '-p tcp' or '-p udp'.
    */
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val chain = context.chain.get
+    val table = context.table.get
+    val rule = context.rule.get
+
     // Check the table/chain in which this target is valid.
     table.name == "nat" && chain.name == "POSTROUTING" &&
     // The existance of the upper port implies the existance of the lower
@@ -51,6 +53,7 @@ case class MasqueradeTarget(
     // =>   lowerPort -> tcp/udp  <=> !lowerPort or tcp/udp
     //
     (lowerPort.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
+  }
 
   // NOTE: This is almost identical to SNAT; it differs only in that it uses the
   // saved ip of the output port, instead of a specified port (range).

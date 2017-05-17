@@ -13,17 +13,18 @@ import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
 
 import core._
 
-case class InInterfaceMatch(val interface: String) extends Match {
+case class InInterfaceMatch(interface: String, regex: Boolean) extends Match {
+  type Self = InInterfaceMatch
 
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val chain = context.chain.get
+
     chain match {
       case BuiltinChain(n, _, _) =>
         List("INPUT", "FORWARD", "PREROUTING") contains n
       case _ /* UserChain */ => true
     }
+  }
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
     import virtdev.InputPortTag
@@ -32,17 +33,18 @@ case class InInterfaceMatch(val interface: String) extends Match {
   }
 }
 
-case class OutInterfaceMatch(val interface: String) extends Match {
+case class OutInterfaceMatch(interface: String, regex: Boolean) extends Match {
+  type Self = OutInterfaceMatch
 
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val chain = context.chain.get
+
     chain match {
       case BuiltinChain(n, _, _) =>
         List("FORWARD", "OUTPUT", "POSTROUTING") contains n
       case _ /* UserChain */ => true
     }
+  }
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
     import virtdev.OutputPortTag
@@ -60,7 +62,8 @@ object InterfaceMatch extends BaseParsers {
                                    parseString("--in-interface"))
       neg <- optional(someSpacesParser >> parseChar('!'))
       int <- someSpacesParser >> identifierParser
-    } yield Match.maybeNegated(InInterfaceMatch(int), neg)
+      maybePlus <- optional(parseChar('+'))
+    } yield Match.maybeNegated(InInterfaceMatch(int, maybePlus.isDefined), neg)
 
   def outParser: Parser[Match] =
     for {
@@ -68,5 +71,6 @@ object InterfaceMatch extends BaseParsers {
                                    parseString("--out-interface"))
       neg <- optional(someSpacesParser >> parseChar('!'))
       int <- someSpacesParser >> identifierParser
-    } yield Match.maybeNegated(OutInterfaceMatch(int), neg)
+      maybePlus <- optional(parseChar('+'))
+    } yield Match.maybeNegated(OutInterfaceMatch(int, maybePlus.isDefined), neg)
 }

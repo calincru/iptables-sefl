@@ -15,7 +15,8 @@ import org.change.v2.util.canonicalnames.{IPDst, IPSrc}
 import core._
 import types.net.Ipv4
 
-case class SourceMatch(val ip: Ipv4) extends Match {
+case class SourceMatch(ip: Ipv4) extends Match {
+  type Self = SourceMatch
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
     val (lower, upper) = ip.toHostRange
@@ -25,7 +26,8 @@ case class SourceMatch(val ip: Ipv4) extends Match {
   }
 }
 
-case class DestinationMatch(val ip: Ipv4) extends Match {
+case class DestinationMatch(ip: Ipv4) extends Match {
+  type Self = DestinationMatch
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
     val (lower, upper) = ip.toHostRange

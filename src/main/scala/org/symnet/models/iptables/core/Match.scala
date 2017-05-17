@@ -11,25 +11,13 @@ import org.change.v2.analysis.processingmodels.instructions.{:~:, Constrain, Con
 import scalaz.Maybe
 import scalaz.Maybe._
 
-trait Match {
+trait Match extends IptElement {
+  type Self <: Match
 
   /** A match could enable other match extensions.  This method returns them as
    *  a list.
    */
   def extensionsEnabled: List[MatchExtension] = Nil
-
-  ///
-  /// Validation
-  ///
-
-  protected def validateIf(rule: Rule, chain: Chain, table: Table): Boolean =
-    true
-
-  def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
-    if (validateIf(rule, chain, table))
-      Just(this)
-    else
-      empty
 
   ///
   /// Sefl code generation
@@ -40,8 +28,10 @@ trait Match {
 }
 
 case class NegatedMatch(m: Match) extends Match {
-  override def validate(rule: Rule, chain: Chain, table: Table): Maybe[Match] =
-    m.validate(rule, chain, table).map(vM => NegatedMatch(vM))
+  type Self = NegatedMatch
+
+  override def validate(context: ValidationContext): Maybe[NegatedMatch] =
+    m.validate(context).map(vM => NegatedMatch(vM))
 
   override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
     m.seflConstrain(options) match {

@@ -7,7 +7,6 @@ package org.symnet
 package models.iptables
 package extensions.filter
 
-
 // scala
 import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Matchers}
@@ -25,6 +24,8 @@ import Policy._
 @RunWith(classOf[JUnitRunner])
 class FilterValidationSuite extends FunSuite with Matchers {
 
+  private val emptyCtx = ValidationContext.empty
+
   test("chain is valid") {
     // Success
     {
@@ -32,14 +33,14 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("INPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(Nil, AcceptTarget)
       val chain = UserChain("MY_CHAIN", List(rule))
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -49,7 +50,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -60,7 +61,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -69,13 +70,13 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("mangle", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
   test("interface match") {
-    val inIntMatch = InInterfaceMatch("eth0")
-    val outIntMatch = NegatedMatch(OutInterfaceMatch("eth1"))
+    val inIntMatch = InInterfaceMatch("eth0", false)
+    val outIntMatch = NegatedMatch(OutInterfaceMatch("eth1", false))
 
     // Success
     {
@@ -83,7 +84,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("INPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(List(outIntMatch),
@@ -91,7 +92,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val otherChain = UserChain("MY_CHAIN", Nil)
@@ -99,7 +100,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain, otherChain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -108,7 +109,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // Input interface match is not available in the POSTROUTING chain.
@@ -117,7 +118,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -131,21 +132,21 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(List(dstIpMatch), AcceptTarget)
       val chain = BuiltinChain("INPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(List(srcIpMatch, dstIpMatch), ReturnTarget)
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -155,7 +156,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("PREROUTING", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 
@@ -166,14 +167,14 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(List(ProtocolMatch("udp")), DropTarget)
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
     {
       val rule = Rule(List(ProtocolMatch("all")),
@@ -181,7 +182,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe Just(table)
+      table.validate(emptyCtx) shouldBe Just(table)
     }
 
     // Failure
@@ -192,7 +193,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("POSTROUTING", List(rule), Drop)
       val table = Table("nat", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
     {
       // 'any' is not a valid protocol.
@@ -200,7 +201,7 @@ class FilterValidationSuite extends FunSuite with Matchers {
       val chain = BuiltinChain("OUTPUT", List(rule), Drop)
       val table = Table("filter", List(chain))
 
-      table.validate shouldBe empty
+      table.validate(emptyCtx) shouldBe empty
     }
   }
 }

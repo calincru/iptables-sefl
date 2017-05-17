@@ -22,11 +22,13 @@ case class DnatTarget(
     lowerIp:   Ipv4,
     upperIp:   Option[Ipv4],
     portRange: Option[PortRange]) extends Target {
+  type Self = DnatTarget
 
-  override protected def validateIf(
-      rule: Rule,
-      chain: Chain,
-      table: Table): Boolean =
+  override protected def validateIf(context: ValidationContext): Boolean = {
+    val table = context.table.get
+    val chain = context.chain.get
+    val rule = context.rule.get
+
     // Check the table/chain in which this target is valid.
     table.name == "nat" &&
       (List("PREROUTING", "OUTPUT") contains chain.name) &&
@@ -35,6 +37,7 @@ case class DnatTarget(
     // The existance of the port range implies that '-p tcp/udp' must
     // have been specified.
     (portRange.isEmpty || ProtocolMatch.ruleMatchesTcpOrUdp(rule))
+  }
 
   override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
