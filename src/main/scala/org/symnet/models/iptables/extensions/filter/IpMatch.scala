@@ -43,19 +43,25 @@ object IpMatch extends BaseParsers {
 
   def srcParser: Parser[Match] =
     for {
-      _   <- spacesParser >> oneOf(parseString("-s"),
-                                   parseString("--source"),
-                                   parseString("--src"))
-      neg <- optional(someSpacesParser >> parseChar('!'))
-      ip  <- someSpacesParser >> ipParser
-    } yield Match.maybeNegated(SourceMatch(ip), neg)
+      _  <- spacesParser
+      n1 <- optional(parseChar('!') >> someSpacesParser)
+      _  <- oneOf(parseString("-s"),
+                  parseString("--source"),
+                  parseString("--src"))
+      n2 <- conditional(optional(someSpacesParser >> parseChar('!')),
+                        !n1.isDefined)
+      ip <- someSpacesParser >> ipParser
+    } yield Match.maybeNegated(SourceMatch(ip), n1 orElse n2.flatten)
 
   def dstParser: Parser[Match] =
     for {
-      _   <- spacesParser >> oneOf(parseString("-d"),
-                                   parseString("--destination"),
-                                   parseString("--dst"))
-      neg <- optional(someSpacesParser >> parseChar('!'))
-      ip  <- someSpacesParser >> ipParser
-    } yield Match.maybeNegated(DestinationMatch(ip), neg)
+      _  <- spacesParser
+      n1 <- optional(parseChar('!') >> someSpacesParser)
+      _  <- oneOf(parseString("-d"),
+                  parseString("--destination"),
+                  parseString("--dst"))
+      n2 <- conditional(optional(someSpacesParser >> parseChar('!')),
+                        !n1.isDefined)
+      ip <- someSpacesParser >> ipParser
+    } yield Match.maybeNegated(DestinationMatch(ip), n1 orElse n2.flatten)
 }

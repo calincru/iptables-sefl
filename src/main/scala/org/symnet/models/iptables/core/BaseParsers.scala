@@ -28,6 +28,9 @@ trait BaseParsers {
   def optional[A](p: Parser[A]): Parser[Option[A]] =
     (p >>= (x => pure(Option(x)))) <<|> pure(None)
 
+  def conditional[A](p: Parser[A], condition: Boolean): Parser[Option[A]] =
+    if (condition) (p >>= (x => pure(Option(x)))) else pure(None)
+
   def many[A](p: Parser[A]): Parser[List[A]] = some(p) <<|> pure(Nil)
 
   def some[A](p: Parser[A]): Parser[List[A]] =

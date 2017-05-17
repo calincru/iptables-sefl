@@ -58,19 +58,25 @@ object InterfaceMatch extends BaseParsers {
 
   def inParser: Parser[Match] =
     for {
-      _   <- spacesParser >> oneOf(parseString("-i"),
-                                   parseString("--in-interface"))
-      neg <- optional(someSpacesParser >> parseChar('!'))
+      _  <- spacesParser
+      n1 <- optional(parseChar('!') >> someSpacesParser)
+      _  <- oneOf(parseString("-i"), parseString("--in-interface"))
+      n2 <- conditional(optional(someSpacesParser >> parseChar('!')),
+                        !n1.isDefined)
       int <- someSpacesParser >> identifierParser
       maybePlus <- optional(parseChar('+'))
-    } yield Match.maybeNegated(InInterfaceMatch(int, maybePlus.isDefined), neg)
+    } yield Match.maybeNegated(
+      InInterfaceMatch(int, maybePlus.isDefined), n1 orElse n2.flatten)
 
   def outParser: Parser[Match] =
     for {
-      _   <- spacesParser >> oneOf(parseString("-o"),
-                                   parseString("--out-interface"))
-      neg <- optional(someSpacesParser >> parseChar('!'))
+      _  <- spacesParser
+      n1 <- optional(parseChar('!') >> someSpacesParser)
+      _  <- oneOf(parseString("-o"), parseString("--out-interface"))
+      n2 <- conditional(optional(someSpacesParser >> parseChar('!')),
+                        !n1.isDefined)
       int <- someSpacesParser >> identifierParser
       maybePlus <- optional(parseChar('+'))
-    } yield Match.maybeNegated(OutInterfaceMatch(int, maybePlus.isDefined), neg)
+    } yield Match.maybeNegated(
+      OutInterfaceMatch(int, maybePlus.isDefined), n1 orElse n2.flatten)
 }

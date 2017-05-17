@@ -135,13 +135,16 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
     assert(ruleParser.eval(" -o ! tap0 -j DROP").isJust)
     assert(ruleParser.eval(" -i ! eth1 -j ACCEPT ").isJust)
 
+    // Prefixing the negation works too.
+    assert(ruleParser.eval(" ! -i  eth1 -j ACCEPT ").isJust)
+
+    // Failures.
     assert(ruleParser.eval(" -otap0 -j DROP").isEmpty)
     assert(ruleParser.eval(" -o tap0").isEmpty)
     assert(ruleParser.eval(" -i !eth1 -j ACCEPT ").isEmpty)
     assert(ruleParser.eval(" -i! eth1 -j ACCEPT ").isEmpty)
     assert(ruleParser.eval(" -i!eth1 -j ACCEPT ").isEmpty)
     assert(ruleParser.eval(" ! -i ! eth1 -j ACCEPT ").isEmpty)
-    assert(ruleParser.eval(" ! -i  eth1 -j ACCEPT ").isEmpty)
   }
 
   test("chain target extension") {
@@ -199,5 +202,14 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
         <OUTPUT:DROP>
         <POSTROUTING:DROP>
     """) shouldBe empty
+  }
+
+  test("negation can appear on either side") {
+    srcParser.eval("! -s 192.168.0.1/24") shouldBe
+      Just(NegatedMatch(SourceMatch(Ipv4(192, 168, 0, 1, Some(24)))))
+  }
+
+  test("negation cannot appear on both sides at the same time") {
+    srcParser.eval("! -s ! 192.168.1.1") shouldBe empty
   }
 }
