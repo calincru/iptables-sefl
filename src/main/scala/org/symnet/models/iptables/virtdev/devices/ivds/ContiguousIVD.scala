@@ -10,7 +10,7 @@ package ivds
 
 import org.change.v2.analysis.processingmodels.instructions.{Fail, Forward, If}
 
-import models.iptables.core.{Rule, SeflGenOptions}
+import models.iptables.core.{Rule, SeflCondition, SeflGenOptions}
 
 trait ContiguousIVDConfig {
   val id:       String
@@ -55,12 +55,42 @@ case class ContiguousIVD(
       val portsMap = config.portsMap
     }
 
-    // This function nests multiple Sefl If statements to implement conjuction.
-    val andConstraints = (constraints: List[Instruction],
-                          thenStmnt:   Instruction,
-                          elseStmnt:   Instruction) =>
-      constraints.foldRight(thenStmnt)(
-        (constraint, acc) => If(constraint, acc, elseStmnt))
+    // This function nests multiple Sefl If statements to implement
+    // conjunction.
+    val combineConstraints = (conditions: List[SeflCondition],
+                              thenStmnt:  Instruction,
+                              elseStmnt:  Instruction) =>
+      conditions.foldRight(thenStmnt)((condition, acc) => {
+        val constraints = condition.constraints
+
+        if (condition.conjunction) {
+          // If this is a conjunction, we do:
+          //
+          //    if (cond1)
+          //      if(cond2)
+          //        ...
+          //      else
+          //        ...
+          //    else
+          //      elseStmnt
+          //
+          constraints.foldRight(acc)((constraint, acc_inner) =>
+              If(constraint, acc_inner, elseStmnt))
+        } else {
+          // If this is a disjunction, we do:
+          //
+          //    if (cond1)
+          //      thenStmnt
+          //    else if (cond2)
+          //      thenStmnt
+          //    ....
+          //    else
+          //      elseStmnt
+          //
+          constraints.foldRight(elseStmnt)((constraint, acc_inner) =>
+              If(constraint, thenStmnt, acc_inner))
+        }
+      })
 
     // This is the default instruction if no rule matches.
     val defaultInstr: Instruction = Forward(nextIVDport)
@@ -71,9 +101,9 @@ case class ContiguousIVD(
       // NOTE: The direction of the fold matters here: iptables lookup is done
       // from top to bottom which maps to right-associativity in our processing.
       Map(inputPort -> config.rules.foldRight(defaultInstr)((rule, acc) =>
-        andConstraints(rule.matches.flatMap(_.seflConstrain(seflGenOptions)),
-                       rule.target.seflCode(seflGenOptions),
-                       acc))),
+        combineConstraints(rule.matches.map(_.seflCondition(seflGenOptions)),
+                           rule.target.seflCode(seflGenOptions),
+                           acc))),
 
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))

@@ -15,16 +15,18 @@ import iptParsers.{chainParser, ruleParser, tableParser}
 // -> extensions
 import extensions.filter.FilteringExtension
 import extensions.nat._
+import extensions.tcp.TcpExtension
+import extensions.udp.UdpExtension
 
 object VirtdevSuitesCommon {
   val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
 
-  private implicit def parsingContext = ParsingContext(
-    List(FilteringExtension),
-    List(FilteringExtension,
-         SnatTargetExtension, DnatTargetExtension,
-         ChainTargetExtension)
-  )
+  // TODO: Remove the extensions once the module loading works.
+  private implicit def parsingContext =
+    ParsingContext
+      .default
+      .addMatchExtension(TcpExtension)
+      .addMatchExtension(UdpExtension)
 
   def toRule(ruleStr: String) = {
     val maybeResult = ruleParser.apply(ruleStr).toOption

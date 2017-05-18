@@ -45,12 +45,23 @@ case class ParsingContext(
 }
 
 object ParsingContext {
-  import extensions.filter.{FilteringExtension}
+  import extensions.filter.FilteringExtension
   import extensions.nat._
+  import extensions.comment.CommentModuleLoader
+  import extensions.tcp.TcpModuleLoader
+  import extensions.udp.UdpModuleLoader
 
   def default: ParsingContext = ParsingContext(
     // Match extensions.
-    List(FilteringExtension),
+    List(
+      // Filtering is included by default.
+      FilteringExtension,
+
+      // NOTE: We also include all matchers for module loaders.
+      CommentModuleLoader,
+      TcpModuleLoader,
+      UdpModuleLoader
+    ),
 
     // Target extensions.
     List(

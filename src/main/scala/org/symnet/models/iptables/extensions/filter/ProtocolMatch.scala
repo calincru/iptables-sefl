@@ -13,6 +13,7 @@ import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
 import org.change.v2.util.canonicalnames.{Proto, ICMPProto, UDPProto, TCPProto}
 
 import core._
+import extensions.tcp.TcpModuleLoader
 
 case class ProtocolMatch(protocol: String) extends Match {
   type Self = ProtocolMatch
@@ -24,15 +25,23 @@ case class ProtocolMatch(protocol: String) extends Match {
     // from /etc/protocols.
     false
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
+  override def extensionsEnabled: List[MatchExtension] =
+    protocol match {
+      case "tcp" => List(TcpModuleLoader)
+      case "udp" => Nil // FIXME
+      case _ => Nil
+    }
+
+  override def seflCondition(options: SeflGenOptions): SeflCondition =
     if (protocol == "all") {
-      None
+      SeflCondition.empty
     } else {
       val protoMap = Map("tcp" -> TCPProto,
                          "udp" -> UDPProto,
                          "icmp" -> ICMPProto)
 
-      Some(Constrain(Proto, :==:(ConstantValue(protoMap(protocol)))))
+      SeflCondition.single(
+        Constrain(Proto, :==:(ConstantValue(protoMap(protocol)))))
     }
 }
 

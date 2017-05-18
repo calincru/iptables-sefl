@@ -18,22 +18,22 @@ import types.net.Ipv4
 case class SourceMatch(ip: Ipv4) extends Match {
   type Self = SourceMatch
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
     val (lower, upper) = ip.toHostRange
 
-    Some(Constrain(IPSrc, :&:(:>=:(ConstantValue(lower.host)),
-                              :<=:(ConstantValue(upper.host)))))
+    SeflCondition.single(Constrain(IPSrc, :&:(:>=:(ConstantValue(lower.host)),
+                                              :<=:(ConstantValue(upper.host)))))
   }
 }
 
 case class DestinationMatch(ip: Ipv4) extends Match {
   type Self = DestinationMatch
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
     val (lower, upper) = ip.toHostRange
 
-    Some(Constrain(IPDst, :&:(:>=:(ConstantValue(lower.host)),
-                              :<=:(ConstantValue(upper.host)))))
+    SeflCondition.single(Constrain(IPDst, :&:(:>=:(ConstantValue(lower.host)),
+                                              :<=:(ConstantValue(upper.host)))))
   }
 }
 

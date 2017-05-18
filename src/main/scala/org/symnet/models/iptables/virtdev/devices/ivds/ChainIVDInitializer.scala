@@ -57,16 +57,6 @@ case class ChainIVDInitializer(
         if (config.table.name == "nat") {
           if (config.chain.name == "PREROUTING") {
             InstructionBlock(
-              // Rewrite dst in a reply to a SNAT'ed packet.
-              If(Constrain(IPDst, :==:(:@(snatNewSrc))),
-                 If(Constrain(TcpDst, :==:(:@(snatNewPort))),
-                    InstructionBlock(
-                      Assign(IPDst, :@(snatOrigSrc)),
-                      Assign(TcpDst, :@(snatOrigPort)),
-                      Forward(skipPort)),
-                    NoOp),
-                 NoOp),
-
               // Reuse existing DNAT mapping.
               If(Constrain(IPDst, :==:(:@(dnatOrigDst))),
                  If(Constrain(TcpDst, :==:(:@(dnatOrigPort))),
@@ -75,26 +65,38 @@ case class ChainIVDInitializer(
                       Assign(TcpDst, :@(dnatNewPort)),
                       Forward(skipPort)),
                     NoOp),
+                 NoOp),
+
+              // Rewrite dst in a reply to a SNAT'ed packet.
+              // TODO: Should this still go through the chain?
+              If(Constrain(IPDst, :==:(:@(snatNewSrc))),
+                 If(Constrain(TcpDst, :==:(:@(snatNewPort))),
+                    InstructionBlock(
+                      Assign(IPDst, :@(snatOrigSrc)),
+                      Assign(TcpDst, :@(snatOrigPort)),
+                      Forward(skipPort)),
+                    NoOp),
                  NoOp)
             )
           } else if (config.chain.name == "POSTROUTING") {
             InstructionBlock(
-              // Rewrite src in a reply to a DNAT'ed packet.
-              If(Constrain(IPSrc, :==:(:@(dnatNewDst))),
-                 If(Constrain(TcpSrc, :==:(:@(dnatNewPort))),
-                    InstructionBlock(
-                      Assign(IPSrc, :@(dnatOrigDst)),
-                      Assign(TcpSrc, :@(dnatOrigPort)),
-                      Forward(skipPort)),
-                    NoOp),
-                 NoOp),
-
               // Reuse existing SNAT mapping.
               If(Constrain(IPSrc, :==:(:@(snatOrigSrc))),
                  If(Constrain(TcpSrc, :==:(:@(snatOrigPort))),
                     InstructionBlock(
                       Assign(IPSrc, :@(snatNewSrc)),
                       Assign(TcpSrc, :@(snatNewPort)),
+                      Forward(skipPort)),
+                    NoOp),
+                 NoOp),
+
+              // Rewrite src in a reply to a DNAT'ed packet.
+              // TODO: Should this still go through the chain?
+              If(Constrain(IPSrc, :==:(:@(dnatNewDst))),
+                 If(Constrain(TcpSrc, :==:(:@(dnatNewPort))),
+                    InstructionBlock(
+                      Assign(IPSrc, :@(dnatOrigDst)),
+                      Assign(TcpSrc, :@(dnatOrigPort)),
                       Forward(skipPort)),
                     NoOp),
                  NoOp)

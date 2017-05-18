@@ -26,10 +26,10 @@ case class InInterfaceMatch(interface: String, regex: Boolean) extends Match {
     }
   }
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
     import virtdev.InputPortTag
-    Some(Constrain(InputPortTag,
-                   :==:(ConstantValue(options.portsMap(interface)))))
+    SeflCondition.single(
+      Constrain(InputPortTag, :==:(ConstantValue(options.portsMap(interface)))))
   }
 }
 
@@ -46,10 +46,10 @@ case class OutInterfaceMatch(interface: String, regex: Boolean) extends Match {
     }
   }
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] = {
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
     import virtdev.OutputPortTag
-    Some(Constrain(OutputPortTag,
-                   :==:(ConstantValue(options.portsMap(interface)))))
+    SeflCondition.single(
+      Constrain(OutputPortTag, :==:(ConstantValue(options.portsMap(interface)))))
   }
 }
 

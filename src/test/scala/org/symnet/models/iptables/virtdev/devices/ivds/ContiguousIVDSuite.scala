@@ -374,4 +374,119 @@ class ContiguousIVDSuite
            Forward(contig.nextIVDport))
     }
   }
+
+  ///
+  /// TCP/UDP codegen extension suite.
+  ///
+
+  test("tcp/udp port match") {
+    val contig = buildIt(
+      toRule("-m tcp --sport 80 -j ACCEPT")
+    )
+
+    val (success, _) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        Assign(TcpSrc, ConstantValue(80))
+      )
+
+    success should (
+      reachPort(contig.acceptPort) and
+      containConstrain (Constrain(TcpSrc, :&:(:>=:(ConstantValue(80)),
+                                              :<=:(ConstantValue(80)))))
+    )
+  }
+
+  test("tcp destination port match") {
+    val contig = buildIt(
+      toRule("-p tcp --dport 80 -j ACCEPT")
+    )
+
+    val (success, _) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        Assign(TcpDst, ConstantValue(80))
+      )
+
+    success should (
+      reachPort (contig.acceptPort) and
+      containConstrain (Constrain(TcpDst, :&:(:>=:(ConstantValue(80)),
+                                              :<=:(ConstantValue(80)))))
+    )
+  }
+
+  test("tcp syn flag match") {
+    val contig = buildIt(
+      toRule("-p tcp --syn -j ACCEPT")
+    )
+
+    val (success, fail) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        InstructionBlock(
+          Assign(TcpFlagSYN, ConstantValue(1)),
+          Assign(TcpFlagRST, ConstantValue(0)),
+          Assign(TcpFlagACK, ConstantValue(0)),
+          Assign(TcpFlagFIN, ConstantValue(0))
+        )
+      )
+
+    success should reachPort (contig.acceptPort)
+    fail should not (reachPort (contig.dropPort))
+  }
+
+  test("tcp flags match") {
+    val contig = buildIt(
+      toRule("-p tcp --tcp-flags SYN,ACK ALL -j ACCEPT")
+    )
+
+    {
+      val (success, fail) =
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          InstructionBlock(
+            Assign(TcpFlagSYN, ConstantValue(1)),
+            Assign(TcpFlagACK, ConstantValue(0))
+          )
+        )
+
+      success should not (reachPort (contig.acceptPort))
+    }
+    {
+      val (success, fail) =
+        SymnetMisc.symExec(
+          contig,
+          contig.inputPort,
+          InstructionBlock(
+            Assign(TcpFlagSYN, ConstantValue(1)),
+            Assign(TcpFlagACK, ConstantValue(1))
+          )
+        )
+
+      success should reachPort (contig.acceptPort)
+    }
+  }
+
+  test("negated tcp flags match") {
+    val contig = buildIt(
+      toRule("-p tcp ! --tcp-flags SYN,ACK ALL -j ACCEPT")
+    )
+    print(contig.portInstructions)
+
+    val (success, fail) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        InstructionBlock(
+          Assign(TcpFlagSYN, ConstantValue(1)),
+          Assign(TcpFlagACK, ConstantValue(1))
+        )
+      )
+
+    success should not (reachPort (contig.acceptPort))
+  }
 }

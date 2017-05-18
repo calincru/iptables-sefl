@@ -32,7 +32,7 @@ class CommentSuite extends FunSuite with Matchers {
     ruleParser.eval("--comment \"Jumping to user-chain..\" -j USER_CHAIN").isJust
     ruleParser.eval("""-s 192.168.0.0/24
                        -i eth0
-                       --comment \"This rule matches private traffic\"
+                       --comment "This rule matches private traffic"
                        -j ACCEPT""").isJust
   }
 }

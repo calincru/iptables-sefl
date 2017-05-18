@@ -14,7 +14,7 @@ import org.change.v2.analysis.processingmodels.Instruction
 import core._
 
 object CommentModuleLoader extends ModuleLoader {
-  override val loaderParser: Parser[Match] =
+  override def loaderParser: Parser[Match] =
     iptParsers.moduleLoaderParser("comment", new ModuleLoaderMatch {
       type Self = this.type
       override def extensionsEnabled = List(CommentExtension)
@@ -28,8 +28,8 @@ object CommentExtension extends MatchExtension {
 case class CommentMatch(comment: String) extends Match {
   type Self = this.type
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
-    None
+  override def seflCondition(options: SeflGenOptions): SeflCondition =
+    SeflCondition.empty
 }
 
 object CommentMatch extends BaseParsers {

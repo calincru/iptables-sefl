@@ -23,13 +23,16 @@ trait Match extends IptElement {
   /// Sefl code generation
   ///
 
-  /** Generates SEFL constraints corresponding to its semantics. */
-  def seflConstrain(options: SeflGenOptions): Option[Instruction]
+  /** Generates SEFL constraints corresponding to its semantics.
+   *
+   *  NOTE: A simple conjunction/disjunction suffices for now.
+   */
+  def seflCondition(options: SeflGenOptions): SeflCondition
 }
 
 trait ModuleLoaderMatch extends Match {
-  final override def seflConstrain(
-      options: SeflGenOptions): Option[Instruction] = None
+  final override def seflCondition(
+      options: SeflGenOptions): SeflCondition = SeflCondition.empty
 }
 
 case class NegatedMatch(m: Match) extends Match {
@@ -38,16 +41,24 @@ case class NegatedMatch(m: Match) extends Match {
   override def validate(context: ValidationContext): Maybe[NegatedMatch] =
     m.validate(context).map(vM => NegatedMatch(vM))
 
-  override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
-    m.seflConstrain(options) match {
-      // TODO: Duplicate code, not nice :(.
-      case Some(ConstrainNamedSymbol(what, withWhat, _)) =>
-        Some(Constrain(what, :~:(withWhat)))
-      case Some(ConstrainRaw(what, withWhat, _)) =>
-        Some(Constrain(what, :~:(withWhat)))
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
+    // Take the original condition.
+    val mCondition = m.seflCondition(options)
+
+    // Negate all constraints.
+    val newConstraints = mCondition.constraints.map(i => i match {
+      // Duplicate code, not nice :(.
+      case ConstrainNamedSymbol(what, withWhat, _) =>
+        Constrain(what, :~:(withWhat))
+      case ConstrainRaw(what, withWhat, _) =>
+        Constrain(what, :~:(withWhat))
 
       case i @ _ => i
-    }
+    })
+
+    // (De Morgan's law) Group them using the opposite logic operation.
+    SeflCondition(newConstraints, !mCondition.conjunction)
+  }
 }
 
 object Match {

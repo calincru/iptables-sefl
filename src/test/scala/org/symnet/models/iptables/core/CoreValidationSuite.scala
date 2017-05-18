@@ -138,8 +138,8 @@ class CoreValidationSuite extends FunSuite with Matchers {
     type Self = this.type
 
     // this is not used here
-    override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
-      None
+    override def seflCondition(options: SeflGenOptions): SeflCondition =
+      SeflCondition.empty
   }
   // is always valid
   object validTarget extends Target {
@@ -156,8 +156,8 @@ class CoreValidationSuite extends FunSuite with Matchers {
       false
 
     // this is not used here
-    override def seflConstrain(options: SeflGenOptions): Option[Instruction] =
-      None
+    override def seflCondition(options: SeflGenOptions): SeflCondition =
+      SeflCondition.empty
   }
   // is never valid
   object invalidTarget extends Target {
