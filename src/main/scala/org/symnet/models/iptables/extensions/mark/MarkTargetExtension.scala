@@ -10,7 +10,7 @@ package extensions.mark
 // 3rd-party
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
-import org.change.v2.analysis.expression.concrete.nonprimitive.{:@, :^:, :|:, :&:}
+import org.change.v2.analysis.expression.concrete.nonprimitive.{:@, <^>, <|>, <&>}
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
 
@@ -44,13 +44,13 @@ case class MarkTarget(
 
   override def seflCode(options: SeflGenOptions): Instruction = {
     val mask = maybeMask getOrElse 0xFFFFFFFFL
-    val op = if (isXor) :^: else :|:
+    val op = if (isXor) <^> else <|>
 
     InstructionBlock(
       Assign(
         virtdev.NfmarkTag,
         op(ConstantValue(value),
-           :&:(:@(virtdev.NfmarkTag), ConstantValue(mask)))),
+          <&>(:@(virtdev.NfmarkTag), ConstantValue(mask)))),
       Forward(options.acceptPort)
     )
   }
