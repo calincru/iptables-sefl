@@ -475,7 +475,6 @@ class ContiguousIVDSuite
     val contig = buildIt(
       toRule("-p tcp ! --tcp-flags SYN,ACK ALL -j ACCEPT")
     )
-    print(contig.portInstructions)
 
     val (success, fail) =
       SymnetMisc.symExec(

@@ -12,6 +12,10 @@ import org.junit.runner.RunWith
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
+// 3rd-party
+// -> scalaz
+import scalaz.Maybe._
+
 // project
 // -> core
 import core._
@@ -29,10 +33,10 @@ class CommentSuite extends FunSuite with Matchers {
 
     // NOTE: All these tests fail if we only add the module loader, since we
     // don't specify "-m comment".
-    ruleParser.eval("--comment \"Jumping to user-chain..\" -j USER_CHAIN").isJust
+    ruleParser.eval("--comment \"Jumping to user-chain..\" -j USER_CHAIN") shouldBe a [Just[_]]
     ruleParser.eval("""-s 192.168.0.0/24
                        -i eth0
                        --comment "This rule matches private traffic"
-                       -j ACCEPT""").isJust
+                       -j ACCEPT""") shouldBe a [Just[_]]
   }
 }

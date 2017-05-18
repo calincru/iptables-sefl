@@ -69,6 +69,7 @@ object ParsingContext {
       SnatTargetExtension,
       DnatTargetExtension,
       MasqueradeTargetExtension,
+      RedirectTargetExtension,
 
       // NOTE: Keep this one the last.
       ChainTargetExtension

@@ -128,12 +128,9 @@ object MasqueradeTarget extends BaseParsers {
                             someSpacesParser >> portParser)
 
       // Try to parse the upper bound port only if the previous one succeeded.
-      upperPort <-
-        if (lowerPort.isDefined)
-          optional(parseChar('-') >> portParser)
-        else
-          pure(None)
-    } yield MasqueradeTarget(lowerPort, upperPort)
+      upperPort <- conditional(optional(parseChar('-') >> portParser),
+                               lowerPort.isDefined)
+    } yield MasqueradeTarget(lowerPort, upperPort.flatten)
 }
 
 object MasqueradeTargetExtension extends TargetExtension {
