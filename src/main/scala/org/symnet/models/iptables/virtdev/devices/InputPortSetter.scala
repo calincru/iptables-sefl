@@ -7,23 +7,36 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
+// 3rd-party
+// -> Symnet
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.Assign
+import org.change.v2.analysis.processingmodels.instructions.{Assign, InstructionBlock}
 
-case class InputPortSetter(
+// project
+import types.net.Ipv4
+
+trait InputPortSetterConfig {
+  val portId: Int
+  val portIp: Ipv4
+}
+
+class InputPortSetter(
     name:   String,
-    portId: Int)
-  extends RegularVirtualDevice[Int](
+    config: InputPortSetterConfig)
+  extends RegularVirtualDevice[InputPortSetterConfig](
     name,
       // single input port
     1,
       // single output port
     1,
-    portId) {
+    config) {
 
   def inputPort: Port  = inputPort(0)
   def outputPort: Port = outputPort(0)
 
   override def portInstructions: Map[Port, Instruction] =
-    Map(inputPort -> Assign(InputPortTag, ConstantValue(portId)))
+    Map(inputPort -> InstructionBlock(
+      Assign(InputPortTag, ConstantValue(config.portId)),
+      Assign(InputIpTag, ConstantValue(config.portIp.host))
+    ))
 }

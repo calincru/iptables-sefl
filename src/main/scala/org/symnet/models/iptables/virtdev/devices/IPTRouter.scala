@@ -138,15 +138,10 @@ class IPTRouter(
 
 class IPTRouterBuilder(
     name:         String,
-    inputIpsMap:  Map[String, Ipv4],
-    outputIpsMap: Map[String, Ipv4],
+    ipsMap:       Map[String, Ipv4],
     routingTable: RoutingTable,
     iptables:     List[Table])
   extends VirtualDeviceBuilder[IPTRouter](name) { self =>
-
-  // NOTE: The input ports and the output ports should have different names for
-  // now.
-  require((inputIpsMap.keySet & outputIpsMap.keySet).isEmpty)
 
   override def build: IPTRouter =
     new IPTRouter(name, inputPorts, outputPorts, new IPTRouterConfig {
@@ -172,13 +167,17 @@ class IPTRouterBuilder(
 
   protected def makeRoutingDecision(id: String) =
     RoutingDecision(s"$name-rd-$id", new RoutingDecisionConfig {
-      val localIpsMap = self.inputIpsMap ++ self.outputIpsMap
+      val localIpsMap = ipsMap
       val routingTable = self.routingTable
       val portsMap = self.portsMap
     })
 
   protected def makeInSetters: List[InputPortSetter] =
-    (0 until inputPorts).map(InputPortSetter(s"$name-port-setter", _)).toList
+    (0 until inputPorts).map(i =>
+      new InputPortSetter(s"$name-port-setter", new InputPortSetterConfig {
+        val portId = i
+        val portIp = ipsMap(reversePortsMap(i))
+      })).toList
 
   protected def makeSeqChains(chainName: String): IVDSequencer = {
     val chains = index.chainsByName(chainName)
@@ -236,12 +235,10 @@ class IPTRouterBuilder(
         ).build
     }
 
-  private val inputPortNames = inputIpsMap.keys.toList
-  private val outputPortNames = outputIpsMap.keys.toList
+  // NOTE: We have the same number of output ports as input ports.
+  private val inputPorts  = ipsMap.size
+  private val outputPorts = inputPorts
 
-  private val inputPorts  = inputPortNames.length
-  private val outputPorts = outputPortNames.length
-
-  private val portsMap = inputPortNames.zipWithIndex.toMap ++
-                         outputPortNames.zipWithIndex.toMap
+  private val portsMap = ipsMap.keys.zipWithIndex.toMap
+  private val reversePortsMap = portsMap.map(_.swap)
 }

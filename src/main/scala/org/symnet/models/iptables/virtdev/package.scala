@@ -20,7 +20,9 @@ package object virtdev {
   val InputPortTag  = "input-port"
   val OutputPortTag = "output-port"
 
-  // Holds the IP of the interface a packet will be sent through.
+  // Holds the IP of the interface a packet has been received on / will be sent
+  // through.
+  val InputIpTag = "input-ip"
   val OutputIpTag = "output-ip"
 
   // Functions used to build unique tag names for NAT handling.
