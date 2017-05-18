@@ -10,7 +10,6 @@ package extensions.tcp
 // 3rd-party
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions.{:&:, :==:, Constrain}
 import org.change.v2.util.canonicalnames._
 

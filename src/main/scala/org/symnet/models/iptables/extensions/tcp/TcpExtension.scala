@@ -7,10 +7,6 @@ package org.symnet
 package models.iptables
 package extensions.tcp
 
-// 3rd-party
-// -> Symnet
-import org.change.v2.analysis.processingmodels.Instruction
-
 // project
 import core._
 

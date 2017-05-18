@@ -18,6 +18,10 @@ import types.net.{Ipv4, Port}
 import core._
 import extensions.filter.ProtocolMatch
 
+object MasqueradeTargetExtension extends TargetExtension {
+  val targetParser = MasqueradeTarget.parser
+}
+
 case class MasqueradeTarget(
     lowerPort: Option[Port],
     upperPort: Option[Port]) extends Target {
@@ -131,8 +135,4 @@ object MasqueradeTarget extends BaseParsers {
       upperPort <- conditional(optional(parseChar('-') >> portParser),
                                lowerPort.isDefined)
     } yield MasqueradeTarget(lowerPort, upperPort.flatten)
-}
-
-object MasqueradeTargetExtension extends TargetExtension {
-  val targetParser = MasqueradeTarget.parser
 }

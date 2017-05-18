@@ -7,7 +7,14 @@ package org.symnet
 package models.iptables
 package core
 
+// scala
+import scala.util.Try
+
+// 3rd-party
+// -> scalaz
 import scalaz.{Maybe, MonadPlus, MonadState, NonEmptyList, StateT}
+
+// project
 import types.net.{Ipv4, Port, PortRange}
 
 trait BaseParsers {
@@ -80,6 +87,12 @@ trait BaseParsers {
     some(parseCharIf(c => c.isLetterOrDigit || c == '_' || c == '-'))
 
   def digitParser: Parser[Int] = parseCharIf(_.isDigit).map(_.asDigit)
+
+  def hexLongParser: Parser[Long] =
+    for {
+      maybeNr <- parseString("0x") >> some(parseCharIf(_.isDigit)).map(
+        x => Try(x.mkString.toLong).toOption) if maybeNr.isDefined
+    } yield maybeNr.get
 
 
   ///

@@ -18,6 +18,10 @@ import types.net.{Ipv4, Port}
 import core._
 import extensions.filter.ProtocolMatch
 
+object RedirectTargetExtension extends TargetExtension {
+  val targetParser = RedirectTarget.parser
+}
+
 case class RedirectTarget(
     lowerPort: Option[Port],
     upperPort: Option[Port]) extends Target {
@@ -95,8 +99,4 @@ object RedirectTarget extends BaseParsers {
       upperPort <- conditional(optional(parseChar('-') >> portParser),
                                lowerPort.isDefined)
     } yield RedirectTarget(lowerPort, upperPort.flatten)
-}
-
-object RedirectTargetExtension extends TargetExtension {
-  val targetParser = RedirectTarget.parser
 }

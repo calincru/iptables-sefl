@@ -18,6 +18,10 @@ import types.net.{Ipv4, PortRange}
 import core._
 import extensions.filter.ProtocolMatch
 
+object DnatTargetExtension extends TargetExtension {
+  val targetParser = DnatTarget.parser
+}
+
 case class DnatTarget(
     lowerIp:   Ipv4,
     upperIp:   Option[Ipv4],
@@ -101,8 +105,4 @@ object DnatTarget extends BaseParsers {
       // Parse the optional port range.
       maybePortRange <- optional(parseChar(':') >> portRangeParser)
     } yield DnatTarget(lowerIp, upperIp, maybePortRange)
-}
-
-object DnatTargetExtension extends TargetExtension {
-  val targetParser = DnatTarget.parser
 }

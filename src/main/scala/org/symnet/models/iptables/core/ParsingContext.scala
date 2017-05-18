@@ -50,6 +50,7 @@ object ParsingContext {
   import extensions.comment.CommentModuleLoader
   import extensions.tcp.TcpModuleLoader
   import extensions.udp.UdpModuleLoader
+  import extensions.mark.{MarkModuleLoader, MarkTargetExtension}
 
   def default: ParsingContext = ParsingContext(
     // Match extensions.
@@ -58,6 +59,9 @@ object ParsingContext {
       FilteringExtension,
 
       // NOTE: We also include all matchers for module loaders.
+
+      MarkModuleLoader,
+
       CommentModuleLoader,
       TcpModuleLoader,
       UdpModuleLoader
@@ -65,11 +69,17 @@ object ParsingContext {
 
     // Target extensions.
     List(
+      // filter-related
       FilteringExtension,
+
+      // NAT-related
       SnatTargetExtension,
       DnatTargetExtension,
       MasqueradeTargetExtension,
       RedirectTargetExtension,
+
+      // mangle-related
+      MarkTargetExtension,
 
       // NOTE: Keep this one the last.
       ChainTargetExtension

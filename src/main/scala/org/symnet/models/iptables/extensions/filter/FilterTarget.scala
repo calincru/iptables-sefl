@@ -15,6 +15,13 @@ import org.change.v2.analysis.processingmodels.instructions.Forward
 // project
 import core._
 
+object FilterTarget extends BaseParsers {
+  def parser: Parser[Target] =
+    iptParsers.optionlessTargetParser(Map(("ACCEPT", AcceptTarget),
+                                          ("DROP",   DropTarget),
+                                          ("RETURN", ReturnTarget)))
+}
+
 abstract class FilterTarget extends Target {
   type Self <: FilterTarget
 
@@ -53,11 +60,4 @@ object ReturnTarget extends FilterTarget {
 
   override def seflCode(options: SeflGenOptions): Instruction =
     Forward(options.returnPort)
-}
-
-object FilterTarget extends BaseParsers {
-  def parser: Parser[Target] =
-    iptParsers.optionlessTargetParser(Map(("ACCEPT", AcceptTarget),
-                                          ("DROP",   DropTarget),
-                                          ("RETURN", ReturnTarget)))
 }

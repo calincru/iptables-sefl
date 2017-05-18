@@ -35,4 +35,7 @@ package object virtdev {
   def dnatFromPort(id: String): String = s"$id-dnat-from-port"
   def dnatToIp(id: String): String = s"$id-dnat-to-ip"
   def dnatToPort(id: String): String = s"$id-dnat-to-port"
+
+  // Metadata tag names for MARK/CONNMARK fields.
+  val NfmarkTag = "nfmark"
 }

@@ -30,6 +30,9 @@ case class OutputPortDispatcher(
           // interface.
           Constrain(OutputPortTag, :==:(ConstantValue(i))),
 
+          // TODO: Cleanup so that the next device is not influenced by metadata
+          // added just for in-device processing (such as nfmark).
+
           // Forward packets on the designated output interface.
           Forward(outputPort(i))
         )

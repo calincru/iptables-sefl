@@ -6,10 +6,6 @@
 package org.symnet.models.iptables
 package extensions.comment
 
-// 3rd-party
-// -> Symnet
-import org.change.v2.analysis.processingmodels.Instruction
-
 // project
 import core._
 
