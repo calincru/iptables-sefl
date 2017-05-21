@@ -40,6 +40,13 @@ class ContiguousIVDSuite
       val rules = rs.toList
     })
 
+  private def buildIt(name: String, rs: Rule*) =
+    ContiguousIVD(name, new ContiguousIVDConfig {
+      val id = "ipt-router"
+      val portsMap = VirtdevSuitesCommon.portsMap
+      val rules = rs.toList
+    })
+
   ///
   /// Simple tests
   ///
@@ -564,21 +571,21 @@ class ContiguousIVDSuite
         -m mark --mark 0xDEAD0000/0xffff0000 -j ACCEPT
     """)
 
-    val mangleContig = buildIt(mangleTable.chains(0).rules: _*)
-    val filterContig = buildIt(filterTable.chains(0).rules: _*)
+    val mangleContig = buildIt("mangle-ivd", mangleTable.chains(0).rules: _*)
+    val filterContig = buildIt("filter-ivd", filterTable.chains(0).rules: _*)
 
     val (success, fail) =
       SymnetMisc.symExec(
-        mangleContig,
-        mangleContig.inputPort,
-        InstructionBlock(
+        vds = List(mangleContig, filterContig),
+        initPort = mangleContig.inputPort,
+        otherInstr = InstructionBlock(
           Assign(CtmarkTag, ConstantBitVector(0xDEADBEEF)),
           Assign(NfmarkTag, ConstantBitVector(0x00001234))
         ),
-        otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort)
+        otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort),
+        log = true
       )
 
     accepted(success, filterContig) should have length (1)
-    success should reachPort (filterContig.acceptPort)
   }
 }

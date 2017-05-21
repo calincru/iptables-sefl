@@ -16,7 +16,12 @@ import devices.VirtualDevice
  */
 case class NetworkModel(
     instructions: Map[Port, Instruction],
-    links:        Map[Port, Port])
+    links:        Map[Port, Port]) {
+
+  def ++(other: NetworkModel): NetworkModel =
+    NetworkModel(instructions ++ other.instructions,
+                 links ++ other.links)
+}
 
 object NetworkModel {
 

@@ -29,11 +29,19 @@ object SymnetMisc {
       initPort: String,
       otherInstr: Instruction = NoOp,
       otherLinks: Map[Port, Port] = Map.empty,
-      log: Boolean = false) = this.synchronized {
-    val model = Model(vd)
+      log: Boolean = false): (List[State], List[State]) =
+    symExec(List(vd), initPort, otherInstr, otherLinks, log)
+
+  def symExec[T <: VirtualDevice[_]](
+      vds: List[T],
+      initPort: String,
+      otherInstr: Instruction,
+      otherLinks: Map[Port, Port],
+      log: Boolean): (List[State], List[State]) = this.synchronized {
+    val model = vds.map(vd => NetworkModel(vd)).reduce(_ ++ _)
     val result = new ClickExecutionContext(
       model.instructions,
-      model.links,
+      model.links ++ otherLinks,
       List(initState(otherInstr).forwardTo(initPort)),
       Nil,
       Nil,
