@@ -34,13 +34,13 @@ case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
   type Self = MarkMatch
 
   override def seflCondition(options: SeflGenOptions): SeflCondition = {
+    val nfmark = virtdev.nfmarkTag(options.id)
     val mask = maybeMask getOrElse 0xFFFFFFFFL
 
     SeflCondition.single(
       initInstr = Assign(
-        "nfmark-tmp",
-        <&>(:@(virtdev.NfmarkTag), ConstantBitVector(mask))),
-      constraint = Constrain("nfmark-tmp", :==:(ConstantBitVector(value)))
+        nfmark + "-tmp", <&>(:@(nfmark), ConstantBitVector(mask))),
+      constraint = Constrain(nfmark + "-tmp", :==:(ConstantBitVector(value)))
     )
   }
 }

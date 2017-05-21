@@ -34,17 +34,21 @@ import devices.IPTIndex
 // implemented as a big If/Then/Else statement.
 @RunWith(classOf[JUnitRunner])
 class ChainIVDSuite
-  extends FunSuite with Inside
+  extends FunSuite with SymnetMisc
+                   with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>
   import VirtdevSuitesCommon._
+
+  override def deviceId: String = "ivd"
 
   private def buildIt(table: Table, neighs: List[Int] = Nil) = {
     val chain = table.chains.head
     val rules = new IPTIndex(List(table)).chainsSplitSubrules(chain)
     val idx = if (neighs.isEmpty) 0 else neighs.max + 1
 
-    new ChainIVDBuilder("ivd", chain, table, idx, rules, neighs, portsMap).build
+    new ChainIVDBuilder(
+      deviceId, chain, table, idx, rules, neighs, portsMap).build
   }
 
   test("empty chain, packet gets dropped") {
@@ -57,7 +61,7 @@ class ChainIVDSuite
     ivd.links should contain key ivd.initPort
     ivd.links should contain key ivd.inputPort
 
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.initPort)
 
     success shouldBe empty
     fail should (
@@ -72,7 +76,7 @@ class ChainIVDSuite
       <PREROUTING:ACCEPT>
     """)
     val ivd = buildIt(preroutingTable)
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.initPort)
 
     fail shouldBe empty
     success should (
@@ -89,11 +93,7 @@ class ChainIVDSuite
     """)
     val ivd = buildIt(filterTable)
     val (success, fail) =
-      SymnetMisc.symExec(
-        ivd,
-        ivd.initPort,
-        Assign(InputPortTag, SymbolicValue())
-      )
+      symExec(ivd, ivd.initPort, Assign(InputPortTag, SymbolicValue()))
 
     fail should (
       // One path should fail because it considers an input port other than
@@ -124,7 +124,7 @@ class ChainIVDSuite
                     :<=:(ConstantValue(Ipv4(192, 168, 0, 255).host)))
     val cstr2 = :&:(:>=:(ConstantValue(Ipv4(172, 16, 0, 0).host)),
                     :<=:(ConstantValue(Ipv4(172, 16, 63, 255).host)))
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.initPort)
 
     success should (
       have length (2) and
@@ -151,11 +151,7 @@ class ChainIVDSuite
     val protoCstr = :==:(ConstantValue(TCPProto))
 
     val (success, fail) =
-      SymnetMisc.symExec(
-        ivd,
-        ivd.initPort,
-        Assign(InputPortTag, SymbolicValue())
-      )
+      symExec(ivd, ivd.initPort, Assign(InputPortTag, SymbolicValue()))
 
     success should (
       // The only 'successful' state is the one which matches protocol TCP and
@@ -187,7 +183,7 @@ class ChainIVDSuite
     val cstr = :&:(:>=:(ConstantValue(ip)), :<=:(ConstantValue(ip)))
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         ivd,
         ivd.initPort,
 
@@ -226,7 +222,7 @@ class ChainIVDSuite
         -d 8.8.8.8 -j RETURN
     """)
     val ivd = buildIt(filterTable, List(5))
-    val (success, _) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, _) = symExec(ivd, ivd.initPort)
 
     success shouldBe empty
   }
@@ -244,7 +240,7 @@ class ChainIVDSuite
       <CHAIN2>
     """)
     val ivd = buildIt(filterTable)
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.initPort)
     val toConstrain = (proto: Int) => :==:(ConstantValue(proto))
 
     success should (
@@ -271,7 +267,7 @@ class ChainIVDSuite
         -p all -j RETURN
     """)
     val ivd = buildIt(filterTable)
-    val (success, fail) = SymnetMisc.symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.initPort)
 
     dropped(fail, ivd) shouldBe empty
     success should have length (1)

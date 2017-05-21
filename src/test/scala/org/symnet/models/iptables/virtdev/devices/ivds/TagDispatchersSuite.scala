@@ -20,8 +20,11 @@ import org.change.v2.analysis.processingmodels.instructions._
 
 @RunWith(classOf[JUnitRunner])
 class TagDispatchersSuite
-  extends FunSuite with Matchers
+  extends FunSuite with SymnetMisc
+                   with Matchers
                    with SymnetCustomMatchers {
+
+  override def deviceId: String = "ipt-router"
 
   test("validate arguments") {
     an [IllegalArgumentException] should be thrownBy
@@ -33,7 +36,7 @@ class TagDispatchersSuite
 
   test("out: no returns, no instructions") {
     val outDisp = OutputTagDispatcher("out-dispatcher", Nil)
-    val (success, fail) = SymnetMisc.symExec(outDisp, outDisp.inputPort)
+    val (success, fail) = symExec(outDisp, outDisp.inputPort)
 
     success shouldBe empty
     fail shouldBe empty
@@ -41,7 +44,7 @@ class TagDispatchersSuite
 
   test("out: tag not set fails") {
     val outDisp = OutputTagDispatcher("out-dispatcher", List(1, 3))
-    val (success, fail) = SymnetMisc.symExec(outDisp, outDisp.inputPort)
+    val (success, fail) = symExec(outDisp, outDisp.inputPort)
 
     success shouldBe empty
     fail should have length (2)
@@ -49,7 +52,7 @@ class TagDispatchersSuite
 
   test("in: tag not set fails") {
     val inDisp = InputTagDispatcher("in-dispatcher", 2)
-    val (success, fail) = SymnetMisc.symExec(inDisp, inDisp.inputPort)
+    val (success, fail) = symExec(inDisp, inDisp.inputPort)
 
     success shouldBe empty
     fail should have length (2)
@@ -58,7 +61,7 @@ class TagDispatchersSuite
   test("out: one option, one matched, is forwarded") {
     val outDisp = OutputTagDispatcher("out-dispatcher", List(1))
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         outDisp,
         outDisp.inputPort,
         Assign(OutputDispatchTag, ConstantValue(1))
@@ -73,11 +76,12 @@ class TagDispatchersSuite
 
   test("in: one option, one matched, is forwarded") {
     val inDisp = InputTagDispatcher("in-dispatcher", 1)
-    val (success, fail) = SymnetMisc.symExec(
-      inDisp,
-      inDisp.inputPort,
-      Assign(InputDispatchTag, ConstantValue(0))
-    )
+    val (success, fail) =
+      symExec(
+        inDisp,
+        inDisp.inputPort,
+        Assign(InputDispatchTag, ConstantValue(0))
+      )
 
     fail shouldBe empty
     success should (
@@ -89,7 +93,7 @@ class TagDispatchersSuite
   test("out: two options, one matched") {
     val outDisp = OutputTagDispatcher("out-dispatcher", List(1, 2))
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         outDisp,
         outDisp.inputPort,
         Assign(OutputDispatchTag, ConstantValue(2))
@@ -105,7 +109,7 @@ class TagDispatchersSuite
   test("in: three ivds, forward to 3rd") {
     val inDisp = InputTagDispatcher("in-dispatcher", 3)
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         inDisp,
         inDisp.inputPort,
         Assign(InputDispatchTag, ConstantValue(2))

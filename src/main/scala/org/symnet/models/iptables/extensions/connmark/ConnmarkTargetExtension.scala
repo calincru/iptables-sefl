@@ -63,13 +63,14 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
+      val nfmark = virtdev.nfmarkTag(options.id)
       val mask = maybeMask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
         Assign(
-          virtdev.NfmarkTag,
+          nfmark,
           <^>(ConstantBitVector(value),
-              <&>(:@(virtdev.NfmarkTag), ConstantBitVector(mask)))),
+              <&>(:@(nfmark), ConstantBitVector(mask)))),
         Forward(options.acceptPort)
       )
     }
@@ -90,6 +91,7 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
+      val nfmark = virtdev.nfmarkTag(options.id)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
@@ -97,7 +99,7 @@ object ConnmarkTarget extends BaseParsers {
         Assign(
           virtdev.CtmarkTag,
           <^>(<&>(:@(virtdev.CtmarkTag), ConstantBitVector(~ctmask)),
-              <&>(:@(virtdev.NfmarkTag), ConstantBitVector(nfmask)))),
+              <&>(:@(nfmark), ConstantBitVector(nfmask)))),
         Forward(options.acceptPort)
       )
     }
@@ -122,13 +124,14 @@ object ConnmarkTarget extends BaseParsers {
       context.table.get.name == "mangle"
 
     override def seflCode(options: SeflGenOptions): Instruction = {
+      val nfmark = virtdev.nfmarkTag(options.id)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
         Assign(
-          virtdev.NfmarkTag,
-          <^>(<&>(:@(virtdev.NfmarkTag), ConstantBitVector(~nfmask)),
+          nfmark,
+          <^>(<&>(:@(nfmark), ConstantBitVector(~nfmask)),
               <&>(:@(virtdev.CtmarkTag), ConstantBitVector(ctmask)))),
         Forward(options.acceptPort)
       )

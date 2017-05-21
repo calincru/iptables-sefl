@@ -22,7 +22,16 @@ import org.change.v2.util.canonicalnames._
 import virtdev.{NetworkModel => Model}
 import virtdev.devices.VirtualDevice
 
-object SymnetMisc {
+trait SymnetMisc {
+
+  // This has to be overridden by implementing class.
+  def deviceId: String
+
+  ///
+  /// Names of device-specific metadata.
+  ///
+
+  def nfmark: String = nfmarkTag(deviceId)
 
   def symExec[T <: VirtualDevice[_]](
       vd: T,
@@ -37,19 +46,20 @@ object SymnetMisc {
       initPort: String,
       otherInstr: Instruction,
       otherLinks: Map[Port, Port],
-      log: Boolean): (List[State], List[State]) = this.synchronized {
-    val model = vds.map(vd => NetworkModel(vd)).reduce(_ ++ _)
-    val result = new ClickExecutionContext(
-      model.instructions,
-      model.links ++ otherLinks,
-      List(initState(otherInstr).forwardTo(initPort)),
-      Nil,
-      Nil,
-      logger = if (log) JsonLogger else NoLogging
-    ).untilDone(true)
+      log: Boolean): (List[State], List[State]) =
+    Z3SyncDummyObject.synchronized {
+      val model = vds.map(vd => NetworkModel(vd)).reduce(_ ++ _)
+      val result = new ClickExecutionContext(
+        model.instructions,
+        model.links ++ otherLinks,
+        List(initState(otherInstr).forwardTo(initPort)),
+        Nil,
+        Nil,
+        logger = if (log) JsonLogger else NoLogging
+      ).untilDone(true)
 
-    (result.stuckStates, result.failedStates)
-  }
+      (result.stuckStates, result.failedStates)
+    }
 
   private def initState(otherInstr: Instruction): State = InstructionBlock(
     CreateTag("START",0),
@@ -77,8 +87,8 @@ object SymnetMisc {
     Allocate(TcpFlagACK, 1),
     Allocate(TcpFlagFIN, 1),
 
-    Allocate(NfmarkTag),
-    Assign(NfmarkTag, SymbolicBitVector()),
+    Allocate(nfmark),
+    Assign(nfmark, SymbolicBitVector()),
 
     Allocate(CtmarkTag),
     Assign(CtmarkTag, SymbolicBitVector()),
@@ -89,3 +99,5 @@ object SymnetMisc {
     otherInstr
   )(State())._1.head
 }
+
+private[this] object Z3SyncDummyObject

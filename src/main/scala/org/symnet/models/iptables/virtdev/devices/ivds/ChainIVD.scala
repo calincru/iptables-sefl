@@ -193,6 +193,7 @@ class ChainIVDBuilder(
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
     val initializer =
       ChainIVDInitializer(s"$name-initializer", new ChainIVDInitializerConfig {
+        // TODO: Shouldn't `id' be the name of the whole device?
         val id = self.name
         val chain = self.chain
         val table = self.table
@@ -208,6 +209,7 @@ class ChainIVDBuilder(
     val contiguousIVDs = subrules.zipWithIndex.map {
       case (rules_, i) =>
         ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
+          // TODO: Shouldn't `id' be the name of the whole device?
           val id = self.name
           val rules = rules_
           val portsMap = self.portsMap

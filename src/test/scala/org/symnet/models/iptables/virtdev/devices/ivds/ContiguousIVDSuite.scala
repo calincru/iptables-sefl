@@ -28,21 +28,24 @@ import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
 class ContiguousIVDSuite
-  extends FunSuite with Inside
+  extends FunSuite with SymnetMisc
+                   with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>
   import VirtdevSuitesCommon._
 
+  override def deviceId: String = "ipt-router"
+
   private def buildIt(rs: Rule*) =
     ContiguousIVD("contig-ivd", new ContiguousIVDConfig {
-      val id = "ipt-router"
+      val id = deviceId
       val portsMap = VirtdevSuitesCommon.portsMap
       val rules = rs.toList
     })
 
   private def buildIt(name: String, rs: Rule*) =
     ContiguousIVD(name, new ContiguousIVDConfig {
-      val id = "ipt-router"
+      val id = deviceId
       val portsMap = VirtdevSuitesCommon.portsMap
       val rules = rs.toList
     })
@@ -74,7 +77,7 @@ class ContiguousIVDSuite
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
-    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
+    val (success, fail) = symExec(contig, contig.inputPort)
     assert(success.length == 2) // 1 if => 2 paths
     assert(fail.isEmpty)
   }
@@ -91,7 +94,7 @@ class ContiguousIVDSuite
          Forward(contig.acceptPort),
          Forward(contig.nextIVDport))
 
-    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
+    val (success, fail) = symExec(contig, contig.inputPort)
     success should (
       have length (2) and
       containPath (contig.inputPort, contig.acceptPort) and
@@ -119,7 +122,7 @@ class ContiguousIVDSuite
     // paths.
     {
       val (success, fail) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           Assign(InputPortTag, SymbolicValue())
@@ -136,7 +139,7 @@ class ContiguousIVDSuite
     // input interface, we have 2 success paths and 1 failure path
     {
       val (success, fail) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           Assign(InputPortTag, ConstantValue(portsMap("eth0")))
@@ -158,7 +161,7 @@ class ContiguousIVDSuite
     // path ('Symbol `input-port' cannot be equal to `eth1'').
     {
       val (success, fail) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           Assign(InputPortTag, ConstantValue(portsMap("eth1")))
@@ -210,7 +213,7 @@ class ContiguousIVDSuite
       toRule("-s 192.168.0.0/24 -j DROP"),
       toRule("-s 192.168.0.5 -j ACCEPT")
     )
-    val (success, fail) = SymnetMisc.symExec(contig, contig.inputPort)
+    val (success, fail) = symExec(contig, contig.inputPort)
 
     success should not (reachPort (contig.acceptPort))
     fail should reachPort (contig.dropPort)
@@ -229,7 +232,7 @@ class ContiguousIVDSuite
                            :<=:(ConstantValue(Ipv4(141, 85, 200, 1).host))))
 
     val (success, _) =
-      SymnetMisc.symExec(
+      symExec(
         postChain,
         postChain.inputPort,
         Assign(IPSrc, ConstantValue(Ipv4(192, 168, 1, 100).host))
@@ -272,14 +275,14 @@ class ContiguousIVDSuite
     // If the source matches (i.e. its symbolic by default), or, more precisely,
     // *could* match, then there must be a path in which it gets rewritten ...
     {
-      val (success, _) = SymnetMisc.symExec(contig, contig.inputPort)
+      val (success, _) = symExec(contig, contig.inputPort)
       success should containConstrain (rewriteConstrain)
     }
 
     // ... otherwise, it shouldn't.
     {
       val (success, _) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           Assign(IPSrc, ConstantValue(Ipv4(192, 168, 3, 20).host))
@@ -317,15 +320,14 @@ class ContiguousIVDSuite
     // precisely, *could* match, then there must be a path in which it gets
     // rewritten ...
     {
-      val (success, _) =
-        SymnetMisc.symExec(preroutingNat, preroutingNat.inputPort)
+      val (success, _) = symExec(preroutingNat, preroutingNat.inputPort)
       success should containConstrain (rewriteConstrain)
     }
 
     // ... otherwise, it shouldn't.
     {
       val (success, _) =
-        SymnetMisc.symExec(
+        symExec(
           preroutingNat,
           preroutingNat.inputPort,
           Assign(IPDst, ConstantValue(Ipv4(2, 5, 3, 100).host))
@@ -392,11 +394,7 @@ class ContiguousIVDSuite
     )
 
     val (success, _) =
-      SymnetMisc.symExec(
-        contig,
-        contig.inputPort,
-        Assign(TcpSrc, ConstantValue(80))
-      )
+      symExec(contig, contig.inputPort, Assign(TcpSrc, ConstantValue(80)))
 
     success should (
       reachPort(contig.acceptPort) and
@@ -411,11 +409,7 @@ class ContiguousIVDSuite
     )
 
     val (success, _) =
-      SymnetMisc.symExec(
-        contig,
-        contig.inputPort,
-        Assign(TcpDst, ConstantValue(80))
-      )
+      symExec(contig, contig.inputPort, Assign(TcpDst, ConstantValue(80)))
 
     success should (
       reachPort (contig.acceptPort) and
@@ -430,7 +424,7 @@ class ContiguousIVDSuite
     )
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         contig,
         contig.inputPort,
         InstructionBlock(
@@ -452,7 +446,7 @@ class ContiguousIVDSuite
 
     {
       val (success, fail) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           InstructionBlock(
@@ -465,7 +459,7 @@ class ContiguousIVDSuite
     }
     {
       val (success, fail) =
-        SymnetMisc.symExec(
+        symExec(
           contig,
           contig.inputPort,
           InstructionBlock(
@@ -484,7 +478,7 @@ class ContiguousIVDSuite
     )
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         contig,
         contig.inputPort,
         InstructionBlock(
@@ -505,7 +499,7 @@ class ContiguousIVDSuite
     val contig = buildIt(mangleTable.chains(0).rules: _*)
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         contig,
         contig.inputPort,
         Assign(InputPortTag, ConstantValue(portsMap("eth0")))
@@ -524,11 +518,11 @@ class ContiguousIVDSuite
     val contig = buildIt(filterTable.chains(0).rules: _*)
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         contig,
         contig.inputPort,
         // NOTE: It matches the mark from above.
-        Assign(NfmarkTag, ConstantBitVector(0x0002))
+        Assign(nfmark, ConstantBitVector(0x0002))
       )
 
     success should reachPort (contig.acceptPort)
@@ -544,11 +538,11 @@ class ContiguousIVDSuite
     val contig = buildIt(filterTable.chains(0).rules: _*)
 
     val (success, _) =
-      SymnetMisc.symExec(
+      symExec(
         contig,
         contig.inputPort,
         // NOTE: It doesn't match the mark from above.
-        Assign(NfmarkTag, ConstantBitVector(0x0001))
+        Assign(nfmark, ConstantBitVector(0x0001))
       )
 
     accepted(success, contig) shouldBe empty
@@ -575,12 +569,12 @@ class ContiguousIVDSuite
     val filterContig = buildIt("filter-ivd", filterTable.chains(0).rules: _*)
 
     val (success, fail) =
-      SymnetMisc.symExec(
+      symExec(
         vds = List(mangleContig, filterContig),
         initPort = mangleContig.inputPort,
         otherInstr = InstructionBlock(
           Assign(CtmarkTag, ConstantBitVector(0xDEADBEEF)),
-          Assign(NfmarkTag, ConstantBitVector(0x00001234))
+          Assign(nfmark, ConstantBitVector(0x00001234))
         ),
         otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort),
         log = true

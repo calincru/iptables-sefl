@@ -6,6 +6,9 @@
 package org.symnet
 package models.iptables
 
+// TODO: Probably most of the tag names here should be device specific, so we
+// should probably rewrite them as functions of device ids.
+
 package object virtdev {
   type Port = String
   type Instruction = org.change.v2.analysis.processingmodels.Instruction
@@ -37,6 +40,15 @@ package object virtdev {
   def dnatToPort(id: String): String = s"$id-dnat-to-port"
 
   // Metadata tag names for MARK/CONNMARK fields.
-  val NfmarkTag = "nfmark"
+  //
+  // NOTE: The difference between the two is that ctmark is 'remembered' as part
+  // of flow's metadata, while nfmark is forgotten when the packet leaves the
+  // device.
   val CtmarkTag = "ctmark"
+  def nfmarkTag(id: String): String = s"$id-nfmark"
+
+  // Metadata tag names for CONNTRACK fields.
+  val CtstateTag = "ctstate"
+  val SnatStateTag = "snat-state"
+  val DnatStateTag = "dnat-state"
 }
