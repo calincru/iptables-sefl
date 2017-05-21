@@ -9,7 +9,7 @@ package virtdev
 
 // 3rd party:
 // -> Symnet
-import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
+import org.change.v2.analysis.expression.concrete._
 import org.change.v2.analysis.memory.State
 import org.change.v2.analysis.memory.TagExp._
 import org.change.v2.analysis.processingmodels.instructions._
@@ -28,6 +28,7 @@ object SymnetMisc {
       vd: T,
       initPort: String,
       otherInstr: Instruction = NoOp,
+      otherLinks: Map[Port, Port] = Map.empty,
       log: Boolean = false) = this.synchronized {
     val model = Model(vd)
     val result = new ClickExecutionContext(
@@ -69,7 +70,10 @@ object SymnetMisc {
     Allocate(TcpFlagFIN, 1),
 
     Allocate(NfmarkTag),
-    Assign(NfmarkTag, SymbolicValue()),
+    Assign(NfmarkTag, SymbolicBitVector()),
+
+    Allocate(CtmarkTag),
+    Assign(CtmarkTag, SymbolicBitVector()),
 
     CreateTag("END", L4Tag + 12000),
 

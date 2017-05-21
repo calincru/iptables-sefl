@@ -25,7 +25,9 @@ object MarkModuleLoader extends ModuleLoader {
 }
 
 object MarkMatchExtension extends MatchExtension {
-  override val matchParsers: List[Parser[Match]] = List(MarkMatch.parser)
+  override val matchParsers: List[Parser[Match]] = List(
+    MarkMatch.parser((value, maybeMask) => MarkMatch(value, maybeMask))
+  )
 }
 
 case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
@@ -46,7 +48,9 @@ case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
 object MarkMatch extends BaseParsers {
   import ParserMP.monadPlusSyntax._
 
-  def parser: Parser[Match] =
+  type MarkMatchFactory = (Long, Option[Long]) => Match
+
+  def parser(factory: MarkMatchFactory): Parser[Match] =
     for {
       _ <- spacesParser
       n1 <- optional(parseChar('!') >> someSpacesParser)
@@ -55,5 +59,5 @@ object MarkMatch extends BaseParsers {
       // TODO: Change this to a general number (u32) parser.
       value <- someSpacesParser >> hexLongParser
       maybeMask <- optional(parseChar('/') >> hexLongParser)
-    } yield Match.maybeNegated(MarkMatch(value, maybeMask), n1)
+    } yield Match.maybeNegated(factory(value, maybeMask), n1)
 }

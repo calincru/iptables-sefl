@@ -12,7 +12,8 @@ import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
 import org.change.v2.util.canonicalnames.{Proto, ICMPProto, UDPProto, TCPProto}
 
 import core._
-import extensions.tcp.TcpModuleLoader
+import extensions.tcp.TcpExtension
+import extensions.udp.UdpExtension
 
 case class ProtocolMatch(protocol: String) extends Match {
   type Self = ProtocolMatch
@@ -26,8 +27,8 @@ case class ProtocolMatch(protocol: String) extends Match {
 
   override def extensionsEnabled: List[MatchExtension] =
     protocol match {
-      case "tcp" => List(TcpModuleLoader)
-      case "udp" => Nil // FIXME
+      case "tcp" => List(TcpExtension)
+      case "udp" => List(UdpExtension)
       case _ => Nil
     }
 

@@ -541,11 +541,44 @@ class ContiguousIVDSuite
         contig,
         contig.inputPort,
         // NOTE: It doesn't match the mark from above.
-        Assign(NfmarkTag, ConstantBitVector(0x0001)),
-        log = true
+        Assign(NfmarkTag, ConstantBitVector(0x0001))
       )
 
     accepted(success, contig) shouldBe empty
     success should reachPort (contig.nextIVDport)
+  }
+
+  test("connmark match and target") {
+    // The only rule in the PREROUTING chain from the mangle table says that if
+    // the ctmark value does not have the most significant 2 bytes set to 0,
+    // then xor them into Nfmark.
+    val mangleTable = toTable("""
+      <<mangle>>
+      <PREROUTING:ACCEPT>
+        -m connmark ! --mark 0x0/0xffff0000
+          -j CONNMARK --restore-mark --nfmask 0xffff0000 --ctmask 0xffff0000
+    """)
+    val filterTable = toTable("""
+      <<filter>>
+      <FORWARD:DROP>
+        -m mark --mark 0xDEAD0000/0xffff0000 -j ACCEPT
+    """)
+
+    val mangleContig = buildIt(mangleTable.chains(0).rules: _*)
+    val filterContig = buildIt(filterTable.chains(0).rules: _*)
+
+    val (success, fail) =
+      SymnetMisc.symExec(
+        mangleContig,
+        mangleContig.inputPort,
+        InstructionBlock(
+          Assign(CtmarkTag, ConstantBitVector(0xDEADBEEF)),
+          Assign(NfmarkTag, ConstantBitVector(0x00001234))
+        ),
+        otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort)
+      )
+
+    accepted(success, filterContig) should have length (1)
+    success should reachPort (filterContig.acceptPort)
   }
 }

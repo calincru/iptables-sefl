@@ -50,7 +50,7 @@ case class MarkTarget(
       Assign(
         virtdev.NfmarkTag,
         op(ConstantBitVector(value),
-           <&>(:@(virtdev.NfmarkTag), ConstantBitVector(mask)))),
+           <&>(:@(virtdev.NfmarkTag), ConstantBitVector(~mask)))),
       Forward(options.acceptPort)
     )
   }

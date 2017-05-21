@@ -38,4 +38,5 @@ package object virtdev {
 
   // Metadata tag names for MARK/CONNMARK fields.
   val NfmarkTag = "nfmark"
+  val CtmarkTag = "ctmark"
 }

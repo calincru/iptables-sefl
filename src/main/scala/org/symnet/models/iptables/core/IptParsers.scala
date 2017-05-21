@@ -62,17 +62,25 @@ object iptParsers extends BaseParsers {
             parseString(moduleName)
     } yield t
 
-  // TODO: Change the way it works to support 'matches' that enable other ones,
-  // such as '-m mark' or '-p tcp'. It can be implemented by adding a new method
-  // to the 'Match' class to return a list of extensions enabled, which will
-  // afterwards be added to the context.
   def ruleParser(implicit context: ParsingContext): Parser[Rule] = {
-    val matchParsers  = context.matchExtensions.map(_.matchParsers).flatten
-    val targetParsers = context.targetExtensions.map(_.targetParser)
+    def matchesParserRec(
+        context: ParsingContext,
+        accMatches: List[Match]): Parser[List[Match]] = {
+      val matchParsers = context.matchExtensions.map(_.matchParsers).flatten
+
+      for {
+        newMatch <- optional(oneOf(matchParsers: _*))
+        accNext <- newMatch match {
+          case Some(m) => matchesParserRec(
+            context.addMatchExtensions(m.extensionsEnabled), accMatches :+ m)
+          case None => pure(accMatches)
+        }
+      } yield accNext
+    }
 
     for {
-      matches <- many(oneOf(matchParsers: _*))
-      target  <- oneOf(targetParsers: _*)
+      matches <- matchesParserRec(context, Nil)
+      target  <- oneOf(context.targetExtensions.map(_.targetParser): _*)
     } yield Rule(matches, target)
   }
 

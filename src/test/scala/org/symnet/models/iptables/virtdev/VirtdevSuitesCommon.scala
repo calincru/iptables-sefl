@@ -22,20 +22,11 @@ import devices.VirtualDevice
 // -> extensions
 import extensions.filter.FilteringExtension
 import extensions.nat._
-import extensions.tcp.TcpExtension
-import extensions.udp.UdpExtension
-import extensions.mark.MarkMatchExtension
 
 object VirtdevSuitesCommon {
   val portsMap = Map("eth0" -> 0, "eth1" -> 1, "eth2" -> 2)
 
-  // TODO: Remove the extensions once the module loading works.
-  private implicit def parsingContext =
-    ParsingContext
-      .default
-      .addMatchExtension(TcpExtension)
-      .addMatchExtension(UdpExtension)
-      .addMatchExtension(MarkMatchExtension)
+  private implicit def parsingContext = ParsingContext.default
 
   def toRule(ruleStr: String) = {
     val maybeResult = ruleParser.apply(ruleStr).toOption
