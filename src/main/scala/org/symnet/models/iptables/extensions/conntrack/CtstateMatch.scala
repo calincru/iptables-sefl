@@ -15,6 +15,8 @@ import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain}
 // project
 import core._
 
+// NOTE: The state `Related' is added just for completeness, but we cannot model
+// it in SEFL.
 object ConnectionState extends Enumeration {
   type ConnectionState = Value
   val Invalid, New, Established, Related, Untracked, Snat, Dnat = Value
@@ -34,20 +36,26 @@ case class CtstateMatch(strStates: List[String]) extends Match {
   override protected def validateIf(context: ValidationContext): Boolean =
     states.size == strStates.size
 
-  override def seflCondition(options: SeflGenOptions): SeflCondition =
+  override def seflCondition(options: SeflGenOptions): SeflCondition = {
+    val ctstateTag = virtdev.ctstateTag(options.id)
+    val snatStateTag = virtdev.snatStateTag(options.id)
+    val dnatStateTag = virtdev.dnatStateTag(options.id)
+
     SeflCondition.conjunction(
       states.map(_ match {
         // Handle virtual states separately (SNAT and DNAT).
-        case ConnectionState.Dnat =>
-          Constrain(virtdev.SnatStateTag, :==:(ConstantValue(1)))
+        // TODO: These are not set atm.
         case ConnectionState.Snat =>
-          Constrain(virtdev.DnatStateTag, :==:(ConstantValue(1)))
+          Constrain(snatStateTag, :==:(ConstantValue(1)))
+        case ConnectionState.Dnat =>
+          Constrain(dnatStateTag, :==:(ConstantValue(1)))
 
         // TODO: Make sure to default this to the valid value (Invalid? New?)
         case s @ _ =>
-          Constrain(virtdev.CtstateTag, :==:(ConstantValue(s.id)))
+          Constrain(ctstateTag, :==:(ConstantValue(s.id)))
       })
     )
+  }
 }
 
 object CtstateMatch extends BaseParsers {

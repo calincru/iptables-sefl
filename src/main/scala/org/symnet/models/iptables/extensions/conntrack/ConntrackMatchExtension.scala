@@ -19,6 +19,7 @@ object ConntrackModuleLoader extends ModuleLoader {
 }
 
 object ConntrackMatchExtension extends MatchExtension {
+  // TODO: There are other unsupported options.
   override val matchParsers: List[Parser[Match]] = List(
     CtstateMatch.parser,
     CtprotoMatch.parser

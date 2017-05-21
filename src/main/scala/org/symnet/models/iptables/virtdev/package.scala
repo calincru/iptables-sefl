@@ -6,9 +6,6 @@
 package org.symnet
 package models.iptables
 
-// TODO: Probably most of the tag names here should be device specific, so we
-// should probably rewrite them as functions of device ids.
-
 package object virtdev {
   type Port = String
   type Instruction = org.change.v2.analysis.processingmodels.Instruction
@@ -16,6 +13,11 @@ package object virtdev {
   // A Routing Table is an ordered list of pairs (IP, Output Port), where the
   // IP is a network prefix (could be a host address to, if the mask is /32).
   type RoutingTable = List[(types.net.Ipv4, String)]
+
+  // TODO: We should probably change all names of metadata fields to
+  // device-specific, but the logic of the flow guarantees these ones don't
+  // affect other devices (there's always an 'Allocate'/'Assign' before
+  // constraining or referencing them).
 
   val InputDispatchTag  = "input-dispatch"
   val OutputDispatchTag = "output-dispatch"
@@ -48,7 +50,7 @@ package object virtdev {
   def nfmarkTag(id: String): String = s"$id-nfmark"
 
   // Metadata tag names for CONNTRACK fields.
-  val CtstateTag = "ctstate"
-  val SnatStateTag = "snat-state"
-  val DnatStateTag = "dnat-state"
+  def ctstateTag(id: String): String = s"$id-ctstate"
+  def snatStateTag(id: String): String = s"$id-snat-state"
+  def dnatStateTag(id: String): String = s"$id-dnat-state"
 }

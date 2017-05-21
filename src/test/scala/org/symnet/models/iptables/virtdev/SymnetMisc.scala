@@ -33,6 +33,13 @@ trait SymnetMisc {
 
   def nfmark: String = nfmarkTag(deviceId)
   def ctmark: String = ctmarkTag(deviceId)
+  def ctstate: String = ctstateTag(deviceId)
+  def snatState: String = snatStateTag(deviceId)
+  def dnatState: String = dnatStateTag(deviceId)
+
+  ///
+  /// Run symbolic execution given a one or more virtual devices
+  ///
 
   def symExec[T <: VirtualDevice[_]](
       vd: T,
@@ -88,13 +95,26 @@ trait SymnetMisc {
     Allocate(TcpFlagACK, 1),
     Allocate(TcpFlagFIN, 1),
 
+    CreateTag("END", L4Tag + 12000),
+
+    ///
+    /// Metadata fields
+    ///
+
     Allocate(nfmark),
     Assign(nfmark, SymbolicBitVector()),
 
     Allocate(ctmark),
     Assign(ctmark, SymbolicBitVector()),
 
-    CreateTag("END", L4Tag + 12000),
+    Allocate(ctstate),
+    Assign(ctstate, SymbolicValue()),
+
+    Allocate(snatState),
+    Assign(snatState, SymbolicValue()),
+
+    Allocate(dnatState),
+    Assign(dnatState, SymbolicValue()),
 
     // Add here the additional instruction.
     otherInstr

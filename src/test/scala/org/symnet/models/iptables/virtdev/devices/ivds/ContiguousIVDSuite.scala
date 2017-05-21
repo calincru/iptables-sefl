@@ -577,7 +577,7 @@ class ContiguousIVDSuite
           Assign(nfmark, ConstantBitVector(0x00001234))
         ),
         otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort),
-        log = true
+        log = false
       )
 
     accepted(success, filterContig) should have length (1)

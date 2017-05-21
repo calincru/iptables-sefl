@@ -58,6 +58,7 @@ object ParsingContext {
   import extensions.udp.UdpModuleLoader
   import extensions.mark.{MarkModuleLoader, MarkTargetExtension}
   import extensions.connmark.{ConnmarkModuleLoader, ConnmarkTargetExtension}
+  import extensions.conntrack.ConntrackModuleLoader
 
   def default: ParsingContext = ParsingContext(
     // Match extensions.
@@ -66,13 +67,12 @@ object ParsingContext {
       FilteringExtension,
 
       // NOTE: We also include all matchers for module loaders.
-
-      MarkModuleLoader,
-      ConnmarkModuleLoader,
-
       CommentModuleLoader,
       TcpModuleLoader,
-      UdpModuleLoader
+      UdpModuleLoader,
+      MarkModuleLoader,
+      ConnmarkModuleLoader,
+      ConntrackModuleLoader
     ),
 
     // Target extensions.

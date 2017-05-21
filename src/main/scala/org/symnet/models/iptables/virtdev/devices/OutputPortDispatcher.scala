@@ -31,7 +31,14 @@ case class OutputPortDispatcher(
           Constrain(OutputPortTag, :==:(ConstantValue(i))),
 
           // TODO: Cleanup so that the next device is not influenced by metadata
-          // added just for in-device processing (such as nfmark).
+          // added just for in-device processing (such as nfmark). NOTE: Since
+          // we added a name scheme which makes sure other devices don't touch
+          // the metadata added by this one, we can simply Assign
+          // SymbolicValue/SymbolicBitVector to those fields in the
+          // InputPortSetter.
+          //
+          // TODO: It's clear that we need to pass some 'device data' to almost
+          // all submodules (e.g. here we need its id, to clear 'nfmarkTag').
 
           // Forward packets on the designated output interface.
           Forward(outputPort(i))
