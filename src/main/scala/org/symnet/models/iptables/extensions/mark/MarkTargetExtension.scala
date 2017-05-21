@@ -9,7 +9,7 @@ package extensions.mark
 
 // 3rd-party
 // -> Symnet
-import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
+import org.change.v2.analysis.expression.concrete.ConstantBitVector
 import org.change.v2.analysis.expression.concrete.nonprimitive.{:@, <^>, <|>, <&>}
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
@@ -49,8 +49,8 @@ case class MarkTarget(
     InstructionBlock(
       Assign(
         virtdev.NfmarkTag,
-        op(ConstantValue(value),
-          <&>(:@(virtdev.NfmarkTag), ConstantValue(mask)))),
+        op(ConstantBitVector(value),
+           <&>(:@(virtdev.NfmarkTag), ConstantBitVector(mask)))),
       Forward(options.acceptPort)
     )
   }
@@ -72,7 +72,7 @@ object MarkTarget extends BaseParsers {
 
       // Parse 'value[/mask]'.
       // TODO: Change this to a general number (u32) parser.
-      value <- hexLongParser
+      value <- someSpacesParser >> hexLongParser
       maybeMask <- optional(parseChar('/') >> hexLongParser)
     } yield MarkTarget(value, maybeMask, option contains 'x')
 }

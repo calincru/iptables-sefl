@@ -15,7 +15,7 @@ import org.scalatest.junit.JUnitRunner
 
 // 3rd party:
 // -> Symnet
-import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicValue}
+import org.change.v2.analysis.expression.concrete._
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.util.canonicalnames._
 
@@ -487,5 +487,65 @@ class ContiguousIVDSuite
       )
 
     success should not (reachPort (contig.acceptPort))
+  }
+
+  test("mark target") {
+    val mangleTable = toTable("""
+      <<mangle>>
+        <PREROUTING:ACCEPT>
+          -i eth+ -j MARK --set-xmark 0x2/0xffff
+    """)
+    val contig = buildIt(mangleTable.chains(0).rules: _*)
+
+    val (success, fail) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        Assign(InputPortTag, ConstantValue(portsMap("eth0")))
+      )
+
+    success should reachPort (contig.acceptPort)
+    dropped(fail, contig) shouldBe empty
+  }
+
+  test("mark match") {
+    val filterTable = toTable("""
+      <<filter>>
+        <FORWARD:DROP>
+          -m mark --mark 0x2/0xffff -j ACCEPT
+    """)
+    val contig = buildIt(filterTable.chains(0).rules: _*)
+
+    val (success, fail) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        // NOTE: It matches the mark from above.
+        Assign(NfmarkTag, ConstantBitVector(0x0002))
+      )
+
+    success should reachPort (contig.acceptPort)
+    dropped(fail, contig) shouldBe empty
+  }
+
+  test("mark match negated") {
+    val filterTable = toTable("""
+      <<filter>>
+        <FORWARD:DROP>
+          -m mark --mark 0x2/0xffff -j ACCEPT
+    """)
+    val contig = buildIt(filterTable.chains(0).rules: _*)
+
+    val (success, _) =
+      SymnetMisc.symExec(
+        contig,
+        contig.inputPort,
+        // NOTE: It doesn't match the mark from above.
+        Assign(NfmarkTag, ConstantBitVector(0x0001)),
+        log = true
+      )
+
+    accepted(success, contig) shouldBe empty
+    success should reachPort (contig.nextIVDport)
   }
 }

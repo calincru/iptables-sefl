@@ -297,4 +297,9 @@ class CoreParsingSuite extends FunSuite with Matchers with BaseParsers {
     optionlessTargetParser(Map(("ONLY", only))).eval("-j OnLY") shouldBe
       empty
   }
+
+  test("hex number parser") {
+    hexLongParser.eval("0x2") shouldBe Just(0x2l)
+    hexLongParser.eval("0xffff") shouldBe Just(0xFFFFl)
+  }
 }

@@ -8,18 +8,26 @@ package org.symnet.models.iptables.core
 // 3rd-party
 // -> Symnet
 import org.change.v2.analysis.processingmodels.Instruction
+import org.change.v2.analysis.processingmodels.instructions.NoOp
 
 case class SeflCondition(
     constraints: List[Instruction],
+    initInstr:   Instruction = NoOp,
     conjunction: Boolean = true)
 
 object SeflCondition {
   def empty: SeflCondition = SeflCondition(Nil)
-  def single(constraint: Instruction): SeflCondition =
-    SeflCondition(List(constraint))
+  def single(
+      constraint: Instruction,
+      initInstr: Instruction = NoOp): SeflCondition =
+    SeflCondition(List(constraint), initInstr)
 
-  def conjunction(constraints: List[Instruction]): SeflCondition =
-    SeflCondition(constraints, true)
-  def disjunction(constraints: List[Instruction]): SeflCondition =
-    SeflCondition(constraints, false)
+  def conjunction(
+      constraints: List[Instruction],
+      initInstr: Instruction = NoOp): SeflCondition =
+    SeflCondition(constraints, initInstr, true)
+  def disjunction(
+      constraints: List[Instruction],
+      initInstr: Instruction = NoOp): SeflCondition =
+    SeflCondition(constraints, initInstr, false)
 }

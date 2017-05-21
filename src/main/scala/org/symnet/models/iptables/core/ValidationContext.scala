@@ -23,12 +23,12 @@ case class ValidationContext(
 
   def setRule(newRule: Rule): ValidationContext =
     ValidationContext(table, chain, Some(newRule), interfaces)
+
+  def setInterfaces(newInterfaces: List[Interface]): ValidationContext =
+    ValidationContext(table, chain, rule, newInterfaces)
 }
 
 object ValidationContext {
   def empty: ValidationContext =
     ValidationContext(None, None, None, Nil)
-
-  def empty(interfaces: List[Interface]): ValidationContext =
-    ValidationContext(None, None, None, interfaces)
 }

@@ -57,7 +57,7 @@ case class NegatedMatch(m: Match) extends Match {
     })
 
     // (De Morgan's law) Group them using the opposite logic operation.
-    SeflCondition(newConstraints, !mCondition.conjunction)
+    SeflCondition(newConstraints, mCondition.initInstr, !mCondition.conjunction)
   }
 }
 

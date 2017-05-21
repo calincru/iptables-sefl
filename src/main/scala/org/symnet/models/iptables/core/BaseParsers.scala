@@ -90,8 +90,8 @@ trait BaseParsers {
 
   def hexLongParser: Parser[Long] =
     for {
-      maybeNr <- parseString("0x") >> some(parseCharIf(_.isDigit)).map(
-        x => Try(x.mkString.toLong).toOption) if maybeNr.isDefined
+      maybeNr <- some(parseCharIf(c => charIsValidHexa(c))).map(
+          x => Try(java.lang.Long.decode(x)).toOption) if maybeNr.isDefined
     } yield maybeNr.get
 
 
@@ -144,4 +144,7 @@ trait BaseParsers {
 
   private def digitsValid(digits: List[Int]): Boolean =
     !digits.isEmpty && !(digits.length >= 2 && digits(0) == 0)
+
+  private def charIsValidHexa(c: Char): Boolean =
+    "x0123456789abcdef" contains c.toLower
 }

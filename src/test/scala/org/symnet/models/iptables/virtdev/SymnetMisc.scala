@@ -68,6 +68,9 @@ object SymnetMisc {
     Allocate(TcpFlagACK, 1),
     Allocate(TcpFlagFIN, 1),
 
+    Allocate(NfmarkTag),
+    Assign(NfmarkTag, SymbolicValue()),
+
     CreateTag("END", L4Tag + 12000),
 
     // Add here the additional instruction.

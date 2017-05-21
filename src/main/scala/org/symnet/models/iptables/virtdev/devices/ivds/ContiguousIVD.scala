@@ -8,8 +8,11 @@ package models.iptables.virtdev
 package devices
 package ivds
 
-import org.change.v2.analysis.processingmodels.instructions.{Fail, Forward, If}
+// 3rd-party
+// -> Symnet
+import org.change.v2.analysis.processingmodels.instructions._
 
+// project
 import models.iptables.core.{Rule, SeflCondition, SeflGenOptions}
 
 trait ContiguousIVDConfig {
@@ -62,6 +65,7 @@ case class ContiguousIVD(
                               elseStmnt:  Instruction) =>
       conditions.foldRight(thenStmnt)((condition, acc) => {
         val constraints = condition.constraints
+        val initInstr = condition.initInstr
 
         if (condition.conjunction) {
           // If this is a conjunction, we do:
@@ -74,8 +78,14 @@ case class ContiguousIVD(
           //    else
           //      elseStmnt
           //
-          constraints.foldRight(acc)((constraint, acc_inner) =>
-              If(constraint, acc_inner, elseStmnt))
+          constraints.foldRight(acc)((constraint, acc_inner) => {
+            val ifInstr = If(constraint, acc_inner, elseStmnt)
+
+            if (initInstr == NoOp)
+              ifInstr
+            else
+              InstructionBlock(initInstr, ifInstr)
+          })
         } else {
           // If this is a disjunction, we do:
           //
@@ -87,8 +97,14 @@ case class ContiguousIVD(
           //    else
           //      elseStmnt
           //
-          constraints.foldRight(elseStmnt)((constraint, acc_inner) =>
-              If(constraint, thenStmnt, acc_inner))
+          constraints.foldRight(elseStmnt)((constraint, acc_inner) => {
+            val ifInstr = If(constraint, thenStmnt, acc_inner)
+
+            if (initInstr == NoOp)
+              ifInstr
+            else
+              InstructionBlock(initInstr, ifInstr)
+          })
         }
       })
 

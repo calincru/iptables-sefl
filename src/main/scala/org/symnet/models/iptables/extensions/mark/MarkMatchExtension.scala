@@ -7,6 +7,12 @@ package org.symnet
 package models.iptables
 package extensions.mark
 
+// 3rd-party
+// -> Symnet
+import org.change.v2.analysis.expression.concrete.ConstantBitVector
+import org.change.v2.analysis.expression.concrete.nonprimitive.{:@, <|>, <&>}
+import org.change.v2.analysis.processingmodels.instructions._
+
 // project
 import core._
 
@@ -22,12 +28,18 @@ object MarkMatchExtension extends MatchExtension {
   override val matchParsers: List[Parser[Match]] = List(MarkMatch.parser)
 }
 
-case class MarkMatch(value: Long, mask: Option[Long]) extends Match {
+case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
   type Self = MarkMatch
 
-  // TODO: Implement this.
   override def seflCondition(options: SeflGenOptions): SeflCondition = {
-    SeflCondition.empty
+    val mask = maybeMask getOrElse 0xFFFFFFFFL
+
+    SeflCondition.single(
+      initInstr = Assign(
+        "nfmark-tmp",
+        <&>(:@(virtdev.NfmarkTag), ConstantBitVector(mask))),
+      constraint = Constrain("nfmark-tmp", :==:(ConstantBitVector(value)))
+    )
   }
 }
 
@@ -41,7 +53,7 @@ object MarkMatch extends BaseParsers {
       _ <- parseString("--mark")
 
       // TODO: Change this to a general number (u32) parser.
-      value <- hexLongParser
+      value <- someSpacesParser >> hexLongParser
       maybeMask <- optional(parseChar('/') >> hexLongParser)
     } yield Match.maybeNegated(MarkMatch(value, maybeMask), n1)
 }

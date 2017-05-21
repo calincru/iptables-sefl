@@ -47,13 +47,6 @@ class ChainIVDSuite
     new ChainIVDBuilder("ivd", chain, table, idx, rules, neighs, portsMap).build
   }
 
-  /** This function eases testing against failing states, as we are sometimes
-   *  only interested in those which were caused by explicitly dropping the
-   *  packet.
-   */
-  private def dropped(failStates: List[State], ivd: ChainIVD) =
-    failStates.filter(_.history.head == ivd.dropPort)
-
   test("empty chain, packet gets dropped") {
     val filterTable = toTable("""
       <<filter>>
