@@ -43,14 +43,15 @@ case class MarkTarget(
   }
 
   override def seflCode(options: SeflGenOptions): Instruction = {
-    val nfmark = virtdev.nfmarkTag(options.id)
+    val nfmarkTag = virtdev.nfmarkTag(options.id)
     val mask = maybeMask getOrElse 0xFFFFFFFFL
     val op = if (isXor) <^> else <|>
 
     InstructionBlock(
       Assign(
-        nfmark,
-        op(ConstantBitVector(value), <&>(:@(nfmark), ConstantBitVector(~mask)))),
+        nfmarkTag,
+        op(ConstantBitVector(value),
+           <&>(:@(nfmarkTag), ConstantBitVector(~mask)))),
       Forward(options.acceptPort)
     )
   }

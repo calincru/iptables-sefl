@@ -35,13 +35,14 @@ case class ConnmarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
   type Self = ConnmarkMatch
 
   override def seflCondition(options: SeflGenOptions): SeflCondition = {
+    val ctmarkTag = virtdev.ctmarkTag(options.id)
+    val ctmarkTmpTag = ctmarkTag + "-tmp"
     val mask = maybeMask getOrElse 0xFFFFFFFFL
 
     SeflCondition.single(
-      initInstr = Assign(
-        "ctmark-tmp",
-        <&>(:@(virtdev.CtmarkTag), ConstantBitVector(mask))),
-      constraint = Constrain("ctmark-tmp", :==:(ConstantBitVector(value)))
+      initInstr =
+        Assign(ctmarkTmpTag, <&>(:@(ctmarkTag), ConstantBitVector(mask))),
+      constraint = Constrain(ctmarkTmpTag, :==:(ConstantBitVector(value)))
     )
   }
 }

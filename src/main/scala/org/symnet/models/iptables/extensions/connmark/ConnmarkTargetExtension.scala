@@ -63,14 +63,14 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmark = virtdev.nfmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.id)
       val mask = maybeMask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
         Assign(
-          nfmark,
+          nfmarkTag,
           <^>(ConstantBitVector(value),
-              <&>(:@(nfmark), ConstantBitVector(mask)))),
+              <&>(:@(nfmarkTag), ConstantBitVector(mask)))),
         Forward(options.acceptPort)
       )
     }
@@ -91,15 +91,16 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmark = virtdev.nfmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.id)
+      val ctmarkTag = virtdev.ctmarkTag(options.id)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
         Assign(
-          virtdev.CtmarkTag,
-          <^>(<&>(:@(virtdev.CtmarkTag), ConstantBitVector(~ctmask)),
-              <&>(:@(nfmark), ConstantBitVector(nfmask)))),
+          ctmarkTag,
+          <^>(<&>(:@(ctmarkTag), ConstantBitVector(~ctmask)),
+              <&>(:@(nfmarkTag), ConstantBitVector(nfmask)))),
         Forward(options.acceptPort)
       )
     }
@@ -124,15 +125,16 @@ object ConnmarkTarget extends BaseParsers {
       context.table.get.name == "mangle"
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmark = virtdev.nfmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.id)
+      val ctmarkTag = virtdev.ctmarkTag(options.id)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
         Assign(
-          nfmark,
-          <^>(<&>(:@(nfmark), ConstantBitVector(~nfmask)),
-              <&>(:@(virtdev.CtmarkTag), ConstantBitVector(ctmask)))),
+          nfmarkTag,
+          <^>(<&>(:@(nfmarkTag), ConstantBitVector(~nfmask)),
+              <&>(:@(ctmarkTag), ConstantBitVector(ctmask)))),
         Forward(options.acceptPort)
       )
     }

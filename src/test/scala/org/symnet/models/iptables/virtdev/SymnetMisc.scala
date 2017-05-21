@@ -32,6 +32,7 @@ trait SymnetMisc {
   ///
 
   def nfmark: String = nfmarkTag(deviceId)
+  def ctmark: String = ctmarkTag(deviceId)
 
   def symExec[T <: VirtualDevice[_]](
       vd: T,
@@ -90,8 +91,8 @@ trait SymnetMisc {
     Allocate(nfmark),
     Assign(nfmark, SymbolicBitVector()),
 
-    Allocate(CtmarkTag),
-    Assign(CtmarkTag, SymbolicBitVector()),
+    Allocate(ctmark),
+    Assign(ctmark, SymbolicBitVector()),
 
     CreateTag("END", L4Tag + 12000),
 

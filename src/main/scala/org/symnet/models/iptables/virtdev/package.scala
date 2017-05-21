@@ -44,7 +44,7 @@ package object virtdev {
   // NOTE: The difference between the two is that ctmark is 'remembered' as part
   // of flow's metadata, while nfmark is forgotten when the packet leaves the
   // device.
-  val CtmarkTag = "ctmark"
+  def ctmarkTag(id: String): String = s"$id-ctmark"
   def nfmarkTag(id: String): String = s"$id-nfmark"
 
   // Metadata tag names for CONNTRACK fields.
