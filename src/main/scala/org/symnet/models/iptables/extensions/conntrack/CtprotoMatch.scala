@@ -22,5 +22,8 @@ object CtprotoMatch extends BaseParsers {
       n2 <- conditional(optional(someSpacesParser >> parseChar('!')),
                         !n1.isDefined)
       l4proto <- someSpacesParser >> identifierParser
+
+    // TODO: Is it OK to reuse the ProtocolMatch match?  It matches the `Proto'
+    // field in the L4 header.
     } yield Match.maybeNegated(ProtocolMatch(l4proto), n1 orElse n2.flatten)
 }

@@ -110,7 +110,7 @@ class IPTRouter(
 
       Map(
         // Add link from the prerouting IVD to the first routing decision.
-        config.preroutingIVD.outputPort -> config.preFwdRD.inputPort,
+        config.preroutingIVD.acceptPort -> config.preFwdRD.inputPort,
 
         // Link the first routing decision as expected.
         config.preFwdRD.localOutputPort -> config.inputIVD.inputPort,
@@ -120,14 +120,14 @@ class IPTRouter(
         config.inputIVD.inputPort -> config.localProcess.inputPort,
 
         // Link the FORWARDING chain to the next routing decision.
-        config.forwardingIVD.outputPort -> config.postFwdRD.inputPort,
+        config.forwardingIVD.acceptPort -> config.postFwdRD.inputPort,
 
         // Link the second routing decision as expected.
         config.postFwdRD.localOutputPort -> config.inputIVD.inputPort,
         config.postFwdRD.fwdOutputPort   -> config.postroutingIVD.inputPort,
 
         // Link the POSTROUTING chain to the output dispatcher.
-        config.postroutingIVD.outputPort -> config.outDispatcher.inputPort),
+        config.postroutingIVD.acceptPort -> config.outDispatcher.inputPort),
 
       // Link the output dispatcher to router's output interfaces.
       (0 until outputPorts).map(
@@ -183,13 +183,29 @@ class IPTRouterBuilder(
     val chains = index.chainsByName(chainName)
 
     new IVDSequencerBuilder(
-      s"$name-seq-$chainName",
-      chains.map(c => chainIVDsMap(chainIndices(c)))
+      s"$name-seq-$chainName", {
+        val ivds = chains.map(c => chainIVDsMap(chainIndices(c)))
+
+        // If we are building the prerouting or the output list of chain ivds,
+        // we need to add the connection tracking element right after the 'raw'
+        // table (if it exists).
+        if (List("PREROUTING", "OUTPUT") contains chainName) {
+          val ct = ConnectionTrackingIVD(s"$name-conntrack", self.name)
+
+          if (!chains.isEmpty && chains.head.name == "raw") {
+            ivds.head :: ct :: ivds.tail
+          } else {
+            ct :: ivds
+          }
+        } else {
+          ivds
+        }
+      }
     ).build
   }
 
   protected def makeOutDispatcher: OutputPortDispatcher =
-    OutputPortDispatcher(s"$name-output-dispatcher", outputPorts)
+    OutputPortDispatcher(s"$name-output-dispatcher", outputPorts, self.name)
 
   protected def makeChainsLinker: UserChainsLinker =
     UserChainsLinker(s"$name-chains-linker", new UserChainsLinkerConfig {
@@ -231,7 +247,8 @@ class IPTRouterBuilder(
           idx,
           index.chainsSplitSubrules(chain),
           chainInNeighsMap(idx),
-          portsMap
+          portsMap,
+          self.name
         ).build
     }
 

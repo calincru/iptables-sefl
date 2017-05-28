@@ -63,10 +63,10 @@ case class MasqueradeTarget(
   // saved ip of the output port, instead of a specified port (range).
   override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
-    val fromIp = virtdev.snatFromIp(options.id)
-    val fromPort = virtdev.snatFromPort(options.id)
-    val toIp = virtdev.snatToIp(options.id)
-    val toPort = virtdev.snatToPort(options.id)
+    val fromIp = virtdev.snatFromIp(options.deviceId)
+    val fromPort = virtdev.snatFromPort(options.deviceId)
+    val toIp = virtdev.snatToIp(options.deviceId)
+    val toPort = virtdev.snatToPort(options.deviceId)
 
     InstructionBlock(
       // Save original addresses.

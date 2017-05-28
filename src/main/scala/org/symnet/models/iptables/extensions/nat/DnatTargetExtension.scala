@@ -45,10 +45,11 @@ case class DnatTarget(
 
   override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
-    val fromIp = virtdev.dnatFromIp(options.id)
-    val fromPort = virtdev.dnatFromPort(options.id)
-    val toIp = virtdev.dnatToIp(options.id)
-    val toPort = virtdev.dnatToPort(options.id)
+    val fromIp = virtdev.dnatFromIp(options.deviceId)
+    val fromPort = virtdev.dnatFromPort(options.deviceId)
+    val toIp = virtdev.dnatToIp(options.deviceId)
+    val toPort = virtdev.dnatToPort(options.deviceId)
+    val dnatStateTag = virtdev.dnatStateTag(options.deviceId)
 
     // If the upper bound is not given, we simply constrain on [lower, lower].
     val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
@@ -78,6 +79,9 @@ case class DnatTarget(
       // Save the new addresses.
       Assign(toIp, :@(IPDst)),
       Assign(toPort, :@(TcpDst)),
+
+      // Activate the DNAT virtual state.
+      Assign(dnatStateTag, ConstantValue(1)),
 
       // In the end, we accept the packet.
       Forward(options.acceptPort)

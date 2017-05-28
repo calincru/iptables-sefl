@@ -48,7 +48,7 @@ class ChainIVDSuite
     val idx = if (neighs.isEmpty) 0 else neighs.max + 1
 
     new ChainIVDBuilder(
-      deviceId, chain, table, idx, rules, neighs, portsMap).build
+      deviceId, chain, table, idx, rules, neighs, portsMap, deviceId).build
   }
 
   test("empty chain, packet gets dropped") {
@@ -58,15 +58,15 @@ class ChainIVDSuite
     """)
     val ivd = buildIt(filterTable)
 
-    ivd.links should contain key ivd.initPort
+    ivd.links should contain key ivd.inputPort
     ivd.links should contain key ivd.inputPort
 
-    val (success, fail) = symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.inputPort)
 
     success shouldBe empty
     fail should (
       have length (1) and
-      passThrough (ivd.initPort, ivd.dropPort)
+      passThrough (ivd.inputPort, ivd.dropPort)
     )
   }
 
@@ -76,12 +76,12 @@ class ChainIVDSuite
       <PREROUTING:ACCEPT>
     """)
     val ivd = buildIt(preroutingTable)
-    val (success, fail) = symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.inputPort)
 
     fail shouldBe empty
     success should (
       have length (1) and
-      passThrough (ivd.initPort, ivd.acceptPort)
+      passThrough (ivd.inputPort, ivd.acceptPort)
     )
   }
 
@@ -93,12 +93,12 @@ class ChainIVDSuite
     """)
     val ivd = buildIt(filterTable)
     val (success, fail) =
-      symExec(ivd, ivd.initPort, Assign(InputPortTag, SymbolicValue()))
+      symExec(ivd, ivd.inputPort, Assign(InputPortTag, SymbolicValue()))
 
     fail should (
       // One path should fail because it considers an input port other than
       // 'eth0' which fails (is dropped) due to the default policy.
-      passThrough (ivd.initPort, ivd.dropPort) and
+      passThrough (ivd.inputPort, ivd.dropPort) and
 
       // Another failing path corresponds to the input dispatcher of a chain IVD
       // considering the 'default port' too, but since the tag is set by the
@@ -108,7 +108,7 @@ class ChainIVDSuite
     success should (
       // There is only one path that gets accepted.
       have length (1) and
-      passThrough (ivd.initPort, ivd.inputPort, ivd.acceptPort)
+      passThrough (ivd.inputPort, ivd.returnInputPort, ivd.acceptPort)
     )
   }
 
@@ -124,7 +124,7 @@ class ChainIVDSuite
                     :<=:(ConstantValue(Ipv4(192, 168, 0, 255).host)))
     val cstr2 = :&:(:>=:(ConstantValue(Ipv4(172, 16, 0, 0).host)),
                     :<=:(ConstantValue(Ipv4(172, 16, 63, 255).host)))
-    val (success, fail) = symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.inputPort)
 
     success should (
       have length (2) and
@@ -151,7 +151,7 @@ class ChainIVDSuite
     val protoCstr = :==:(ConstantValue(TCPProto))
 
     val (success, fail) =
-      symExec(ivd, ivd.initPort, Assign(InputPortTag, SymbolicValue()))
+      symExec(ivd, ivd.inputPort, Assign(InputPortTag, SymbolicValue()))
 
     success should (
       // The only 'successful' state is the one which matches protocol TCP and
@@ -185,7 +185,7 @@ class ChainIVDSuite
     val (success, fail) =
       symExec(
         ivd,
-        ivd.initPort,
+        ivd.inputPort,
 
         // It's important to set this because in order to execute a 'RETURN' we
         // should have jumped from somewhere else (and that's where this is
@@ -208,7 +208,7 @@ class ChainIVDSuite
 
       // Both.
       reachPort (ivd.backlinkPort(0)) and
-      passThrough (ivd.initPort, ivd.backlinkPort(0))
+      passThrough (ivd.inputPort, ivd.backlinkPort(0))
     )
 
     // No packet should be dropped as far as this chain is concerned.
@@ -222,7 +222,7 @@ class ChainIVDSuite
         -d 8.8.8.8 -j RETURN
     """)
     val ivd = buildIt(filterTable, List(5))
-    val (success, _) = symExec(ivd, ivd.initPort)
+    val (success, _) = symExec(ivd, ivd.inputPort)
 
     success shouldBe empty
   }
@@ -240,7 +240,7 @@ class ChainIVDSuite
       <CHAIN2>
     """)
     val ivd = buildIt(filterTable)
-    val (success, fail) = symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.inputPort)
     val toConstrain = (proto: Int) => :==:(ConstantValue(proto))
 
     success should (
@@ -267,7 +267,7 @@ class ChainIVDSuite
         -p all -j RETURN
     """)
     val ivd = buildIt(filterTable)
-    val (success, fail) = symExec(ivd, ivd.initPort)
+    val (success, fail) = symExec(ivd, ivd.inputPort)
 
     dropped(fail, ivd) shouldBe empty
     success should have length (1)

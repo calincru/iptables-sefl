@@ -63,7 +63,7 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmarkTag = virtdev.nfmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
       val mask = maybeMask getOrElse 0xFFFFFFFFL
 
       InstructionBlock(
@@ -91,8 +91,8 @@ object ConnmarkTarget extends BaseParsers {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmarkTag = virtdev.nfmarkTag(options.id)
-      val ctmarkTag = virtdev.ctmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
+      val ctmarkTag = virtdev.ctmarkTag(options.deviceId)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
@@ -125,8 +125,8 @@ object ConnmarkTarget extends BaseParsers {
       context.table.get.name == "mangle"
 
     override def seflCode(options: SeflGenOptions): Instruction = {
-      val nfmarkTag = virtdev.nfmarkTag(options.id)
-      val ctmarkTag = virtdev.ctmarkTag(options.id)
+      val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
+      val ctmarkTag = virtdev.ctmarkTag(options.deviceId)
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 

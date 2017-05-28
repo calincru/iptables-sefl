@@ -35,7 +35,7 @@ case class ConnmarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
   type Self = ConnmarkMatch
 
   override def seflCondition(options: SeflGenOptions): SeflCondition = {
-    val ctmarkTag = virtdev.ctmarkTag(options.id)
+    val ctmarkTag = virtdev.ctmarkTag(options.deviceId)
     val ctmarkTmpTag = ctmarkTag + "-tmp"
     val mask = maybeMask getOrElse 0xFFFFFFFFL
 

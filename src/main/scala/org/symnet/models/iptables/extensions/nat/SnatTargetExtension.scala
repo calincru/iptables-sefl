@@ -46,10 +46,11 @@ case class SnatTarget(
   // at the same offset.
   override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
-    val fromIp = virtdev.snatFromIp(options.id)
-    val fromPort = virtdev.snatFromPort(options.id)
-    val toIp = virtdev.snatToIp(options.id)
-    val toPort = virtdev.snatToPort(options.id)
+    val fromIp = virtdev.snatFromIp(options.deviceId)
+    val fromPort = virtdev.snatFromPort(options.deviceId)
+    val toIp = virtdev.snatToIp(options.deviceId)
+    val toPort = virtdev.snatToPort(options.deviceId)
+    val snatStateTag = virtdev.snatStateTag(options.deviceId)
 
     // If the upper bound is not given, we simply constrain on [lower, lower].
     val (lower, upper) = (lowerIp, upperIp getOrElse lowerIp)
@@ -95,6 +96,9 @@ case class SnatTarget(
       // Save the new addresses.
       Assign(toIp, :@(IPSrc)),
       Assign(toPort, :@(TcpSrc)),
+
+      // Activate the SNAT virtual state.
+      Assign(snatStateTag, ConstantValue(1)),
 
       // In the end, we accept the packet.
       Forward(options.acceptPort)

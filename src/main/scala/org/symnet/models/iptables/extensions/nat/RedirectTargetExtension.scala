@@ -47,10 +47,10 @@ case class RedirectTarget(
   // '--to-destination' parameter.
   override def seflCode(options: SeflGenOptions): Instruction = {
     // Get the name of the metadata tags.
-    val fromIp = virtdev.dnatFromIp(options.id)
-    val fromPort = virtdev.dnatFromPort(options.id)
-    val toIp = virtdev.dnatToIp(options.id)
-    val toPort = virtdev.dnatToPort(options.id)
+    val fromIp = virtdev.dnatFromIp(options.deviceId)
+    val fromPort = virtdev.dnatFromPort(options.deviceId)
+    val toIp = virtdev.dnatToIp(options.deviceId)
+    val toPort = virtdev.dnatToPort(options.deviceId)
 
     InstructionBlock(
       // Save original addresses.

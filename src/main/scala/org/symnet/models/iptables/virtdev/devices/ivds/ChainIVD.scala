@@ -31,33 +31,21 @@ trait ChainIVDConfig {
 class ChainIVD(
     name:   String,
     config: ChainIVDConfig)
-  extends CompositeVirtualDevice[ChainIVDConfig](
+  extends IptablesVirtualDevice[ChainIVDConfig](
     name,
-        // 2 input ports:
-        //  * 0 - regular input port
-        //  * 1 - initializer input port (see below for use case)
-    2,
-        // (2 + n + m) output ports:
-        //  * 0 - ACCEPT output port
-        //  * 1 - DROP output port
-        //  * [2; 2 + n) - jumps to user-defined chains
-        //  * [2 + n; 2 + n + m) - backlinks
-    2 + config.contiguousIVDs.length + config.outDispatcher.outputPorts,
+        // 1 extra input port:
+        //  * 0 - return input port
+    1,
+        // (n + m) extra output ports:
+        //  * [0; n) - jumps to user-defined chains
+        //  * [n; n + m) - backlinks
+    config.contiguousIVDs.length + config.outDispatcher.outputPorts,
     config) {
 
-  // Briefly, the input port is used only when returning from a user-defined
-  // chain to which a jump from this one has been made, to ensure that the
-  // previous value of the input dispatch tag is seen.
-  //
-  // TODO: Consider renaming them.
-  def initPort: Port = inputPort(0)
-  def inputPort: Port = inputPort(1)
+  def returnInputPort: Port = inputPort(0)
 
-  def acceptPort: Port = outputPort(0)
-  def dropPort: Port = outputPort(1)
-  def jumpPort(n: Int): Port = outputPort(2 + n)
-  def backlinkPort(n: Int): Port =
-    outputPort(2 + config.contiguousIVDs.length + n)
+  def jumpPort(n: Int): Port = outputPort(n)
+  def backlinkPort(n: Int): Port = outputPort(config.contiguousIVDs.length + n)
 
   protected override def devices: List[VirtualDevice[_]] =
     config.contiguousIVDs ++
@@ -81,16 +69,16 @@ class ChainIVD(
 
     List(
       ///
-      /// initPort -> initializer -> input
+      /// inputPort -> initializer -> returnInputPort
       ///
-      Map(initPort                 -> initializer.inputPort,
-          initializer.continuePort -> inputPort,
+      Map(inputPort                -> initializer.inputPort,
+          initializer.continuePort -> returnInputPort,
           initializer.skipPort     -> acceptPort),
 
       ///
       /// input -> tag dispatcher
       ///
-      Map(inputPort -> inDispatcher.inputPort),
+      Map(returnInputPort -> inDispatcher.inputPort),
 
       ///
       /// tag dispatcher -> IVDs
@@ -140,7 +128,7 @@ class ChainIVD(
     ).flatten.toMap
   }
 
-  protected override def compPortInstructions: Map[Port, Instruction] =
+  protected override def ivdPortInstructions: Map[Port, Instruction] =
     List(
       // Add instructions on jump ports.
       (0 until config.contiguousIVDs.length).map(i => jumpPort(i) ->
@@ -179,6 +167,7 @@ class ChainIVD(
  *    output tag dispatcher, in case a RETURN target is jumped to.
  *    * `portsMap' - a map from real port names of the device being modeled to
  *    port indices of the model.
+ *    * `id' - the ID of the device this chain IVD is part of.
  */
 class ChainIVDBuilder(
     name: String,
@@ -187,14 +176,14 @@ class ChainIVDBuilder(
     index: Int,
     subrules: List[List[Rule]],
     neighbourChainIndices: List[Int],
-    portsMap: Map[String, Int])
+    portsMap: Map[String, Int],
+    deviceId: String)
   extends VirtualDeviceBuilder[ChainIVD](name) { self =>
 
   override def build: ChainIVD = new ChainIVD(name, new ChainIVDConfig {
     val initializer =
       ChainIVDInitializer(s"$name-initializer", new ChainIVDInitializerConfig {
-        // TODO: Shouldn't `id' be the name of the whole device?
-        val id = self.name
+        val deviceId = self.deviceId
         val chain = self.chain
         val table = self.table
       })
@@ -209,8 +198,7 @@ class ChainIVDBuilder(
     val contiguousIVDs = subrules.zipWithIndex.map {
       case (rules_, i) =>
         ContiguousIVD(s"$name-contiguous-$i", new ContiguousIVDConfig {
-          // TODO: Shouldn't `id' be the name of the whole device?
-          val id = self.name
+          val deviceId = self.deviceId
           val rules = rules_
           val portsMap = self.portsMap
         })

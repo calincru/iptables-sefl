@@ -16,7 +16,7 @@ import org.change.v2.analysis.processingmodels.instructions._
 import models.iptables.core.{Rule, SeflCondition, SeflGenOptions}
 
 trait ContiguousIVDConfig {
-  val id:       String
+  val deviceId: String
   val rules:    List[Rule]
   val portsMap: Map[String, Int]
 }
@@ -24,31 +24,26 @@ trait ContiguousIVDConfig {
 case class ContiguousIVD(
     name:   String,
     config: ContiguousIVDConfig)
-  extends RegularVirtualDevice[ContiguousIVDConfig](
+  extends IptablesVirtualDevice[ContiguousIVDConfig](
     name,
-      // single input port
-    1,
-      // 5 output ports:
-      //  * 0 - ACCEPT output port
-      //  * 1 - DROP output port
-      //  * 2 - RETURN output port
-      //  * 3 - towards its corresponding user-defined chain
-      //  * 4 - next contiguous IVD
-    5,
+      // no extra input ports
+    0,
+      // 3 output ports:
+      //  * 0 - RETURN output port
+      //  * 1 - towards its corresponding user-defined chain
+      //  * 2 - next contiguous IVD
+    3,
     config) { self =>
 
-  def inputPort:   Port = inputPort(0)
-  def acceptPort:  Port = outputPort(0)
-  def dropPort:    Port = outputPort(1)
-  def returnPort:  Port = outputPort(2)
-  def jumpPort:    Port = outputPort(3)
-  def nextIVDport: Port = outputPort(4)
+  def returnPort:  Port = outputPort(0)
+  def jumpPort:    Port = outputPort(1)
+  def nextIVDport: Port = outputPort(2)
 
   // TODO: There might be room for optimization here, in terms of generated Sefl
   // code.
-  override def portInstructions: Map[Port, Instruction] = {
+  protected override def ivdPortInstructions: Map[Port, Instruction] = {
     val seflGenOptions = new SeflGenOptions {
-      val id = config.id
+      val deviceId = config.deviceId
 
       val acceptPort = self.acceptPort
       val dropPort   = self.dropPort

@@ -16,8 +16,8 @@ import org.change.v2.analysis.memory.State
 import core._
 import iptParsers.{chainParser, ruleParser, tableParser}
 
-// -> devices
-import devices.VirtualDevice
+// -> ivd
+import devices.ivds.IptablesVirtualDevice
 
 // -> extensions
 import extensions.filter.FilteringExtension
@@ -65,13 +65,10 @@ object VirtdevSuitesCommon {
   /** These functions ease testing against failing/accepted states, as we are
    *  sometimes only interested in those which were caused by explicitly
    *  dropping/accepting the packet.
-   *
-   *  FIXME: It is assumed that the `acceptPort' is `outputPort(0)' and
-   *  `dropPort' is `outputPort(1)'.
    */
-  def accepted[T <: VirtualDevice[_]](successfulStates: List[State], t: T) =
-    successfulStates.filter(_.history.head == t.outputPort(0))
+  def accepted(successfulStates: List[State], ivd: IptablesVirtualDevice[_]) =
+    successfulStates.filter(_.history.head == ivd.acceptPort)
 
-  def dropped[T <: VirtualDevice[_]](failStates: List[State], t: T) =
-    failStates.filter(_.history.head == t.outputPort(1))
+  def dropped(failStates: List[State], ivd: IptablesVirtualDevice[_]) =
+    failStates.filter(_.history.head == ivd.dropPort)
 }

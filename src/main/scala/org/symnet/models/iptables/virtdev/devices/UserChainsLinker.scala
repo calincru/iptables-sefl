@@ -36,8 +36,9 @@ case class UserChainsLinker(
       config.chainIVDsMap.map {
         case (idx, ivd) => config.chainOutNeighsMap(idx).zipWithIndex.map {
           case (neighIdx, portId) =>
-            // NOTE: We link it to the `init' port.
-            ivd.jumpPort(portId) -> config.chainIVDsMap(neighIdx).initPort
+            // NOTE: We link it to the `input' port.
+            ivd.jumpPort(portId) ->
+              config.chainIVDsMap(neighIdx).inputPort
         }.toMap
       }.flatten.toMap,
 
@@ -45,8 +46,9 @@ case class UserChainsLinker(
       config.chainIVDsMap.map {
         case (idx, ivd) => config.chainInNeighsMap(idx).zipWithIndex.map {
           case (neighIdx, portId) =>
-            // NOTE: We link it to the `input' port.
-            ivd.backlinkPort(portId) -> config.chainIVDsMap(neighIdx).inputPort
+            // NOTE: We link it to the `returnInputPort' port.
+            ivd.backlinkPort(portId) ->
+              config.chainIVDsMap(neighIdx).returnInputPort
         }.toMap
       }.flatten.toMap
     ).flatten.toMap

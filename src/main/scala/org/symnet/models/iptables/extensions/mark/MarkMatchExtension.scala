@@ -34,7 +34,7 @@ case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
   type Self = MarkMatch
 
   override def seflCondition(options: SeflGenOptions): SeflCondition = {
-    val nfmarkTag = virtdev.nfmarkTag(options.id)
+    val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
     val nfmarkTmpTag = nfmarkTag + "-tmp"
     val mask = maybeMask getOrElse 0xFFFFFFFFL
 

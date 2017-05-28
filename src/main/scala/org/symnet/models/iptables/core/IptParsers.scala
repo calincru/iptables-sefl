@@ -32,8 +32,6 @@ object iptParsers extends BaseParsers {
    *  NOTE: The rule parser (see above) containing it should be added last to
    *  the list of rule parsers as part of the parsing context if support for
    *  jumps to other chains is needed.
-   *
-   *  TODO(calincru): Add factory helper for this.
    */
   def chainTargetParser: Parser[Target] =
     for {

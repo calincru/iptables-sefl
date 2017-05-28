@@ -17,7 +17,7 @@ import models.iptables.core.{Chain, Table}
 
 // TODO: A `Chain' should probably suffice if we re-design it.
 trait ChainIVDInitializerConfig {
-  val id:    String
+  val deviceId: String
   val chain: Chain
   val table: Table
 }
@@ -41,15 +41,15 @@ case class ChainIVDInitializer(
   def skipPort:     Port = outputPort(1)
 
   override def portInstructions: Map[Port, Instruction] = {
-    val snatOrigSrc = snatFromIp(config.id)
-    val snatOrigPort = snatFromPort(config.id)
-    val snatNewSrc = snatToIp(config.id)
-    val snatNewPort = snatToPort(config.id)
+    val snatOrigSrc = snatFromIp(config.deviceId)
+    val snatOrigPort = snatFromPort(config.deviceId)
+    val snatNewSrc = snatToIp(config.deviceId)
+    val snatNewPort = snatToPort(config.deviceId)
 
-    val dnatOrigDst = dnatFromIp(config.id)
-    val dnatOrigPort = dnatFromPort(config.id)
-    val dnatNewDst = dnatToIp(config.id)
-    val dnatNewPort = dnatToPort(config.id)
+    val dnatOrigDst = dnatFromIp(config.deviceId)
+    val dnatOrigPort = dnatFromPort(config.deviceId)
+    val dnatNewDst = dnatToIp(config.deviceId)
+    val dnatNewPort = dnatToPort(config.deviceId)
 
     List(
       Map(inputPort -> InstructionBlock(

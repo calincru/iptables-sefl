@@ -7,18 +7,20 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.{:==:, Constrain, Fork, Forward, InstructionBlock}
+import org.change.v2.analysis.expression.concrete.{ConstantValue, SymbolicBitVector}
+import org.change.v2.analysis.processingmodels.instructions._
 
 case class OutputPortDispatcher(
     name:        String,
-    outputPorts: Int)
-  extends RegularVirtualDevice[Unit](
+    outputPorts: Int,
+    deviceId:    String)
+  extends RegularVirtualDevice[String](
     name,
       // single input port
     1,
     outputPorts,
-    ()) {
+      // The ID of the IPT router device this is part of.
+    deviceId) {
 
   def inputPort: Port  = inputPort(0)
 
@@ -30,15 +32,14 @@ case class OutputPortDispatcher(
           // interface.
           Constrain(OutputPortTag, :==:(ConstantValue(i))),
 
-          // TODO: Cleanup so that the next device is not influenced by metadata
-          // added just for in-device processing (such as nfmark). NOTE: Since
-          // we added a name scheme which makes sure other devices don't touch
-          // the metadata added by this one, we can simply Assign
+          // Cleanup so that the next device is not influenced by metadata
+          // added just for in-device processing (such as nfmark).
+          //
+          // NOTE: Since we added a name scheme which makes sure other devices
+          // don't touch the metadata added by this one, we can simply Assign
           // SymbolicValue/SymbolicBitVector to those fields in the
           // InputPortSetter.
-          //
-          // TODO: It's clear that we need to pass some 'device data' to almost
-          // all submodules (e.g. here we need its id, to clear 'nfmarkTag').
+          Assign(nfmarkTag(deviceId), SymbolicBitVector()),
 
           // Forward packets on the designated output interface.
           Forward(outputPort(i))

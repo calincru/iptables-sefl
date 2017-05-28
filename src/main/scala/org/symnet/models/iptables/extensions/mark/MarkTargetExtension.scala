@@ -43,7 +43,7 @@ case class MarkTarget(
   }
 
   override def seflCode(options: SeflGenOptions): Instruction = {
-    val nfmarkTag = virtdev.nfmarkTag(options.id)
+    val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
     val mask = maybeMask getOrElse 0xFFFFFFFFL
     val op = if (isXor) <^> else <|>
 

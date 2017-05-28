@@ -38,14 +38,14 @@ class ContiguousIVDSuite
 
   private def buildIt(rs: Rule*) =
     ContiguousIVD("contig-ivd", new ContiguousIVDConfig {
-      val id = deviceId
+      val deviceId = self.deviceId
       val portsMap = VirtdevSuitesCommon.portsMap
       val rules = rs.toList
     })
 
   private def buildIt(name: String, rs: Rule*) =
     ContiguousIVD(name, new ContiguousIVDConfig {
-      val id = deviceId
+      val deviceId = self.deviceId
       val portsMap = VirtdevSuitesCommon.portsMap
       val rules = rs.toList
     })
