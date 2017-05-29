@@ -19,6 +19,7 @@ import scalaz.Maybe.maybeInstance.traverse
 // project
 import core.{iptParsers, BaseParsers, ParsingContext, ValidationContext}
 import types.net.Ipv4
+import virtdev.devices.IPTRouterBuilder
 import virtdev.NetworkModel
 
 class Driver(
@@ -40,22 +41,26 @@ class Driver(
     val routingTable = routingTableStr.split("\n").map(line => {
         val Array(ipStr, nextHop) = line.split(" ")
         (parse(ipParser, ipStr), parse(identifierParser, nextHop))
-    })
+    }).toList
 
     // Parse and validate iptables.
     val iptables = {
       implicit val parsingContext = ParsingContext.default
       val parsedTables = parse(many(iptParsers.tableParser), iptablesStr)
 
-      for {
-        validatedIptables <-
-            traverse(parsedTables)(_.validate(ValidationContext.empty))
-      } yield validatedIptables
+      val vParsedTables =
+        parsedTables.flatMap(_.validate(ValidationContext.empty).toOption)
+      assert(vParsedTables.size == parsedTables.size)
+
+      vParsedTables
     }
 
     if (!validateOnly) {
-      // TODO: Run symbolic execution.
-      println(iptables)
+      val iptRouter =
+        new IPTRouterBuilder("ipt-router", ipsMap, routingTable, iptables).build
+      val model = NetworkModel(iptRouter)
+
+
     }
   }
 

@@ -36,7 +36,7 @@ import types.net.Ipv4
  *  444 -- this is the INPUT chain.
  *  LLL -- this is the local process; it usually acts as a sink (simply drops
  *         the packets)
- *  555 -- this is the FORWARDING chain.
+ *  555 -- this is the FORWARD chain.
  *  666 -- this is the second (and final) routing decision; it works the same as
  *         the previous one.
  *  777 -- this is the POSTROUTING chain.
@@ -53,7 +53,7 @@ trait IPTRouterConfig {
   // iptables specific.
   val inPortSetters:  List[InputPortSetter]
   val preroutingIVD:  IVDSequencer
-  val forwardingIVD:  IVDSequencer
+  val forwardIVD:     IVDSequencer
   val inputIVD:       IVDSequencer
   val postroutingIVD: IVDSequencer
   val outDispatcher:  OutputPortDispatcher
@@ -89,7 +89,7 @@ class IPTRouter(
 
         // iptables specific.
         config.preroutingIVD,
-        config.forwardingIVD,
+        config.forwardIVD,
         config.inputIVD,
         config.postroutingIVD,
         config.outDispatcher,
@@ -114,13 +114,13 @@ class IPTRouter(
 
         // Link the first routing decision as expected.
         config.preFwdRD.localOutputPort -> config.inputIVD.inputPort,
-        config.preFwdRD.fwdOutputPort   -> config.forwardingIVD.inputPort,
+        config.preFwdRD.fwdOutputPort   -> config.forwardIVD.inputPort,
 
         // Link the INPUT chain to the local process
         config.inputIVD.inputPort -> config.localProcess.inputPort,
 
-        // Link the FORWARDING chain to the next routing decision.
-        config.forwardingIVD.acceptPort -> config.postFwdRD.inputPort,
+        // Link the FORWARD chain to the next routing decision.
+        config.forwardIVD.acceptPort -> config.postFwdRD.inputPort,
 
         // Link the second routing decision as expected.
         config.postFwdRD.localOutputPort -> config.inputIVD.inputPort,
@@ -151,7 +151,7 @@ class IPTRouterBuilder(
 
       val inPortSetters  = makeInSetters
       val preroutingIVD  = makeSeqChains("PREROUTING")
-      val forwardingIVD  = makeSeqChains("FORWARDING")
+      val forwardIVD     = makeSeqChains("FORWARD")
       val inputIVD       = makeSeqChains("INPUT")
       val postroutingIVD = makeSeqChains("POSTROUTING")
       val outDispatcher  = makeOutDispatcher
@@ -220,24 +220,24 @@ class IPTRouterBuilder(
   /// Helper data structures.
   ///
 
-  protected val index: IPTIndex = new IPTIndex(iptables)
+  protected lazy val index: IPTIndex = new IPTIndex(iptables)
 
-  protected val chainIndices: Map[Chain, Int] =
+  protected lazy val chainIndices: Map[Chain, Int] =
     index.allChains.zipWithIndex.toMap
 
-  protected val chainInNeighsMap: Map[Int, List[Int]] =
+  protected lazy val chainInNeighsMap: Map[Int, List[Int]] =
     chainIndices map {
       case (chain, idx) =>
         idx -> index.inAdjacencyLists(chain).map(c => chainIndices(c)).toList
     }
 
-  protected val chainOutNeighsMap: Map[Int, List[Int]] =
+  protected lazy val chainOutNeighsMap: Map[Int, List[Int]] =
     chainIndices map {
       case (chain, idx) =>
         idx -> index.outAdjacencyLists(chain).map(c => chainIndices(c)).toList
     }
 
-  protected val chainIVDsMap: Map[Int, ChainIVD] =
+  protected lazy val chainIVDsMap: Map[Int, ChainIVD] =
     chainIndices map {
       case (chain, idx) => idx ->
         new ChainIVDBuilder(
