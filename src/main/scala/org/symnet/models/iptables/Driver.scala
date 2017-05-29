@@ -13,20 +13,19 @@ import scala.io.Source
 // -> scallop
 import org.rogach.scallop._
 
-// -> scalaz
-import scalaz.Maybe.maybeInstance.traverse
-
 // project
 import core.{iptParsers, BaseParsers, ParsingContext, ValidationContext}
-import types.net.Ipv4
 import virtdev.devices.IPTRouterBuilder
-import virtdev.NetworkModel
+import virtdev.SymnetFacade
 
 class Driver(
     ipsStr: String,
     routingTableStr: String,
     iptablesStr: String,
-    validateOnly: Boolean) extends BaseParsers {
+    validateOnly: Boolean,
+    inputPort: String) extends SymnetFacade with BaseParsers {
+
+  override def deviceId: String = "ipt-router"
 
   def run() = {
     // Parse ips.
@@ -57,10 +56,10 @@ class Driver(
 
     if (!validateOnly) {
       val iptRouter =
-        new IPTRouterBuilder("ipt-router", ipsMap, routingTable, iptables).build
-      val model = NetworkModel(iptRouter)
+        new IPTRouterBuilder(deviceId, ipsMap, routingTable, iptables).build
 
-
+      // Run symbolic execution starting on the specified input port.
+      symExec(iptRouter, iptRouter.inputPort(inputPort), log = true)
     }
   }
 
@@ -77,10 +76,17 @@ class Driver(
 
 object Driver extends App {
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-    val iptables = opt[String](required=true)
-    val routing_table = opt[String](required=true)
-    val ips = opt[String](required=true)
+    val iptables = opt[String](required = true)
+    val routing_table = opt[String](required = true)
+    val ips = opt[String](required = true)
     val validate_only = opt[Boolean]()
+    val input_port = opt[String]()
+
+    validateOpt (validate_only, input_port) {
+      case (Some(true), None) => Right(Unit)
+      case (Some(false), Some(port)) => Right(Unit)
+      case _ => Left("Either `validate_only' or `input_port' must be specified")
+    }
     verify()
   }
   val conf = new Conf(args)
@@ -94,6 +100,7 @@ object Driver extends App {
     ipsStr = ips,
     routingTableStr = routingTable,
     iptablesStr = iptables,
-    validateOnly = conf.validate_only()
+    validateOnly = conf.validate_only(),
+    inputPort = conf.input_port()
   ).run()
 }

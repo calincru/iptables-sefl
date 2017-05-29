@@ -28,7 +28,7 @@ import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
 class ContiguousIVDSuite
-  extends FunSuite with SymnetMisc
+  extends FunSuite with SymnetFacade
                    with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>

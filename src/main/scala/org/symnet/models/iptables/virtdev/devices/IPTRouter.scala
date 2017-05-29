@@ -64,6 +64,10 @@ trait IPTRouterConfig {
   // NOTE: It doesn't have any input or output ports, it just defines links
   // between existing ChainIVDs.
   val chainsLinker: UserChainsLinker
+
+  // The map between the actual interface names to the input/output port numbers
+  // of this device.
+  val portsMap: Map[String, Int]
 }
 
 class IPTRouter(
@@ -76,6 +80,11 @@ class IPTRouter(
     inputPorts,
     outputPorts,
     config) {
+
+  def inputPort(byName: String): Port =
+    super.inputPort(config.portsMap(byName))
+  def outputPort(byName: String): Port =
+    super.outputPort(config.portsMap(byName))
 
   protected override def devices: List[VirtualDevice[_]] =
     List(
@@ -157,6 +166,8 @@ class IPTRouterBuilder(
       val outDispatcher  = makeOutDispatcher
 
       val chainsLinker = makeChainsLinker
+
+      val portsMap = self.portsMap
     })
 
   ///

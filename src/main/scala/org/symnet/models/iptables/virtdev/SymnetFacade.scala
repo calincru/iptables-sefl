@@ -4,8 +4,7 @@
 // information regarding copyright ownership.
 
 package org.symnet
-package models.iptables
-package virtdev
+package models.iptables.virtdev
 
 // 3rd party:
 // -> Symnet
@@ -18,13 +17,12 @@ import org.change.v2.executor.clickabstractnetwork.executionlogging.{JsonLogger,
 import org.change.v2.util.canonicalnames._
 
 // project
-// -> virtdev
-import virtdev.{NetworkModel => Model}
-import virtdev.devices.VirtualDevice
+// -> devices
+import devices.VirtualDevice
 
-trait SymnetMisc {
+trait SymnetFacade {
 
-  // This has to be overridden by implementing class.
+  // This has to be overridden by the implementing class.
   def deviceId: String
 
   ///
@@ -69,7 +67,7 @@ trait SymnetMisc {
       (result.stuckStates, result.failedStates)
     }
 
-  private def initState(otherInstr: Instruction): State = InstructionBlock(
+  protected def initState(otherInstr: Instruction): State = InstructionBlock(
     CreateTag("START",0),
     CreateTag("L3", 0),
 

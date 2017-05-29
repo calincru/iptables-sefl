@@ -34,7 +34,7 @@ import devices.IPTIndex
 // implemented as a big If/Then/Else statement.
 @RunWith(classOf[JUnitRunner])
 class ChainIVDSuite
-  extends FunSuite with SymnetMisc
+  extends FunSuite with SymnetFacade
                    with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>

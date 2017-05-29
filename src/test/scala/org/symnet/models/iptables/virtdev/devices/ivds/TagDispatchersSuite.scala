@@ -20,7 +20,7 @@ import org.change.v2.analysis.processingmodels.instructions._
 
 @RunWith(classOf[JUnitRunner])
 class TagDispatchersSuite
-  extends FunSuite with SymnetMisc
+  extends FunSuite with SymnetFacade
                    with Matchers
                    with SymnetCustomMatchers {
 
