@@ -39,7 +39,11 @@ case class MarkTarget(
 
     // ... note that the mark needs to be set in the PREROUTING chain of the
     // mangle table ...
-    table.name == "mangle" && chain.name == "PREROUTING"
+    table.name == "mangle" && (chain match {
+      case _ @ BuiltinChain("PREROUTING", _, _) => true
+      case _ @ UserChain(_, _) => true
+      case _ => false
+    })
   }
 
   override def seflCode(options: SeflGenOptions): Instruction = {

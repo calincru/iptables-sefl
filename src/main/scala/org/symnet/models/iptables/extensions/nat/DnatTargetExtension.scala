@@ -34,8 +34,12 @@ case class DnatTarget(
     val rule = context.rule.get
 
     // Check the table/chain in which this target is valid.
-    table.name == "nat" &&
-      (List("PREROUTING", "OUTPUT") contains chain.name) &&
+    table.name == "nat" && (chain match {
+      case _ @ BuiltinChain("PREROUTING", _, _) => true
+      case _ @ BuiltinChain("OUTPUT", _, _) => true
+      case _ @ UserChain(_, _) => true
+      case _ => false
+    }) &&
     // Check that 'tcp' or 'udp' is specified when given the port range.
     //
     // The existance of the port range implies that '-p tcp/udp' must

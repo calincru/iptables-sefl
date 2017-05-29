@@ -26,6 +26,8 @@ import extensions.tcp.TcpExtension
 // -> types
 import types.net._
 
+// TODO: Change all these `eval's to sequences of apply/asserts.
+
 @RunWith(classOf[JUnitRunner])
 class NatParsingSuite extends FunSuite with Matchers {
 

@@ -63,14 +63,12 @@ class FilterValidationSuite extends FunSuite with Matchers {
 
       table.validate(emptyCtx) shouldBe Just(table)
     }
-
-    // Failure
     {
       val rule = Rule(Nil, AcceptTarget)
       val chain = BuiltinChain("FORWARD", List(rule), Drop)
       val table = Table("mangle", List(chain))
 
-      table.validate(emptyCtx) shouldBe empty
+      table.validate(emptyCtx) shouldBe Just(table)
     }
   }
 

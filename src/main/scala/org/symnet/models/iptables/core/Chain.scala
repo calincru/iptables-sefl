@@ -111,10 +111,10 @@ case class BuiltinChain(
     super.validateIf(context) &&
     // ... and it conforms to the chain/table restrictions.
     ((name match {
-      case "PREROUTING"  => List("nat", "mangle")
+      case "PREROUTING"  => List("raw", "nat", "mangle")
       case "FORWARD"     => List("mangle", "filter")
-      case "INPUT"       => List("mangle", "filter")
-      case "OUTPUT"      => List("nat", "mangle", "filter")
+      case "INPUT"       => List("nat", "mangle", "filter")
+      case "OUTPUT"      => List("raw", "nat", "mangle", "filter")
       case "POSTROUTING" => List("nat", "mangle")
       case _             => Nil
     }) contains table.name)

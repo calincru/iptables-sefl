@@ -39,7 +39,11 @@ case class MasqueradeTarget(
     val rule = context.rule.get
 
     // Check the table/chain in which this target is valid.
-    table.name == "nat" && chain.name == "POSTROUTING" &&
+    table.name == "nat" && (chain match {
+      case _ @ BuiltinChain("POSTROUTING", _, _) => true
+      case _ @ UserChain(_, _) => true
+      case _ => false
+    }) &&
     // The existance of the upper port implies the existance of the lower
     // one.
     //

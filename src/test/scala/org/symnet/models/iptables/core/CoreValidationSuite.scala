@@ -288,4 +288,95 @@ class CoreValidationSuite extends FunSuite with Matchers {
 
     table.validate(emptyCtx) shouldBe Just(table)
   }
+
+  test("raw validation") {
+    val tableStr = """
+      <<raw>>
+      <PREROUTING:ACCEPT>
+      -j neutron-l3-agent-PREROUTING
+      <OUTPUT:ACCEPT>
+      -j neutron-l3-agent-OUTPUT
+      <neutron-l3-agent-OUTPUT>
+      <neutron-l3-agent-PREROUTING>
+    """
+    implicit val context = ParsingContext.default
+
+    val maybeTable = iptParsers.tableParser.eval(tableStr)
+    maybeTable shouldBe a [Just[_]]
+
+    val table = maybeTable.toOption.get
+    val maybeVTable = table.validate(ValidationContext.empty)
+    maybeVTable shouldBe a [Just[_]]
+  }
+
+  test("mangle validation") {
+    val tableStr = """
+      <<mangle>>
+      <PREROUTING:ACCEPT>
+      -j neutron-l3-agent-PREROUTING
+      <INPUT:ACCEPT>
+      -j neutron-l3-agent-INPUT
+      <FORWARD:ACCEPT>
+      -j neutron-l3-agent-FORWARD
+      <OUTPUT:ACCEPT>
+      -j neutron-l3-agent-OUTPUT
+      <POSTROUTING:ACCEPT>
+      -j neutron-l3-agent-POSTROUTING
+      <neutron-l3-agent-FORWARD>
+      <neutron-l3-agent-INPUT>
+      <neutron-l3-agent-OUTPUT>
+      <neutron-l3-agent-POSTROUTING>
+      -o qg-09d66f0a-46 -m connmark --mark 0x0/0xffff0000 -j CONNMARK --save-mark --nfmask 0xffff0000 --ctmask 0xffff0000
+      <neutron-l3-agent-PREROUTING>
+      -j neutron-l3-agent-mark
+      -j neutron-l3-agent-scope
+      -m connmark ! --mark 0x0/0xffff0000 -j CONNMARK --restore-mark --nfmask 0xffff0000 --ctmask 0xffff0000
+      -j neutron-l3-agent-floatingip
+      -d 169.254.169.254/32 -i qr-+ -p tcp -m tcp --dport 80 -j MARK --set-xmark 0x1/0xffff
+      <neutron-l3-agent-float-snat>
+      -m connmark --mark 0x0/0xffff0000 -j CONNMARK --save-mark --nfmask 0xffff0000 --ctmask 0xffff0000
+      <neutron-l3-agent-floatingip>
+      <neutron-l3-agent-mark>
+      -i qg-09d66f0a-46 -j MARK --set-xmark 0x2/0xffff
+      <neutron-l3-agent-scope>
+      -i qr-6a98a347-87 -j MARK --set-xmark 0x4000000/0xffff0000
+      -i qg-09d66f0a-46 -j MARK --set-xmark 0x4000000/0xffff0000
+    """
+    implicit val context = ParsingContext.default
+
+    val maybeTable = iptParsers.tableParser.eval(tableStr)
+    maybeTable shouldBe a [Just[_]]
+
+    val table = maybeTable.toOption.get
+    val maybeVTable = table.validate(ValidationContext.empty)
+    maybeVTable shouldBe a [Just[_]]
+  }
+
+  test("nat validation") {
+    val tableStr = """
+      <<nat>>
+      <PREROUTING:ACCEPT>
+      -j neutron-l3-agent-PREROUTING
+      <INPUT:ACCEPT>
+      <OUTPUT:ACCEPT>
+      -j neutron-l3-agent-OUTPUT
+      <POSTROUTING:ACCEPT>
+      -j neutron-l3-agent-POSTROUTING
+      -j neutron-postrouting-bottom
+      <neutron-l3-agent-OUTPUT>
+      <neutron-l3-agent-POSTROUTING>
+      <neutron-l3-agent-PREROUTING>
+      <neutron-l3-agent-float-snat>
+      <neutron-l3-agent-snat>
+      <neutron-postrouting-bottom>
+    """
+    implicit val context = ParsingContext.default
+
+    val maybeTable = iptParsers.tableParser.eval(tableStr)
+    maybeTable shouldBe a [Just[_]]
+
+    val table = maybeTable.toOption.get
+    val maybeVTable = table.validate(ValidationContext.empty)
+    maybeVTable shouldBe a [Just[_]]
+  }
 }

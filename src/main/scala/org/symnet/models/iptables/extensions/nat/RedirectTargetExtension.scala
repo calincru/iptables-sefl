@@ -33,8 +33,12 @@ case class RedirectTarget(
     val rule = context.rule.get
 
     // Check the table/chain in which this target is valid.
-    table.name == "nat" &&
-      (List("PREROUTING", "OUTPUT") contains chain.name) &&
+    table.name == "nat" && (chain match {
+      case _ @ BuiltinChain("PREROUTING", _, _) => true
+      case _ @ BuiltinChain("OUTPUT", _, _) => true
+      case _ @ UserChain(_, _) => true
+      case _ => false
+    }) &&
     // Check that 'tcp' or 'udp' is specified when given the port/port range.
     //
     // The existance of the lower port implies that '-p tcp/udp' must
@@ -95,7 +99,8 @@ object RedirectTarget extends BaseParsers {
         if targetName == "REDIRECT"
 
       // Parse the optional lower port.
-      lowerPort <- optional(someSpacesParser >> portParser)
+      lowerPort <- optional(someSpacesParser >> parseString("--to-ports") >>
+                            someSpacesParser >> portParser)
       upperPort <- conditional(optional(parseChar('-') >> portParser),
                                lowerPort.isDefined)
     } yield RedirectTarget(lowerPort, upperPort.flatten)

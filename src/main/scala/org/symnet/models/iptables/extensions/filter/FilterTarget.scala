@@ -44,6 +44,11 @@ abstract class FilterTarget extends Target {
 object AcceptTarget extends FilterTarget {
   type Self = this.type
 
+  // The `Accept' target can appear in other tables than 'filter' too, for
+  // short-circuiting.
+  override protected def validateIf(context: ValidationContext): Boolean =
+    true
+
   override def seflCode(options: SeflGenOptions): Instruction =
     Forward(options.acceptPort)
 }

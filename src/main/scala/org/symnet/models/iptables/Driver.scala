@@ -13,26 +13,19 @@ import scala.io.Source
 // -> scallop
 import org.rogach.scallop._
 
+// -> scalaz
+import scalaz.Maybe.maybeInstance.traverse
+
 // project
-import core.{iptParsers, BaseParsers, ParsingContext}
+import core.{iptParsers, BaseParsers, ParsingContext, ValidationContext}
 import types.net.Ipv4
+import virtdev.NetworkModel
 
 class Driver(
     ipsStr: String,
     routingTableStr: String,
     iptablesStr: String,
     validateOnly: Boolean) extends BaseParsers {
-
-  private def parse[T](p: Parser[T], s: String): T = {
-    val maybeResult = p.apply(s)
-    assert(maybeResult.isJust)
-
-    val (state, result) = maybeResult.toOption.get
-    println(state)
-    assert(state.trim.isEmpty)
-
-    result
-  }
 
   def run() = {
     // Parse ips.
@@ -49,13 +42,31 @@ class Driver(
         (parse(ipParser, ipStr), parse(identifierParser, nextHop))
     })
 
-    // Parse iptables.
+    // Parse and validate iptables.
     val iptables = {
       implicit val parsingContext = ParsingContext.default
-      parse(many(iptParsers.tableParser), iptablesStr)
+      val parsedTables = parse(many(iptParsers.tableParser), iptablesStr)
+
+      for {
+        validatedIptables <-
+            traverse(parsedTables)(_.validate(ValidationContext.empty))
+      } yield validatedIptables
     }
 
-    // TODO: Validate and run symbolic execution.
+    if (!validateOnly) {
+      // TODO: Run symbolic execution.
+      println(iptables)
+    }
+  }
+
+  private def parse[T](p: Parser[T], s: String): T = {
+    val maybeResult = p.apply(s)
+    assert(maybeResult.isJust)
+
+    val (state, result) = maybeResult.toOption.get
+    assert(state.trim.isEmpty)
+
+    result
   }
 }
 
