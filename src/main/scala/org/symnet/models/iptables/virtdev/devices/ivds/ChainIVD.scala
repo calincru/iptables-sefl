@@ -23,6 +23,7 @@ trait ChainIVDConfig {
 
   // The default policy of the chain modelled by this IVD.
   val policy: Policy
+  val isUserDefined: Boolean
 
   // The index of this chain, as it is referred back by other chains.
   val index: Int
@@ -83,6 +84,9 @@ class ChainIVD(
       ///
       /// tag dispatcher -> IVDs
       ///
+      // Link its accept port to this IVD's accept port.
+      Map(inDispatcher.acceptPort -> acceptPort),
+
       // Link input tag dispatcher's outputs to IVDs.
       (0 until ivds.length).map(
         i => inDispatcher.outputPort(i) -> ivds(i).inputPort),
@@ -117,14 +121,24 @@ class ChainIVD(
       if (!ivds.isEmpty) {
         Map(ivds.last.nextIVDport -> defaultPort)
       } else {
-        Map()
+        Map.empty
       },
 
       ///
       /// return dispatcher -> back link ports
       ///
       (0 until backlinks).map(
-        i => outDispatcher.outputPort(i) -> backlinkPort(i))
+        i => outDispatcher.outputPort(i) -> backlinkPort(i)),
+
+      ///
+      /// If this models a user-defined chain, we link its accept port to the
+      /// output dispatcher in order to propagate the 'acceptance' as well.
+      ///
+      if (config.isUserDefined) {
+        Map(acceptPort -> outDispatcher.inputPort)
+      } else {
+        Map.empty
+      }
     ).flatten.toMap
   }
 
@@ -149,6 +163,18 @@ class ChainIVD(
           Assign(InputDispatchTag, ConstantValue(i + 1))
         )
       ),
+
+      // If this models a user-defined chain, on its `acceptPort' we set the
+      // accept tag value to propagate the decision back to the chain which
+      // jumped to this one.
+      if (config.isUserDefined) {
+        Map(acceptPort -> InstructionBlock(
+          Allocate(InputDispatchTag),
+          Assign(InputDispatchTag, ConstantValue(AcceptTagValue))
+        ))
+      } else {
+        Map.empty
+      },
 
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))
@@ -207,12 +233,12 @@ class ChainIVDBuilder(
     val outDispatcher =
       OutputTagDispatcher(s"$name-out-dispatcher", neighbourChainIndices)
 
-    val policy = chain match {
-      case bc: BuiltinChain => bc.policy
+    val (policy, isUserDefined) = chain match {
+      case _ @ BuiltinChain(_, _, policy) => (policy, false)
 
       // NOTE: This is not officially documented (i.e. a packet shouldn't reach
       // the end of a user-defined chain).
-      case uc: UserChain    => Return
+      case _ @ UserChain(_, _) => (Return, true)
     }
 
     val index = self.index

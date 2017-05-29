@@ -55,7 +55,9 @@ class TagDispatchersSuite
     val (success, fail) = symExec(inDisp, inDisp.inputPort)
 
     success shouldBe empty
-    fail should have length (2)
+    // NOTE: The '+1' here comes from the special tag value used to propagate
+    // 'accepts' from user-defined chains.
+    fail should have length (3)
   }
 
   test("out: one option, one matched, is forwarded") {
@@ -83,7 +85,7 @@ class TagDispatchersSuite
         Assign(InputDispatchTag, ConstantValue(0))
       )
 
-    fail shouldBe empty
+    fail should have length (1) // special tag value used to propagate accepts
     success should (
       have length (1) and
       containPath (inDisp.inputPort, inDisp.outputPort(0))
@@ -115,7 +117,7 @@ class TagDispatchersSuite
         Assign(InputDispatchTag, ConstantValue(2))
       )
 
-    fail should have length (2)
+    fail should have length (3)
     success should (
       have length (1) and
       containPath (inDisp.inputPort, inDisp.outputPort(2))

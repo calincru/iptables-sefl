@@ -64,7 +64,7 @@ class ChainIVDSuite
     val (success, fail) = symExec(ivd, ivd.inputPort)
 
     success shouldBe empty
-    fail should (
+    dropped(fail, ivd) should (
       have length (1) and
       passThrough (ivd.inputPort, ivd.dropPort)
     )
@@ -78,7 +78,7 @@ class ChainIVDSuite
     val ivd = buildIt(preroutingTable)
     val (success, fail) = symExec(ivd, ivd.inputPort)
 
-    fail shouldBe empty
+    dropped(fail, ivd) shouldBe empty
     success should (
       have length (1) and
       passThrough (ivd.inputPort, ivd.acceptPort)
@@ -95,15 +95,12 @@ class ChainIVDSuite
     val (success, fail) =
       symExec(ivd, ivd.inputPort, Assign(InputPortTag, SymbolicValue()))
 
-    fail should (
+    dropped(fail, ivd) should (
+      have length (1) and
+
       // One path should fail because it considers an input port other than
       // 'eth0' which fails (is dropped) due to the default policy.
-      passThrough (ivd.inputPort, ivd.dropPort) and
-
-      // Another failing path corresponds to the input dispatcher of a chain IVD
-      // considering the 'default port' too, but since the tag is set by the
-      // initializer to 0, it cannot be different than that.
-      have length (2)
+      passThrough (ivd.inputPort, ivd.dropPort)
     )
     success should (
       // There is only one path that gets accepted.

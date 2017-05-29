@@ -203,7 +203,8 @@ class IPTRouterBuilder(
         if (List("PREROUTING", "OUTPUT") contains chainName) {
           val ct = ConnectionTrackingIVD(s"$name-conntrack", self.name)
 
-          if (!chains.isEmpty && chains.head.name == "raw") {
+          if (!chains.isEmpty &&
+              index.chainsToTables(chains.head).name == "raw") {
             ivds.head :: ct :: ivds.tail
           } else {
             ct :: ivds
@@ -252,7 +253,7 @@ class IPTRouterBuilder(
     chainIndices map {
       case (chain, idx) => idx ->
         new ChainIVDBuilder(
-          s"$name-chainIVD-${chain.name}",
+          s"$name-chainIVD-${chain.name}/${index.chainsToTables(chain).name}",
           chain,
           index.chainsToTables(chain),
           idx,

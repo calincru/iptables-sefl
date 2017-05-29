@@ -22,7 +22,7 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
   protected override def ivdPortInstructions: Map[Port, Instruction] = {
     val ctstateTagName = ctstateTag(deviceId)
 
-    Map(inputPort ->
+    Map(inputPort -> InstructionBlock(
       // Here goes the logic for state transitions. So far we only handle the
       // transition from NEW to ESTABLISHED.
       //
@@ -30,7 +30,10 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
       // accept port; this would allow an `egress' style selection.
       If(Constrain(ctstateTagName, :==:(ConstantValue(ConnectionState.New.id))),
          Assign(ctstateTagName, ConstantValue(ConnectionState.Established.id)),
-         NoOp)
-    )
+         NoOp),
+
+      // At the end, we simply forward packets to the accept port.
+      Forward(acceptPort)
+    ))
   }
 }

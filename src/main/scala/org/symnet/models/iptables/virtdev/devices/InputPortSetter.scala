@@ -10,7 +10,7 @@ package devices
 // 3rd-party
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.{Assign, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions.{Assign, Forward, InstructionBlock}
 
 // project
 import types.net.Ipv4
@@ -37,6 +37,7 @@ class InputPortSetter(
   override def portInstructions: Map[Port, Instruction] =
     Map(inputPort -> InstructionBlock(
       Assign(InputPortTag, ConstantValue(config.portId)),
-      Assign(InputIpTag, ConstantValue(config.portIp.host))
+      Assign(InputIpTag, ConstantValue(config.portIp.host)),
+      Forward(outputPort)
     ))
 }
