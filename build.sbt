@@ -1,4 +1,5 @@
 organization := "org.symnet"
+name := "iptables-to-sefl"
 version := "0.1"
 
 scalaVersion := "2.11.1"
@@ -23,9 +24,14 @@ libraryDependencies ++= {
     "org.scalactic" %% "scalactic" % "3.0.1",
     "org.scalatest" %% "scalatest" % "3.0.1" % "test",
 
+    // argument parsing
+    "org.rogach" %% "scallop" % "2.1.2",
+
     // scalaz
     "org.scalaz" %% "scalaz-core" % scalazVersion,
     "org.scalaz" %% "scalaz-effect" % scalazVersion,
     "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
   )
 }
+
+mainClass in Compile := Some("org.symnet.models.iptables.Driver")
