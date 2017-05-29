@@ -66,13 +66,9 @@ object ConnmarkTarget extends BaseParsers {
       val nfmarkTag = virtdev.nfmarkTag(options.deviceId)
       val mask = maybeMask getOrElse 0xFFFFFFFFL
 
-      InstructionBlock(
-        Assign(
-          nfmarkTag,
-          <^>(ConstantBitVector(value),
-              <&>(:@(nfmarkTag), ConstantBitVector(mask)))),
-        Forward(options.acceptPort)
-      )
+      Assign(nfmarkTag,
+            <^>(ConstantBitVector(value),
+                <&>(:@(nfmarkTag), ConstantBitVector(mask))))
     }
   }
 

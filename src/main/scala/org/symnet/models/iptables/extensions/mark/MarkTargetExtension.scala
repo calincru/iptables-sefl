@@ -51,13 +51,9 @@ case class MarkTarget(
     val mask = maybeMask getOrElse 0xFFFFFFFFL
     val op = if (isXor) <^> else <|>
 
-    InstructionBlock(
-      Assign(
-        nfmarkTag,
-        op(ConstantBitVector(value),
-           <&>(:@(nfmarkTag), ConstantBitVector(~mask)))),
-      Forward(options.acceptPort)
-    )
+    Assign(nfmarkTag,
+           op(ConstantBitVector(value),
+              <&>(:@(nfmarkTag), ConstantBitVector(~mask))))
   }
 }
 

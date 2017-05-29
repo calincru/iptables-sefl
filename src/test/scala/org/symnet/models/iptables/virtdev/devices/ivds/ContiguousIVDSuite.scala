@@ -71,12 +71,6 @@ class ContiguousIVDSuite
     contig.links shouldBe empty
     contig.portInstructions should not be empty
 
-    val inputInstr = contig.portInstructions(contig.inputPort)
-    inputInstr shouldBe
-      If(Constrain(Proto, :==:(ConstantValue(TCPProto))),
-         Forward(contig.acceptPort),
-         Forward(contig.nextIVDport))
-
     val (success, fail) = symExec(contig, contig.inputPort)
     assert(success.length == 2) // 1 if => 2 paths
     assert(fail.isEmpty)
@@ -87,12 +81,6 @@ class ContiguousIVDSuite
       toRule("-s ! 192.168.0.1 -j ACCEPT")
     )
     val ip = ConstantValue(Ipv4(192, 168, 0, 1).host)
-
-    val inputInstr = contig.portInstructions(contig.inputPort)
-    inputInstr shouldBe
-      If(Constrain(IPSrc, :~:(:&:(:>=:(ip), :<=:(ip)))),
-         Forward(contig.acceptPort),
-         Forward(contig.nextIVDport))
 
     val (success, fail) = symExec(contig, contig.inputPort)
     success should (
@@ -109,14 +97,6 @@ class ContiguousIVDSuite
     )
     val (lo, up) = Ipv4(10, 10, 10, 0, Some(24)).toHostRange
     val (loIp, upIp) = (ConstantValue(lo.host), ConstantValue(up.host))
-
-    val inputInstr = contig.portInstructions(contig.inputPort)
-    inputInstr shouldBe
-      If(Constrain(InputPortTag, :==:(ConstantValue(portsMap("eth0")))),
-         If(Constrain(IPDst, :&:(:>=:(loIp), :<=:(upIp))),
-            Forward(contig.returnPort),
-            Forward(contig.nextIVDport)),
-         Forward(contig.nextIVDport))
 
     // If the input port tag is set to a symbolic value, we have 3 possible
     // paths.
@@ -177,37 +157,6 @@ class ContiguousIVDSuite
     }
   }
 
-  test("two rules, drop/accept") {
-    val contig = buildIt(
-      toRule("-o eth1 -p udp -s 172.16.0.171 -j DROP"),
-      toRule("-i ! eth2 -p all -j ACCEPT")
-    )
-    val ip = ConstantValue(Ipv4(172, 16, 0, 171).host)
-    val secondInstr =
-      // NOTE: '-p all' doesn't add any constraints.
-      If(Constrain(InputPortTag, :~:(:==:(ConstantValue(portsMap("eth2"))))),
-         // matched
-         Forward(contig.acceptPort),
-         // default instr
-         Forward(contig.nextIVDport))
-    val firstInstr =
-      If(Constrain(OutputPortTag, :==:(ConstantValue(portsMap("eth1")))),
-         // and ...
-         If(Constrain(Proto, :==:(ConstantValue(UDPProto))),
-            // and ...
-            If(Constrain(IPSrc, :&:(:>=:(ip), :<=:(ip))),
-               // matched
-               Forward(contig.dropPort),
-               // else
-               secondInstr),
-            // else
-            secondInstr),
-         // else
-         secondInstr)
-
-    contig.portInstructions(contig.inputPort) shouldBe firstInstr
-  }
-
   test("second rule is not reachable") {
     val contig = buildIt(
       toRule("-s 192.168.0.0/24 -j DROP"),
@@ -256,22 +205,6 @@ class ContiguousIVDSuite
       Constrain(IPSrc, :&:(:>=:(ConstantValue(Ipv4(15, 15, 15, 15).host)),
                            :<=:(ConstantValue(Ipv4(15, 15, 15, 138).host))))
 
-    inside (inputInstr) { case If(testInstr, thenInstr, elseInstr) =>
-      inside (testInstr) { case ConstrainRaw(what, withWhat, _) =>
-        what shouldBe IPSrc
-        withWhat shouldBe :&:(:>=:(ConstantValue(Ipv4(192, 168, 2, 0).host)),
-                              :<=:(ConstantValue(Ipv4(192, 168, 2, 255).host)))
-      }
-      inside (thenInstr) { case InstructionBlock(instrs) =>
-        // This ensures NAT correctly rewrites the source address.
-        instrs should contain allOf (
-          Assign(IPSrc, SymbolicValue()),
-          rewriteConstrain
-        )
-      }
-      elseInstr shouldBe Forward(contig.nextIVDport)
-    }
-
     // If the source matches (i.e. its symbolic by default), or, more precisely,
     // *could* match, then there must be a path in which it gets rewritten ...
     {
@@ -299,22 +232,6 @@ class ContiguousIVDSuite
     val rewriteConstrain =
       Constrain(IPDst, :&:(:>=:(ConstantValue(Ipv4(192, 168, 2, 5).host)),
                            :<=:(ConstantValue(Ipv4(192, 168, 2, 100).host))))
-
-    inside (inputInstr) { case If(testInstr, thenInstr, elseInstr) =>
-      inside (testInstr) { case ConstrainRaw(what, withWhat, _) =>
-        what shouldBe IPDst
-        withWhat shouldBe :&:(:>=:(ConstantValue(Ipv4(2, 5, 2, 0).host)),
-                              :<=:(ConstantValue(Ipv4(2, 5, 2, 255).host)))
-      }
-      inside (thenInstr) { case InstructionBlock(instrs) =>
-        // This ensures NAT correctly rewrites the destination address.
-        instrs should contain allOf (
-          Assign(IPDst, SymbolicValue()),
-          rewriteConstrain
-        )
-      }
-      elseInstr shouldBe Forward(preroutingNat.nextIVDport)
-    }
 
     // If the destination matches (i.e. its symbolic by default), or, more
     // precisely, *could* match, then there must be a path in which it gets
@@ -362,25 +279,21 @@ class ContiguousIVDSuite
     // Create a contiguous IVD from each one of them.
     {
       val contig = buildIt(forwardRules: _*)
-      val inputInstr = contig.portInstructions(contig.inputPort)
+      val (success, _) =
+        symExec(
+          contig,
+          contig.inputPort,
+          Assign(InputPortTag, ConstantValue(portsMap("eth0")))
+        )
 
-      // The thing we are testing here is that the jump on the `then' branch
-      // should go to the jump port.
-      inputInstr shouldBe
-        If(Constrain(InputPortTag, :==:(ConstantValue(portsMap("eth0")))),
-           Forward(contig.jumpPort),
-           Forward(contig.nextIVDport))
+      success should reachPort (contig.jumpPort)
     }
 
     {
       val contig = buildIt(myRules: _*)
-      val inputInstr = contig.portInstructions(contig.inputPort)
+      val (success, _) = symExec(contig, contig.inputPort)
 
-      inputInstr shouldBe
-        If(Constrain(IPSrc, :&:(:>=:(ConstantValue(Ipv4(192, 168, 1, 0).host)),
-                                :<=:(ConstantValue(Ipv4(192, 168, 1, 3).host)))),
-           Forward(contig.returnPort),
-           Forward(contig.nextIVDport))
+      success should reachPort (contig.returnPort)
     }
   }
 
@@ -505,7 +418,10 @@ class ContiguousIVDSuite
         Assign(InputPortTag, ConstantValue(portsMap("eth0")))
       )
 
-    success should reachPort (contig.acceptPort)
+    // NOTE: The `nextIVDPort' should be linked to the accept port of the outer
+    // ipt router.
+    // TODO: Add a separate test to prove this.
+    success should reachPort (contig.nextIVDport)
     dropped(fail, contig) shouldBe empty
   }
 

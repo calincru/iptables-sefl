@@ -73,14 +73,11 @@ case class ContiguousIVD(
           //    else
           //      elseStmnt
           //
-          constraints.foldRight(acc)((constraint, acc_inner) => {
-            val ifInstr = If(constraint, acc_inner, elseStmnt)
-
-            if (initInstr == NoOp)
-              ifInstr
-            else
-              InstructionBlock(initInstr, ifInstr)
-          })
+          constraints.foldRight(acc)((constraint, accInner) =>
+            InstructionBlock(
+              initInstr,
+              If(constraint, accInner, NoOp),
+              elseStmnt))
         } else {
           // If this is a disjunction, we do:
           //
@@ -92,14 +89,11 @@ case class ContiguousIVD(
           //    else
           //      elseStmnt
           //
-          constraints.foldRight(elseStmnt)((constraint, acc_inner) => {
-            val ifInstr = If(constraint, thenStmnt, acc_inner)
-
-            if (initInstr == NoOp)
-              ifInstr
-            else
-              InstructionBlock(initInstr, ifInstr)
-          })
+          constraints.foldRight(elseStmnt)((constraint, accInner) =>
+            InstructionBlock(
+              initInstr,
+              If(constraint, thenStmnt, NoOp),
+              accInner))
         }
       })
 
