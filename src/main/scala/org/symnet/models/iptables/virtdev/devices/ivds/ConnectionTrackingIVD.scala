@@ -19,21 +19,20 @@ import extensions.conntrack.ConnectionState
 case class ConnectionTrackingIVD(name: String, deviceId: String)
   extends IptablesVirtualDevice[String](name, 0, 0, deviceId) {
 
+  // NOTE: Drop port currently unused here.
+
   protected override def ivdPortInstructions: Map[Port, Instruction] = {
     val ctstateTagName = ctstateTag(deviceId)
+    val ctstateTransitions = Map(
+      ConnectionState.New -> ConnectionState.Established
+    )
 
-    Map(inputPort -> InstructionBlock(
-      // Here goes the logic for state transitions. So far we only handle the
-      // transition from NEW to ESTABLISHED.
-      //
-      // TODO: Consider using multiple output ports which are all linked to the
-      // accept port; this would allow an `egress' style selection.
-      If(Constrain(ctstateTagName, :==:(ConstantValue(ConnectionState.New.id))),
-         Assign(ctstateTagName, ConstantValue(ConnectionState.Established.id)),
-         NoOp),
-
-      // At the end, we simply forward packets to the accept port.
-      Forward(acceptPort)
-    ))
+    Map(inputPort -> Fork((ctstateTransitions map {
+      case (from, to) => InstructionBlock(
+        Constrain(ctstateTagName, :==:(ConstantValue(from.id))),
+        Assign(ctstateTagName, ConstantValue(to.id)),
+        Forward(acceptPort)
+      )
+    }).toSeq: _*))
   }
 }

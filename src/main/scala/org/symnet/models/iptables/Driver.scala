@@ -20,7 +20,8 @@ import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.util.canonicalnames._
 
 // project
-import core.{iptParsers, BaseParsers, ParsingContext, ValidationContext}
+import core._
+import extensions.conntrack.ConnectionState
 import types.net.Ipv4
 import virtdev.devices.IPTRouterBuilder
 import virtdev.SymnetFacade
@@ -68,6 +69,10 @@ class Driver(
       // NOTE: This is were we constrain the initial packet we insert into the
       // network.
       val initialPacket = InstructionBlock(
+        // This is the sane default for any "initial" packet.
+        Assign(ctstate, ConstantValue(ConnectionState.New.id)),
+
+        // Constrain the destination IP.
         Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
       )
 
