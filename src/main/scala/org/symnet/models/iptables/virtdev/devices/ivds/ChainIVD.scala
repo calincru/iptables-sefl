@@ -9,7 +9,7 @@ package devices
 package ivds
 
 import org.change.v2.analysis.expression.concrete.ConstantValue
-import org.change.v2.analysis.processingmodels.instructions.{Assign, Allocate, Fail, InstructionBlock}
+import org.change.v2.analysis.processingmodels.instructions._
 
 import models.iptables.core._
 import Policy._
@@ -118,11 +118,7 @@ class ChainIVD(
         i => ivds(i).nextIVDport -> ivds(i + 1).inputPort),
 
       // Link the last one according to the policy.
-      if (!ivds.isEmpty) {
-        Map(ivds.last.nextIVDport -> defaultPort)
-      } else {
-        Map.empty
-      },
+      mapIf(!ivds.isEmpty, ivds.last.nextIVDport, defaultPort),
 
       ///
       /// return dispatcher -> back link ports
@@ -134,11 +130,7 @@ class ChainIVD(
       /// If this models a user-defined chain, we link its accept port to the
       /// output dispatcher in order to propagate the 'acceptance' as well.
       ///
-      if (config.isUserDefined) {
-        Map(acceptPort -> outDispatcher.inputPort)
-      } else {
-        Map.empty
-      }
+      mapIf(config.isUserDefined, acceptPort, outDispatcher.inputPort)
     ).flatten.toMap
   }
 
@@ -167,18 +159,17 @@ class ChainIVD(
       // If this models a user-defined chain, on its `acceptPort' we set the
       // accept tag value to propagate the decision back to the chain which
       // jumped to this one.
-      if (config.isUserDefined) {
-        Map(acceptPort -> InstructionBlock(
-          Allocate(InputDispatchTag),
-          Assign(InputDispatchTag, ConstantValue(AcceptTagValue))
-        ))
-      } else {
-        Map.empty
-      },
+      mapIf(config.isUserDefined, acceptPort, InstructionBlock(
+        Allocate(InputDispatchTag),
+        Assign(InputDispatchTag, ConstantValue(AcceptTagValue))
+      )),
 
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))
     ).flatten.toMap
+
+  private def mapIf[K, V](cond: Boolean, k: => K, v: => V): Map[K, V] =
+    if (cond) Map(k -> v) else Map.empty
 }
 
 /** This is a builder for the 'ChainIVD' class.

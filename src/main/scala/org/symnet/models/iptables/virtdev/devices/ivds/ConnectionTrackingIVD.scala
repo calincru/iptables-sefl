@@ -26,7 +26,7 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
       // Here goes the logic for state transitions. So far we only handle the
       // transition from NEW to ESTABLISHED.
       //
-      // FIXME: Consider using multiple output ports which are all linked to the
+      // TODO: Consider using multiple output ports which are all linked to the
       // accept port; this would allow an `egress' style selection.
       If(Constrain(ctstateTagName, :==:(ConstantValue(ConnectionState.New.id))),
          Assign(ctstateTagName, ConstantValue(ConnectionState.Established.id)),

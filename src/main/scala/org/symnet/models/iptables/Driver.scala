@@ -13,8 +13,15 @@ import scala.io.Source
 // -> scallop
 import org.rogach.scallop._
 
+// -> Symnet
+import org.change.v2.analysis.expression.concrete.ConstantValue
+import org.change.v2.analysis.memory.TagExp._
+import org.change.v2.analysis.processingmodels.instructions._
+import org.change.v2.util.canonicalnames._
+
 // project
 import core.{iptParsers, BaseParsers, ParsingContext, ValidationContext}
+import types.net.Ipv4
 import virtdev.devices.IPTRouterBuilder
 import virtdev.SymnetFacade
 
@@ -58,8 +65,19 @@ class Driver(
       val iptRouter =
         new IPTRouterBuilder(deviceId, ipsMap, routingTable, iptables).build
 
+      // NOTE: This is were we constrain the initial packet we insert into the
+      // network.
+      val initialPacket = InstructionBlock(
+        Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
+      )
+
       // Run symbolic execution starting on the specified input port.
-      symExec(iptRouter, iptRouter.inputPort(inputPort), log = true)
+      symExec(
+        iptRouter,
+        iptRouter.inputPort(inputPort),
+        log = true,
+        otherInstr = initialPacket
+      )
     }
   }
 
