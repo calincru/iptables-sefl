@@ -18,6 +18,13 @@ coverallsTokenFile := Some(".coveralls_token")
 
 val scalazVersion = "7.2.9"
 
+resolvers += "Sonatype OSS Snapshots" at
+  "https://oss.sonatype.org/content/repositories/snapshots"
+
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+logBuffered := false
+parallelExecution in Test := false
+
 libraryDependencies ++= {
   Seq(
     "junit" % "junit" % "4.4" % "test",
@@ -26,6 +33,9 @@ libraryDependencies ++= {
 
     // argument parsing
     "org.rogach" %% "scallop" % "2.1.2",
+
+    // scalameter
+    "com.storm-enroute" %% "scalameter" % "0.8.2",
 
     // scalaz
     "org.scalaz" %% "scalaz-core" % scalazVersion,
