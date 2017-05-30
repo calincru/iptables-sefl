@@ -44,12 +44,12 @@ object SymbolicExecutionBench extends Bench.ForkedTime {
 
           // Run the driver.
           // FIXME: Is there an nicer way of ignoring a test in SBT/scalameter?
-          new Driver(
-            ips,
-            routingTable,
-            iptables,
-            validateOnly=false,
-            inputPort=port).run()
+          // new Driver(
+          //   ips,
+          //   routingTable,
+          //   iptables,
+          //   validateOnly=false,
+          //   inputPort=port).run()
         }
       }
     }
