@@ -22,32 +22,22 @@ import core._
 import core.iptParsers.ruleParser
 
 @RunWith(classOf[JUnitRunner])
-class CommentSuite extends FunSuite with Matchers {
+class CommentSuite extends FunSuite with Matchers
+                                    with ValidationCustomMatchers {
 
   test("simple comment rule with extension explicitly added") {
     implicit val context = ParsingContext.default
 
-    {
-      val maybeResult = ruleParser.apply("""
-        -m comment --comment "Jumping to user-chain.."
-        -j USER_CHAIN
-      """)
-      maybeResult shouldBe a [Just[_]]
+    ruleParser.apply("""
+      -m comment --comment "Jumping to user-chain.."
+      -j USER_CHAIN
+    """) should consumeInput
 
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
-    {
-      val maybeResult = ruleParser.apply("""
-        -s 192.168.0.0/24
-        -i eth0
-        -m comment --comment "This rule matches private traffic"
-        -j ACCEPT
-      """)
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
+    ruleParser.apply("""
+      -s 192.168.0.0/24
+      -i eth0
+      -m comment --comment "This rule matches private traffic"
+      -j ACCEPT
+    """) should consumeInput
   }
 }

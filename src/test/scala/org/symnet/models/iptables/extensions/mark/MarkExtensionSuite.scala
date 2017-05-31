@@ -22,7 +22,8 @@ import core.iptParsers.{ruleParser, tableParser}
 import extensions.filter._
 
 @RunWith(classOf[JUnitRunner])
-class MarkExtensionSuite extends FunSuite with Matchers {
+class MarkExtensionSuite extends FunSuite with Matchers
+                                          with ValidationCustomMatchers {
 
   implicit private val context = ParsingContext(
     List(FilteringExtension, MarkModuleLoader),
@@ -30,86 +31,35 @@ class MarkExtensionSuite extends FunSuite with Matchers {
   )
 
   test("parsing mark match") {
-    {
-      val maybeResult = ruleParser.apply("-m mark --mark 0x2/0xffff -j ACCEPT")
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
-    {
-      val maybeResult = ruleParser.apply("-m mark ! --mark 0x2/0xffff -j DROP")
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
+    ruleParser.apply("-m mark --mark 0x2/0xffff -j ACCEPT") should consumeInput
+    ruleParser.apply("-m mark ! --mark 0x2/0xffff -j DROP") should consumeInput
   }
 
   test("parsing target test") {
-    {
-      val maybeResult = ruleParser.apply("-j MARK --set-xmark 0x2/0xffff") 
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
-    {
-      val maybeResult = ruleParser.apply("-i eth1 -j MARK --set-mark 0x2/0xffff")
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-    }
+    ruleParser.apply("-j MARK --set-xmark 0x2/0xffff") should consumeInput
+    ruleParser.apply("-i eth1 -j MARK --set-mark 0x2/0xffff") should consumeInput
   }
 
   test("target validation - mangle table") {
-    {
-      val maybeResult = tableParser.apply("""
-        <<mangle>>
-          <PREROUTING:ACCEPT>
-            -i eth1 -j MARK --set-mark 0x2/0xffff
-            -i vxlan-+ -j MARK --set-mark 0x8/0xffff
-      """)
-      maybeResult shouldBe a [Just[_]]
+    tableParser.apply("""
+      <<mangle>>
+        <PREROUTING:ACCEPT>
+          -i eth1 -j MARK --set-mark 0x2/0xffff
+          -i vxlan-+ -j MARK --set-mark 0x8/0xffff
+    """) should (consumeInput and beValid)
 
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
+    // Invalid table.
+    tableParser.apply("""
+      <<nat>>
+        <PREROUTING:ACCEPT>
+          -d 141.23.2.3 -j MARK --set-xmark 0x1/0xfe00
+    """) should (consumeInput and not (beValid))
 
-      val validatedResult = result.validate(ValidationContext.empty)
-      validatedResult shouldBe a [Just[_]]
-    }
-
-    {
-      // Invalid table.
-      val maybeResult = tableParser.apply("""
-        <<nat>>
-          <PREROUTING:ACCEPT>
-            -d 141.23.2.3 -j MARK --set-xmark 0x1/0xfe00
-      """)
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-
-      val validatedResult = result.validate(ValidationContext.empty)
-      validatedResult shouldBe empty
-    }
-
-    {
-      // Invalid chain.
-      val maybeResult = tableParser.apply("""
-        <<mangle>>
-          <POSTROUTING:ACCEPT>
-            -d 141.23.2.3 -j MARK --set-xmark 0x1/0xfe00
-      """)
-      maybeResult shouldBe a [Just[_]]
-
-      val (state, result) = maybeResult.toOption.get
-      state.trim shouldBe empty
-
-      val validatedResult = result.validate(ValidationContext.empty)
-      validatedResult shouldBe empty
-    }
+    // Invalid chain.
+    tableParser.apply("""
+      <<mangle>>
+        <POSTROUTING:ACCEPT>
+          -d 141.23.2.3 -j MARK --set-xmark 0x1/0xfe00
+    """) should (consumeInput and not (beValid))
   }
 }

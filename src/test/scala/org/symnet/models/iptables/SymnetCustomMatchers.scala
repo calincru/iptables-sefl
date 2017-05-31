@@ -5,7 +5,6 @@
 
 package org.symnet
 package models.iptables
-package virtdev
 
 // 3rd party:
 // -> scalatest
@@ -14,6 +13,7 @@ import matchers._
 
 // -> Symnet
 import org.change.v2.analysis.memory.{Intable, State}
+import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
 
 // project

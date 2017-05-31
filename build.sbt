@@ -7,6 +7,7 @@ scalacOptions := Seq(
   "-deprecation",
   "-feature",
   "-language:implicitConversions",
+  "-language:existentials",
   "-language:higherKinds",
   "utf8"
 )

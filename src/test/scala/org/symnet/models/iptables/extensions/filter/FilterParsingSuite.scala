@@ -24,7 +24,9 @@ import core.iptParsers.{chainParser, ruleParser, tableParser}
 import types.net.Ipv4
 
 @RunWith(classOf[JUnitRunner])
-class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
+class FilterParsingSuite extends FunSuite with Matchers
+                                          with BaseParsers
+                                          with ValidationCustomMatchers {
   import FilterTarget.{parser => targetParser}
   import IpMatch.{dstParser, srcParser}
 
@@ -151,16 +153,20 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
     // With the top level context, which doesn't contain the (user-defined)
     // chain target extension, the second test here fails.
     {
-      assert(ruleParser.eval("""-i eth0
-                                -s 192.168.0.1
-                                -o eth1
-                                -d 172.19.8.0/24
-                                -j ACCEPT""").isJust)
-      assert(ruleParser.eval("""-i eth0
-                                -s 192.168.0.1
-                                -o eth1
-                                -d 172.19.8.0/24
-                                -j otherChain""").isEmpty)
+      ruleParser.apply("""
+        -i eth0
+        -s 192.168.0.1
+        -o eth1
+        -d 172.19.8.0/24
+        -j ACCEPT
+      """) should consumeInput
+      ruleParser.apply("""
+        -i eth0
+        -s 192.168.0.1
+        -o eth1
+        -d 172.19.8.0/24
+        -j otherChain
+      """) should not (consumeInput)
     }
 
     // Once we add that to the target extensions, it doesn't fail anymore.
@@ -170,15 +176,15 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
         List(FilteringExtension, ChainTargetExtension)
       )
 
-      assert(ruleParser.eval("""-i eth0
-                                -s 192.168.0.1
-                                -o eth1
-                                -d 172.19.8.0/24
-                                -j otherChain""").isJust)
+      ruleParser.apply("""
+        -i eth0
+        -s 192.168.0.1
+        -o eth1
+        -d 172.19.8.0/24
+        -j otherChain
+      """) should consumeInput
     }
   }
-
-  // TODO: Add more chain/table tests.
 
   test("empty chain correctly parsed") {
     chainParser.eval("<PREROUTING:DROP>") shouldBe a [Just[_]]
@@ -189,19 +195,19 @@ class FilterParsingSuite extends FunSuite with Matchers with BaseParsers {
   }
 
   test("empty table correctly parsed") {
-    tableParser.eval("""
+    tableParser.apply("""
       <<filter>>
         <PREROUTING:DROP>
         <OUTPUT:DROP>
         <POSTROUTING:DROP>
-    """) shouldBe a [Just[_]]
+    """) should consumeInput
 
-    tableParser.eval("""
+    tableParser.apply("""
       <<filter>
         <PREROUTING:DROP>
         <OUTPUT:DROP>
         <POSTROUTING:DROP>
-    """) shouldBe empty
+    """) should not (consumeInput)
   }
 
   test("negation can appear on either side") {
