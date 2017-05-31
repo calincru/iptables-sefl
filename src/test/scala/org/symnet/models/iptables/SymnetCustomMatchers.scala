@@ -12,6 +12,7 @@ import org.scalatest._
 import matchers._
 
 // -> Symnet
+import org.change.v2.analysis.expression.abst.Expression
 import org.change.v2.analysis.memory.{Intable, State}
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
@@ -88,6 +89,27 @@ trait SymnetCustomMatchers {
       )
     }
 
+  class StateContainsAssignment(symbol: String, expr: Expression)
+    extends Matcher[State] {
+
+    def apply(state: State) = MatchResult(
+      {
+        val symbols = state.memory.symbols
+
+        if (!symbols.contains(symbol)) {
+          false
+        } else {
+          symbols(symbol).value match {
+            case Some(v) => v.e == expr
+            case _ => false
+          }
+        }
+      },
+      s"$state does not contain assignment ($symbol = $expr)",
+      s"$state contains assignment ($symbol = $expr)"
+    )
+  }
+
   ///
   /// Factory functions.
   ///
@@ -98,4 +120,7 @@ trait SymnetCustomMatchers {
 
   def containConstrain(constrain: Instruction) =
     new StatesContainConstrain(constrain)
+
+  def containAssignment(symbol: String, expr: Expression) =
+    new StateContainsAssignment(symbol, expr)
 }

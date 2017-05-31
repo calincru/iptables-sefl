@@ -498,4 +498,26 @@ class ContiguousIVDSuite
 
     accepted(success, filterContig) should have length (1)
   }
+
+  test("match established connection") {
+    import extensions.conntrack.ConnectionState
+
+    val filterTable = toTable("""
+      <<filter>>
+      <FORWARD:DROP>
+        -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    """)
+    val contig = buildIt(filterTable.chains(0).rules: _*)
+
+    val (success, fail) =
+      symExec(
+        contig,
+        contig.inputPort,
+        otherInstr =
+          Assign(ctstate, ConstantValue(ConnectionState.Established.id))
+      )
+
+    accepted(success, contig) should have length (1)
+    dropped(fail, contig) shouldBe empty
+  }
 }
