@@ -492,7 +492,7 @@ class ContiguousIVDSuite
           Assign(ctmark, ConstantBitVector(0xDEADBEEF)),
           Assign(nfmark, ConstantBitVector(0x00001234))
         ),
-        otherLinks = Map(mangleContig.acceptPort -> filterContig.inputPort),
+        otherLinks = Map(mangleContig.nextIVDport -> filterContig.inputPort),
         log = false
       )
 

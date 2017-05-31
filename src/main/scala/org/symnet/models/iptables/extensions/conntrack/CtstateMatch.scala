@@ -19,12 +19,13 @@ import core._
 // it in SEFL.
 object ConnectionState extends Enumeration {
 
-  // TODOs: What are the precise rules for a packet to be considered INVALID
-  // (rather than NEW)?
+  // TODOs: What are the precise rules for a packet to be considered INVALID,
+  // rather than NEW?
 
   type ConnectionState = Value
   val Invalid, New, Established, Related, Untracked, Snat, Dnat = Value
 
+  // NOTE: We only convert the supported ones (e.g. we don't support `Related').
   def apply(s: String): Option[ConnectionState] =
     s match {
       case "DNAT" => Some(Dnat)
@@ -39,6 +40,7 @@ object ConnectionState extends Enumeration {
 case class CtstateMatch(strStates: List[String]) extends Match {
   private val states = strStates.flatMap(s => ConnectionState(s))
 
+  // FIXME: Should we ignore the ones which are not supported?
   override protected def validateIf(context: ValidationContext): Boolean =
     states.size == strStates.size
 

@@ -30,9 +30,9 @@ case class OutputTagDispatcher(
 
   require(outputPorts >= 0)
 
-  def outputPorts: Int = tagValues.length
-
   def inputPort: Port = inputPort(0)
+
+  def outputPorts: Int = tagValues.length
 
   override def portInstructions: Map[Port, Instruction] = {
     val portIdToInstr = (tagValue: Int, portId: Int) => InstructionBlock(

@@ -45,17 +45,19 @@ package object net {
   }
 
   object Ipv4 {
-    // TODO(calincru): Check b0/b1/b2/b3 values here.
     def apply(
         b0: Int,
         b1: Int,
         b2: Int,
         b3: Int,
-        mask: Option[Int] = None): Ipv4 =
+        mask: Option[Int] = None): Ipv4 = {
+      val validByte = (b: Int) => b >= 0 && b <= 255
+      assert(validByte(b0) && validByte(b1) && validByte(b2) && validByte(b3))
+
       new Ipv4((b0.toLong << 24) + (b1 << 16) + (b2 << 8) + (b3 << 0), mask)
+    }
   }
 
   type Port = Int
-
   type PortRange = (Port, Port)
 }

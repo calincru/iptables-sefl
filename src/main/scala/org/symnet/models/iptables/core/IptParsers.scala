@@ -24,10 +24,8 @@ object iptParsers extends BaseParsers {
    *
    *  This parser is used as the solution of last resort when matching targets
    *  in a rule, and the parsed target name should refer to the name of another
-   *  chain.
-   *
-   *  This is ensured at a later stage, when the entire parsing is complete, to
-   *  allow forward references.
+   *  chain.  This is ensured at a later stage, when the entire parsing is
+   *  complete, to allow forward references.
    *
    *  NOTE: The rule parser (see above) containing it should be added last to
    *  the list of rule parsers as part of the parsing context if support for
@@ -39,7 +37,7 @@ object iptParsers extends BaseParsers {
       targetName <- someSpacesParser >> identifierParser
     } yield PlaceholderTarget(targetName, List("-g", "--goto").contains(jump))
 
-  /** Helper implementation of a optionless target parser.
+  /** Helper implementation of an optionless target parser.
    *
    *  Other specialized target parsers can often be easily implemented by simply
    *  providing a mapping of target names and the actual target object from the
@@ -56,8 +54,8 @@ object iptParsers extends BaseParsers {
 
   def moduleLoaderParser[T <: Match](moduleName: String, t: T): Parser[Match] =
     for {
-      _ <- spacesParser >> parseString("-m") >> someSpacesParser >>
-            parseString(moduleName)
+      _ <- spacesParser >> parseString("-m") >>
+           someSpacesParser >> parseString(moduleName)
     } yield t
 
   def ruleParser(implicit context: ParsingContext): Parser[Rule] = {

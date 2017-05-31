@@ -148,7 +148,7 @@ class ChainIVD(
           // caused this jump on the stack corresponding to the input dispatch
           // tag.
           //
-          // TODO: Is there a way to clear the entire stack before doing this?
+          // FIXME: Is there a way to clear the entire stack before doing this?
           // It's not guaranteed we will return to have this consumed by the
           // input dispatcher.
           Allocate(InputDispatchTag),

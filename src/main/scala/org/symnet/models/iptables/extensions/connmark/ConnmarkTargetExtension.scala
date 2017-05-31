@@ -24,14 +24,14 @@ object ConnmarkTargetExtension extends TargetExtension {
   val targetParser = ConnmarkTarget.parser
 }
 
-case class ConnmarkTarget(param: ConnmarkTarget.Param) extends Target {
-  type Self = param.Self
+case class ConnmarkTarget(option: ConnmarkTarget.TargetOption) extends Target {
+  type Self = option.Self
 
   override def validate(context: ValidationContext): Maybe[Self] =
-    param.validate(context)
+    option.validate(context)
 
   override def seflCode(options: SeflGenOptions): Instruction =
-    param.seflCode(options)
+    option.seflCode(options)
 }
 
 object ConnmarkTarget extends BaseParsers {
@@ -45,21 +45,21 @@ object ConnmarkTarget extends BaseParsers {
       targetName <- someSpacesParser >> identifierParser
         if targetName == "CONNMARK"
 
-      // Parse target's parameter.
-      param <- someSpacesParser >> oneOf(setOptionParser,
-                                         saveOptionParser,
-                                         restoreOptionParser)
-    } yield ConnmarkTarget(param)
+      // Parse target's options.
+      option <- someSpacesParser >> oneOf(setXmarkOptionParser,
+                                          saveMarkOptionParser,
+                                          restoreMarkOptionParser)
+    } yield ConnmarkTarget(option)
 
-  sealed trait Param extends Target
+  sealed trait TargetOption extends Target
 
 
   // --set-xmark value[/mask]
   //
   //    Zero out the bits given by mask and XOR value into the ctmark.
-  private case class SetParam(
+  private case class SetXmarkOption(
       value: Long,
-      maybeMask: Option[Long]) extends Param {
+      maybeMask: Option[Long]) extends TargetOption {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
@@ -67,8 +67,8 @@ object ConnmarkTarget extends BaseParsers {
       val mask = maybeMask getOrElse 0xFFFFFFFFL
 
       Assign(nfmarkTag,
-            <^>(ConstantBitVector(value),
-                <&>(:@(nfmarkTag), ConstantBitVector(mask))))
+             <^>(ConstantBitVector(value),
+                 <&>(:@(nfmarkTag), ConstantBitVector(mask))))
     }
   }
 
@@ -81,9 +81,9 @@ object ConnmarkTarget extends BaseParsers {
   //
   //    i.e. ctmask defines what bits to clear and nfmask what bits of the
   //    nfmark to XOR into the ctmark. ctmask and nfmask default to 0xFFFFFFFF.
-  private case class SaveParam(
+  private case class SaveMarkOption(
       maybeNfmask: Option[Long],
-      maybeCtmask: Option[Long]) extends Param {
+      maybeCtmask: Option[Long]) extends TargetOption {
     type Self = this.type
 
     override def seflCode(options: SeflGenOptions): Instruction = {
@@ -92,13 +92,9 @@ object ConnmarkTarget extends BaseParsers {
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
-      InstructionBlock(
-        Assign(
-          ctmarkTag,
-          <^>(<&>(:@(ctmarkTag), ConstantBitVector(~ctmask)),
-              <&>(:@(nfmarkTag), ConstantBitVector(nfmask)))),
-        Forward(options.acceptPort)
-      )
+      Assign(ctmarkTag,
+             <^>(<&>(:@(ctmarkTag), ConstantBitVector(~ctmask)),
+                 <&>(:@(nfmarkTag), ConstantBitVector(nfmask))))
     }
   }
 
@@ -111,9 +107,9 @@ object ConnmarkTarget extends BaseParsers {
   //
   //    i.e. nfmask defines what bits to clear and ctmask what bits of the
   //    ctmark to xor into the nfmark. ctmask and nfmask default to 0xffffffff.
-  private case class RestoreParam(
+  private case class RestoreMarkOption(
       maybeNfmask: Option[Long],
-      maybeCtmask: Option[Long]) extends Param {
+      maybeCtmask: Option[Long]) extends TargetOption {
     type Self = this.type
 
     override protected def validateIf(context: ValidationContext): Boolean =
@@ -126,38 +122,34 @@ object ConnmarkTarget extends BaseParsers {
       val nfmask = maybeNfmask getOrElse 0xFFFFFFFFL
       val ctmask = maybeCtmask getOrElse 0xFFFFFFFFL
 
-      InstructionBlock(
-        Assign(
-          nfmarkTag,
-          <^>(<&>(:@(nfmarkTag), ConstantBitVector(~nfmask)),
-              <&>(:@(ctmarkTag), ConstantBitVector(ctmask)))),
-        Forward(options.acceptPort)
-      )
+      Assign(nfmarkTag,
+             <^>(<&>(:@(nfmarkTag), ConstantBitVector(~nfmask)),
+                 <&>(:@(ctmarkTag), ConstantBitVector(ctmask))))
     }
   }
 
-  private def setOptionParser: Parser[Param] =
+  private def setXmarkOptionParser: Parser[TargetOption] =
     for {
       optionName <- parseString("--set-xmark")
       value <- someSpacesParser >> hexLongParser
       maybeMask <- optional(parseChar('/') >> hexLongParser)
-    } yield SetParam(value, maybeMask)
+    } yield SetXmarkOption(value, maybeMask)
 
-  private def saveOptionParser: Parser[Param] =
+  private def saveMarkOptionParser: Parser[TargetOption] =
     for {
       optionName <- parseString("--save-mark")
       nfmask <- optional(someSpacesParser >> parseString("--nfmask") >>
                          someSpacesParser >> hexLongParser)
       ctmask <- optional(someSpacesParser >> parseString("--ctmask") >>
                          someSpacesParser >> hexLongParser)
-    } yield SaveParam(nfmask, ctmask)
+    } yield SaveMarkOption(nfmask, ctmask)
 
-  private def restoreOptionParser: Parser[Param] =
+  private def restoreMarkOptionParser: Parser[TargetOption] =
     for {
       optionName <- parseString("--restore-mark")
       nfmask <- optional(someSpacesParser >> parseString("--nfmask") >>
                          someSpacesParser >> hexLongParser)
       ctmask <- optional(someSpacesParser >> parseString("--ctmask") >>
                          someSpacesParser >> hexLongParser)
-    } yield RestoreParam(nfmask, ctmask)
+    } yield RestoreMarkOption(nfmask, ctmask)
 }
