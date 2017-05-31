@@ -16,6 +16,7 @@ import org.rogach.scallop._
 // -> Symnet
 import org.change.v2.analysis.expression.concrete.ConstantValue
 import org.change.v2.analysis.memory.TagExp._
+import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
 import org.change.v2.util.canonicalnames._
 
@@ -30,25 +31,28 @@ class Driver(
     ipsStr: String,
     routingTableStr: String,
     iptablesStr: String,
-    validateOnly: Boolean,
-    inputPort: String) extends SymnetFacade with BaseParsers {
-
+    inputPort: String,
+    validateOnly: Boolean = false) extends SymnetFacade with BaseParsers {
   override def deviceId: String = "ipt-router"
+
+  def initInstruction: Instruction = NoOp
 
   def run() = {
     // Parse ips.
-    val ipsMap = ipsStr.split("\n").map(line => {
-      val tokens = line.split(" ")
-      val int = parse(identifierParser, tokens(0))
-      // FIXME: Multiple ips on an interface.
-      (int, parse(ipParser, tokens(1)))
-    }).toMap
+    val ipsMap =
+      ipsStr.split("\n").filter(!_.trim.isEmpty).map(line => {
+        val tokens = line.trim.split(" ")
+        val int = parse(identifierParser, tokens(0))
+        // FIXME: Multiple ips on an interface.
+        (int, parse(ipParser, tokens(1)))
+      }).toMap
 
     // Parse routing table.
-    val routingTable = routingTableStr.split("\n").map(line => {
-        val Array(ipStr, nextHop) = line.split(" ")
-        (parse(ipParser, ipStr), parse(identifierParser, nextHop))
-    }).toList
+    val routingTable =
+      routingTableStr.split("\n").filter(!_.trim.isEmpty).map(line => {
+          val Array(ipStr, nextHop) = line.trim.split(" ")
+          (parse(ipParser, ipStr), parse(identifierParser, nextHop))
+      }).toList
 
     // Parse and validate iptables.
     val iptables = {
@@ -66,22 +70,12 @@ class Driver(
       val iptRouter =
         new IPTRouterBuilder(deviceId, ipsMap, routingTable, iptables).build
 
-      // NOTE: This is were we constrain the initial packet we insert into the
-      // network.
-      val initialPacket = InstructionBlock(
-        // This is the sane default for any "initial" packet.
-        Assign(ctstate, ConstantValue(ConnectionState.New.id)),
-
-        // Constrain the destination IP.
-        Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
-      )
-
       // Run symbolic execution starting on the specified input port.
       symExec(
         iptRouter,
         iptRouter.inputPort(inputPort),
-        log = true,
-        otherInstr = initialPacket
+        otherInstr = initInstruction,
+        log = true
       )
     } else {
       (Nil, Nil)
@@ -122,10 +116,18 @@ object Driver extends App {
     }
 
   new Driver(
-    ipsStr = ips,
-    routingTableStr = routingTable,
-    iptablesStr = iptables,
-    validateOnly = conf.validate_only(),
-    inputPort = conf.input_port()
-  ).run()
+      ipsStr = ips,
+      routingTableStr = routingTable,
+      iptablesStr = iptables,
+      inputPort = conf.input_port(),
+      validateOnly = conf.validate_only()) {
+
+    override def initInstruction = InstructionBlock(
+      // This is the sane default for any "initial" packet.
+      Assign(ctstate, ConstantValue(ConnectionState.New.id)),
+
+      // Constrain the destination IP.
+      Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
+    )
+  }.run()
 }

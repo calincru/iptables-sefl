@@ -15,7 +15,16 @@ import org.scalameter.api._
 import org.scalameter.picklers.noPickler._
 
 // -> Symnet
+import org.change.v2.analysis.expression.concrete.ConstantValue
+import org.change.v2.analysis.memory.TagExp._
+import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
+import org.change.v2.util.canonicalnames._
+
+// project
+import extensions.conntrack.ConnectionState
+import types.net.Ipv4
+
 
 object SymbolicExecutionBench extends Bench.ForkedTime {
 
@@ -27,6 +36,9 @@ object SymbolicExecutionBench extends Bench.ForkedTime {
     "qg-09d66f0a-46"          // input port
   ))
 
+  // FIXME: Is there an nicer way of ignoring a test in SBT/scalameter?
+
+  /*
   performance of "Driver" in {
     measure method "symExec" in {
       using (testset) config (
@@ -43,15 +55,18 @@ object SymbolicExecutionBench extends Bench.ForkedTime {
             }
 
           // Run the driver.
-          // FIXME: Is there an nicer way of ignoring a test in SBT/scalameter?
-          // new Driver(
-          //   ips,
-          //   routingTable,
-          //   iptables,
-          //   validateOnly=false,
-          //   inputPort=port).run()
+          new Driver(ips, routingTable, iptables, port) {
+            override def initInstruction = InstructionBlock(
+              // This is the sane default for any "initial" packet.
+              Assign(ctstate, ConstantValue(ConnectionState.New.id)),
+
+              // Constrain the destination IP.
+              Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
+            )
+          }.run()
         }
       }
     }
   }
+  */
 }

@@ -22,19 +22,23 @@ class IVDSequencer(
   protected override def newLinks: Map[Port, Port] = {
     val ivds = config.ivds
 
-    List(
-      // Add link from its input port to the input port of the first ivd.
-      Map(inputPort -> ivds(0).inputPort),
+    if (ivds.isEmpty) {
+      Map(inputPort -> acceptPort)
+    } else {
+      List(
+        // Add link from its input port to the input port of the first ivd.
+        Map(inputPort -> ivds(0).inputPort),
 
-      // Add links from the accept port of a ivd to the next, except for the
-      // last one.
-      (0 until ivds.length - 1).map(
-        i => ivds(i).acceptPort -> ivds(i + 1).inputPort),
+        // Add links from the accept port of a ivd to the next, except for the
+        // last one.
+        (0 until ivds.length - 1).map(
+          i => ivds(i).acceptPort -> ivds(i + 1).inputPort),
 
-      // Add a link from the accept port of the last one to the output port of
-      // this ivd.
-      Map(ivds.last.acceptPort -> acceptPort)
-    ).flatten.toMap
+        // Add a link from the accept port of the last one to the output port of
+        // this ivd.
+        Map(ivds.last.acceptPort -> acceptPort)
+      ).flatten.toMap
+    }
   }
 }
 

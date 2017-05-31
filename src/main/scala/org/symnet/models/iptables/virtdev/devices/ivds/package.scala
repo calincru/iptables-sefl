@@ -6,5 +6,17 @@
 package org.symnet.models.iptables.virtdev.devices
 
 package object ivds {
+  ///
+  /// Constants used only in the `ivds' package.
+  ///
+
   def AcceptTagValue = Int.MaxValue
+
+
+  ///
+  /// Various utility functions used only in the `ivds' package.
+  ///
+
+  def mapIf[K, V](cond: Boolean, k: => K, v: => V): Map[K, V] =
+    if (cond) Map(k -> v) else Map.empty
 }

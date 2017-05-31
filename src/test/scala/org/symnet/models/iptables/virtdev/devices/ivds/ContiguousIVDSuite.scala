@@ -10,7 +10,7 @@ package devices.ivds
 
 // scala
 import org.junit.runner.RunWith
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.junit.JUnitRunner
 
 // 3rd party:
@@ -29,7 +29,6 @@ import types.net.Ipv4
 @RunWith(classOf[JUnitRunner])
 class ContiguousIVDSuite
   extends FunSuite with SymnetFacade
-                   with Inside
                    with Matchers
                    with SymnetCustomMatchers { self =>
   import VirtdevSuitesCommon._

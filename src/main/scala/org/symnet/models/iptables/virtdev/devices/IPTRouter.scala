@@ -185,7 +185,7 @@ class IPTRouterBuilder(
 
   protected def makeInSetters: List[InputPortSetter] =
     (0 until inputPorts).map(i =>
-      new InputPortSetter(s"$name-port-setter", new InputPortSetterConfig {
+      new InputPortSetter(s"$name-port-setter-$i", new InputPortSetterConfig {
         val portId = i
         val portIp = ipsMap(reversePortsMap(i))
       })).toList

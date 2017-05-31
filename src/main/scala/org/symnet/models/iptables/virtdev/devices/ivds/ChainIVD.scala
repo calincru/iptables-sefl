@@ -167,9 +167,6 @@ class ChainIVD(
       // Fail if the drop port is reached.
       Map(dropPort -> Fail(s"Packet dropped by $name"))
     ).flatten.toMap
-
-  private def mapIf[K, V](cond: Boolean, k: => K, v: => V): Map[K, V] =
-    if (cond) Map(k -> v) else Map.empty
 }
 
 /** This is a builder for the 'ChainIVD' class.
