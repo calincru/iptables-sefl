@@ -7,7 +7,7 @@ package org.symnet
 package models.iptables.virtdev
 package devices
 
-import org.change.v2.analysis.processingmodels.instructions.Fail
+import org.change.v2.analysis.processingmodels.instructions.NoOp
 
 /** A local process acts as a sink. It has one input port and no output ports. */
 case class LocalProcess(name: String)
@@ -15,6 +15,7 @@ case class LocalProcess(name: String)
 
   def inputPort: Port = inputPort(0)
 
+  // We accept all packets that reach the input port.
   override def portInstructions: Map[Port, Instruction] =
-    Map(inputPort -> Fail("Packet dropped by local process"))
+    Map(inputPort -> NoOp)
 }

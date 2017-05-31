@@ -126,7 +126,7 @@ class IPTRouter(
         config.preFwdRD.fwdOutputPort   -> config.forwardIVD.inputPort,
 
         // Link the INPUT chain to the local process
-        config.inputIVD.inputPort -> config.localProcess.inputPort,
+        config.inputIVD.acceptPort -> config.localProcess.inputPort,
 
         // Link the FORWARD chain to the next routing decision.
         config.forwardIVD.acceptPort -> config.postFwdRD.inputPort,
