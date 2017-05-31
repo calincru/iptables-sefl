@@ -270,7 +270,76 @@ class ChainIVDSuite
     success should have length (1)
   }
 
-  test("nat'ed packet is skiped") {
-    // TODO: Add this.
+  test("dnat'ed packet is skiped") {
+    val natTable = toTable("""
+      <<nat>>
+      <PREROUTING:ACCEPT>
+        -d 8.8.8.8 -j DNAT --to-destination 192.168.0.1
+    """)
+    val ivd = buildIt(natTable)
+
+    val dnatOrigDst = dnatFromIp(deviceId)
+    val dnatOrigPort = dnatFromPort(deviceId)
+    val dnatNewDst = dnatToIp(deviceId)
+    val dnatNewPort = dnatToPort(deviceId)
+
+    val (success, _) =
+      symExec(
+        ivd,
+        ivd.inputPort,
+        otherInstr = InstructionBlock(
+          // We simulate that it has been DNAT'ed before so we reuse that
+          // mapping.
+          Assign(dnatOrigDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host)),
+          Assign(dnatOrigPort, ConstantValue(80)),
+          Assign(dnatNewDst, ConstantValue(Ipv4(192, 168, 0, 1, None).host)),
+          Assign(dnatNewPort, ConstantValue(8080)),
+
+          // This packet is part of the same flow.
+          Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host)),
+          Assign(TcpDst, ConstantValue(80)))
+      )
+
+    // We assert that the table will *not be* matched against.
+    // NOTE: `returnInputPort' is just an intermediary port that we normally
+    // skip when the table is skipped.
+    success should not (passThrough (ivd.returnInputPort))
+  }
+
+  test("packet which is not dnated is not skipped") {
+    val natTable = toTable("""
+      <<nat>>
+      <PREROUTING:ACCEPT>
+        -d 8.8.8.0/10 -j DNAT --to-destination 192.168.0.1-192.168.0.255
+    """)
+    val ivd = buildIt(natTable)
+
+    val dnatOrigDst = dnatFromIp(deviceId)
+    val dnatOrigPort = dnatFromPort(deviceId)
+    val dnatNewDst = dnatToIp(deviceId)
+    val dnatNewPort = dnatToPort(deviceId)
+
+    val (success, _) =
+      symExec(
+        ivd,
+        ivd.inputPort,
+        otherInstr = InstructionBlock(
+          // There is an active connection towards 8.8.8.8 which has been
+          // DNAT'ed.
+          Assign(dnatOrigDst, ConstantValue(Ipv4(8, 8, 8, 8).host)),
+          Assign(dnatOrigPort, ConstantValue(80)),
+          Assign(dnatNewDst, ConstantValue(Ipv4(192, 168, 0, 1).host)),
+          Assign(dnatNewPort, ConstantValue(8080)),
+
+          // However, it shouldn't affect connections to 8.8.8.7, which is the
+          // destination of the packet we insert.
+          Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 7).host)),
+          Assign(TcpDst, ConstantValue(80)))
+      )
+
+    // We assert that the table will *be* matched against.
+    // NOTE: `returnInputPort' is just an intermediary port that we normally
+    // skip when the table is skipped.
+    success should passThrough (ivd.returnInputPort)
   }
 }

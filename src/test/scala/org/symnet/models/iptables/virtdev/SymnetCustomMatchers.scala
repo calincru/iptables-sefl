@@ -27,7 +27,7 @@ trait SymnetCustomMatchers {
     def apply(states: List[State]) =
       MatchResult(
         states.exists(_.history == ports.reverse),
-        s"""There is no state which passes through the given ports""",
+        s"""There is no state which passes through the given ports ($ports)""",
         s"""There is a state which passes through the given ports"""
       )
   }
@@ -42,8 +42,8 @@ trait SymnetCustomMatchers {
 
           !indices.contains(-1) && indices == indices.sorted
         }),
-        s"""No state passes through the given ports (in order)""",
-        s"""There is a state which passes through the given ports (in order)"""
+        s"""No state passes through the given ports in order ($ports)""",
+        s"""There is a state which passes through the given ports in order"""
       )
   }
 

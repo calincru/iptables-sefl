@@ -68,13 +68,14 @@ case class ChainIVDInitializer(
                  NoOp),
 
               // Rewrite dst in a reply to a SNAT'ed packet.
-              // TODO: Should this still go through the chain?
+              // NOTE: It still passes through the chain (this is where
+              // --ctstate SNAT can be applied, in fact).
               If(Constrain(IPDst, :==:(:@(snatNewSrc))),
                  If(Constrain(TcpDst, :==:(:@(snatNewPort))),
                     InstructionBlock(
                       Assign(IPDst, :@(snatOrigSrc)),
                       Assign(TcpDst, :@(snatOrigPort)),
-                      Forward(skipPort)),
+                      Forward(continuePort)),
                     NoOp),
                  NoOp)
             )
@@ -91,13 +92,14 @@ case class ChainIVDInitializer(
                  NoOp),
 
               // Rewrite src in a reply to a DNAT'ed packet.
-              // TODO: Should this still go through the chain?
+              // NOTE: It still passes through the chain (this is where
+              // --ctstate DNAT can be applied, in fact).
               If(Constrain(IPSrc, :==:(:@(dnatNewDst))),
                  If(Constrain(TcpSrc, :==:(:@(dnatNewPort))),
                     InstructionBlock(
                       Assign(IPSrc, :@(dnatOrigDst)),
                       Assign(TcpSrc, :@(dnatOrigPort)),
-                      Forward(skipPort)),
+                      Forward(continuePort)),
                     NoOp),
                  NoOp)
             )

@@ -83,6 +83,8 @@ class Driver(
         log = true,
         otherInstr = initialPacket
       )
+    } else {
+      (Nil, Nil)
     }
   }
 
