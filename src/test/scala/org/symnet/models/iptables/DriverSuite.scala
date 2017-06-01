@@ -221,6 +221,9 @@ class DriverSuite extends FunSuite with Matchers
     """
 
     new SymnetFacade {
+      // NOTE: This is not really needed here, but we need to be inside
+      // SymnetFacade to use the version of symExec which accepts multiple
+      // virtual devices.
       override def deviceId = "simple-net"
 
       val driver = new Driver(ips, rt, ipt, "eth0")
