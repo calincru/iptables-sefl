@@ -81,10 +81,16 @@ class IPTRouter(
     outputPorts,
     config) {
 
+  ///
+  /// Convenient access to various input/output ports of this IPT router.
+  ///
+
   def inputPort(byName: String): Port =
     super.inputPort(config.portsMap(byName))
   def outputPort(byName: String): Port =
     super.outputPort(config.portsMap(byName))
+
+  def localProcessInputPort: Port = config.localProcess.inputPort
 
   protected override def devices: List[VirtualDevice[_]] =
     List(

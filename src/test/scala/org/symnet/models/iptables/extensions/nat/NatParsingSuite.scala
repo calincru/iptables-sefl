@@ -19,7 +19,7 @@ import scalaz.Maybe._
 // project
 // -> core
 import core.ParsingContext
-import core.iptParsers.{ruleParser, chainParser}
+import core.iptParsers.{ruleParser, tableParser}
 import extensions.filter._
 import extensions.tcp.TcpExtension
 
@@ -53,6 +53,12 @@ class NatParsingSuite extends FunSuite with Matchers
       -s 172.19.0.0/16
       -j SNAT --to-source 141.85.200.1-141.85.200.10:200-300
     """) should consumeInput
+
+    tableParser.apply("""
+      <<nat>>
+      <POSTROUTING:ACCEPT>
+        -s 192.168.0.0/24 -p tcp -j SNAT --to-source 15.15.15.15:5000-10000
+    """) should beValid
 
     // Failure
     ruleParser.apply(

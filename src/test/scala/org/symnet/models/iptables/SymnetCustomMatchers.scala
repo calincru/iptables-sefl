@@ -13,6 +13,7 @@ import matchers._
 
 // -> Symnet
 import org.change.v2.analysis.expression.abst.Expression
+import org.change.v2.analysis.expression.concrete.nonprimitive.Reference
 import org.change.v2.analysis.memory.{Intable, State}
 import org.change.v2.analysis.processingmodels.Instruction
 import org.change.v2.analysis.processingmodels.instructions._
@@ -89,7 +90,7 @@ trait SymnetCustomMatchers {
       )
     }
 
-  class StateContainsAssignment(symbol: String, expr: Expression)
+  class StateContainsSymbolAssignment(symbol: String, expr: Expression)
     extends Matcher[State] {
 
     def apply(state: State) = MatchResult(
@@ -105,8 +106,25 @@ trait SymnetCustomMatchers {
           }
         }
       },
-      s"$state does not contain assignment ($symbol = $expr)",
-      s"$state contains assignment ($symbol = $expr)"
+      s"$state does not contain symbol assignment ($symbol = $expr)",
+      s"$state contains symbol assignment ($symbol = $expr)"
+    )
+  }
+
+  class StateContainsFieldAssignment(field: Intable, expr: Expression)
+    extends Matcher[State] {
+
+    def apply(state: State) = MatchResult(
+      field(state).flatMap(f =>
+        state.memory.rawObjects.get(f).flatMap(_.value.flatMap(v =>
+          v.e match {
+            case e: Expression if e == expr => Some(expr)
+            case Reference(rv) if rv.e == expr => Some(expr)
+            case _ => None
+          }
+      ))).isDefined,
+      s"$state does not contain field assignment ($field = $expr)",
+      s"$state contains field assignment ($field = $expr)"
     )
   }
 
@@ -122,5 +140,7 @@ trait SymnetCustomMatchers {
     new StatesContainConstrain(constrain)
 
   def containAssignment(symbol: String, expr: Expression) =
-    new StateContainsAssignment(symbol, expr)
+    new StateContainsSymbolAssignment(symbol, expr)
+  def containAssignment(field: Intable, expr: Expression) =
+    new StateContainsFieldAssignment(field, expr)
 }

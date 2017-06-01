@@ -35,41 +35,43 @@ class Driver(
     validateOnly: Boolean = false) extends SymnetFacade with BaseParsers {
   override def deviceId: String = "ipt-router"
 
+  // The `Driver' can be subclasses to overwrite this instruction.
   def initInstruction: Instruction = NoOp
 
-  def run() = {
-    // Parse ips.
-    val ipsMap =
-      ipsStr.split("\n").filter(!_.trim.isEmpty).map(line => {
-        val tokens = line.trim.split(" ")
-        val int = parse(identifierParser, tokens(0))
-        // FIXME: Multiple ips on an interface.
-        (int, parse(ipParser, tokens(1)))
-      }).toMap
+  lazy val ipsMap =
+    ipsStr.split("\n").filter(!_.trim.isEmpty).map(line => {
+      val tokens = line.trim.split(" ")
+      val int = parse(identifierParser, tokens(0))
+      // FIXME: Multiple ips on an interface.
+      (int, parse(ipParser, tokens(1)))
+    }).toMap
 
-    // Parse routing table.
-    val routingTable =
-      routingTableStr.split("\n").filter(!_.trim.isEmpty).map(line => {
-          val Array(ipStr, nextHop) = line.trim.split(" ")
-          (parse(ipParser, ipStr), parse(identifierParser, nextHop))
-      }).toList
+  lazy val routingTable =
+    routingTableStr.split("\n").filter(!_.trim.isEmpty).map(line => {
+        val Array(ipStr, nextHop) = line.trim.split(" ")
+        (parse(ipParser, ipStr), parse(identifierParser, nextHop))
+    }).toList
 
-    // Parse and validate iptables.
-    val iptables = {
-      implicit val parsingContext = ParsingContext.default
-      val parsedTables = parse(many(iptParsers.tableParser), iptablesStr)
+  lazy val iptables = {
+    implicit val parsingContext = ParsingContext.default
+    val parsedTables = parse(many(iptParsers.tableParser), iptablesStr)
 
-      val vParsedTables =
-        parsedTables.flatMap(_.validate(ValidationContext.empty).toOption)
-      assert(vParsedTables.size == parsedTables.size)
+    val vParsedTables =
+      parsedTables.flatMap(_.validate(ValidationContext.empty).toOption)
+    assert(vParsedTables.size == parsedTables.size)
 
-      vParsedTables
-    }
+    vParsedTables
+  }
 
-    if (!validateOnly) {
-      val iptRouter =
-        new IPTRouterBuilder(deviceId, ipsMap, routingTable, iptables).build
+  lazy val iptRouter =
+    new IPTRouterBuilder(deviceId, ipsMap, routingTable, iptables).build
 
+  def run() =
+    if (validateOnly) {
+      // Force the evaluation of all of the above lazy vals.
+      ipsMap; routingTable; iptables; iptRouter;
+      (Nil, Nil)
+    } else {
       // Run symbolic execution starting on the specified input port.
       symExec(
         iptRouter,
@@ -77,10 +79,7 @@ class Driver(
         otherInstr = initInstruction,
         log = true
       )
-    } else {
-      (Nil, Nil)
     }
-  }
 
   private def parse[T](p: Parser[T], s: String): T = {
     val maybeResult = p.apply(s)
