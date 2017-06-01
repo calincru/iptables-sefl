@@ -38,6 +38,8 @@ case class MarkMatch(value: Long, maybeMask: Option[Long]) extends Match {
     val nfmarkTmpTag = nfmarkTag + "-tmp"
     val mask = maybeMask getOrElse 0xFFFFFFFFL
 
+    // TODO: Should we Allocate/Deallocate the tmp?  See IPMirror in the click
+    // model.
     SeflCondition.single(
       initInstr =
         Assign(nfmarkTmpTag, <&>(:@(nfmarkTag), ConstantBitVector(mask))),
