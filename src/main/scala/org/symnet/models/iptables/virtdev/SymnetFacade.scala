@@ -4,7 +4,8 @@
 // information regarding copyright ownership.
 
 package org.symnet
-package models.iptables.virtdev
+package models.iptables
+package virtdev
 
 // 3rd party:
 // -> Symnet
@@ -17,6 +18,8 @@ import org.change.v2.executor.clickabstractnetwork.executionlogging.{JsonLogger,
 import org.change.v2.util.canonicalnames._
 
 // project
+// -> extensions
+import extensions.conntrack.ConnectionState
 // -> devices
 import devices.VirtualDevice
 
@@ -105,8 +108,10 @@ trait SymnetFacade {
     Allocate(ctmark),
     Assign(ctmark, SymbolicBitVector()),
 
+    // NOTE: We initialize the connection state to the concrete (!) value
+    // `Unset' instead of SymbolicValue.
     Allocate(ctstate),
-    Assign(ctstate, SymbolicValue()),
+    Assign(ctstate, ConstantValue(ConnectionState.Unset.id)),
 
     Allocate(snatState),
     Assign(snatState, SymbolicValue()),

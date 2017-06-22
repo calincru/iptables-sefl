@@ -24,6 +24,7 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
   protected override def ivdPortInstructions: Map[Port, Instruction] = {
     val ctstateTagName = ctstateTag(deviceId)
     val ctstateTransitions = Map(
+      ConnectionState.Unset -> ConnectionState.New,
       ConnectionState.New -> ConnectionState.Established
     )
 

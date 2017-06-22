@@ -62,7 +62,7 @@ object iptParsers extends BaseParsers {
     def matchesParserRec(
         context: ParsingContext,
         accMatches: List[Match]): Parser[List[Match]] = {
-      val matchParsers = context.matchExtensions.map(_.matchParsers).flatten
+      val matchParsers = context.matchExtensions.flatMap(_.matchParsers)
 
       for {
         newMatch <- optional(oneOf(matchParsers: _*))

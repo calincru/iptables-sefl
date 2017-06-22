@@ -39,7 +39,7 @@ case class ParsingContext(
 
   /** This function simply calls the one from above, as a module loader is a
    *  trait which extends `MatchExtension'. However, it is convenient when we
-   *  want to be explicit about our intention.
+   *  want to be explicit about it.
    */
   def addModuleLoader(ml: ModuleLoader): ParsingContext = addMatchExtension(ml)
 

@@ -93,6 +93,10 @@ class Driver(
 }
 
 object Driver extends App {
+  /////////////////////////////////////////
+  /// Parse args
+  /////////////////////////////////////////
+
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     val iptables = opt[String](required = true)
     val routing_table = opt[String](required = true)
@@ -109,12 +113,16 @@ object Driver extends App {
   }
   val conf = new Conf(args)
 
+
+  /////////////////////////////////////////
+  /// Build the driver and run it.
+  /////////////////////////////////////////
+
   val List(iptables, routingTable, ips) =
     List(conf.iptables(), conf.routing_table(), conf.ips()) map {
       fileName => Source.fromFile(fileName).getLines.mkString("\n")
     }
-
-  new Driver(
+  val driver = new Driver(
       ipsStr = ips,
       routingTableStr = routingTable,
       iptablesStr = iptables,
@@ -128,5 +136,21 @@ object Driver extends App {
       // Constrain the destination IP.
       Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
     )
-  }.run()
+  }
+  val (successful, failed) = driver.run()
+
+
+  /////////////////////////////////////////
+  /// Print various useful statistics.
+  /////////////////////////////////////////
+  println("*********** STATS BEGIN HERE ***********")
+
+  val iptRouter = driver.iptRouter
+  val localSuccessCount = successful.filter(
+    _.history.head == iptRouter.localProcessInputPort).size
+
+  // Print the number of packets that reached the local process.
+  println(s"$localSuccessCount paths reached input port.")
+
+  println("*********** STATS END HERE ***********")
 }

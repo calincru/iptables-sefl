@@ -17,6 +17,8 @@ class IVDSequencer(
     config: IVDSequencerConfig)
   extends IptablesVirtualDevice[IVDSequencerConfig](name, 0, 0, config) {
 
+  // NOTE: Drop port currently unused here.
+
   protected override def devices: List[VirtualDevice[_]] = config.ivds
 
   protected override def newLinks: Map[Port, Port] = {

@@ -74,8 +74,7 @@ case class ChainIVDInitializer(
                  If(Constrain(TcpDst, :==:(:@(snatNewPort))),
                     InstructionBlock(
                       Assign(IPDst, :@(snatOrigSrc)),
-                      Assign(TcpDst, :@(snatOrigPort)),
-                      Forward(continuePort)),
+                      Assign(TcpDst, :@(snatOrigPort))),
                     NoOp),
                  NoOp)
             )
@@ -98,8 +97,7 @@ case class ChainIVDInitializer(
                  If(Constrain(TcpSrc, :==:(:@(dnatNewPort))),
                     InstructionBlock(
                       Assign(IPSrc, :@(dnatOrigDst)),
-                      Assign(TcpSrc, :@(dnatOrigPort)),
-                      Forward(continuePort)),
+                      Assign(TcpSrc, :@(dnatOrigPort))),
                     NoOp),
                  NoOp)
             )

@@ -17,13 +17,16 @@ import core._
 
 // NOTE: The state `Related' is added just for completeness, but we cannot model
 // it in SEFL.
+// NOTE: The state `Unset' is not a real conntrack stat but instead a state we
+// use to initialize packets with to enable us to correctly switch to the New
+// state for new packets.
 object ConnectionState extends Enumeration {
 
   // TODOs: What are the precise rules for a packet to be considered INVALID,
   // rather than NEW?
 
   type ConnectionState = Value
-  val Invalid, New, Established, Related, Untracked, Snat, Dnat = Value
+  val Unset, Invalid, New, Established, Related, Untracked, Snat, Dnat = Value
 
   // NOTE: We only convert the supported ones (e.g. we don't support `Related').
   def apply(s: String): Option[ConnectionState] =

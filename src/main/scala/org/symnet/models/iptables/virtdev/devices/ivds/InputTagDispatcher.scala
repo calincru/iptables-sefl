@@ -17,6 +17,8 @@ case class InputTagDispatcher(
   extends IptablesVirtualDevice[Unit](name, 0, outputPorts, ()) {
   require(outputPorts > 0)
 
+  // NOTE: Drop port currently unused here.
+
   override def ivdPortInstructions: Map[Port, Instruction] = {
     val portIdToInstr = (i: Int) => InstructionBlock(
       // Make sure we only forward to the successor contiguous chain IVD of the

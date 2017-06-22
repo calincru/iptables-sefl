@@ -33,16 +33,16 @@ def main(args):
 
     with open('iptables.out', mode='w') as f:
         for table_name, chains in tables.items():
-            print('<<{}>>'.format(table_name), file=f)
+            print('\n<<{}>>'.format(table_name), file=f)
             for chain_name, chain_data in chains.items():
                 if 'default_policy' in chain_data:
-                    print('<{}:{}>'.format(chain_name,
+                    print('\t<{}:{}>'.format(chain_name,
                                            chain_data['default_policy']),
                           file=f)
                 else:
-                    print('<{}>'.format(chain_name), file=f)
+                    print('\t<{}>'.format(chain_name), file=f)
                 for rule in chain_data['rules']:
-                    print(rule, file=f)
+                    print('\t\t' + rule, file=f)
 
 
 if __name__ == '__main__':
