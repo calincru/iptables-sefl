@@ -157,6 +157,8 @@ object Driver extends App with BaseParsers {
     _.history.head == iptRouter.localProcessInputPort).size
 
   // Print the number of packets that reached the local process.
+  println(s"${successful.size} successful paths.")
+  println(s"${failed.size} failed paths.")
   println(s"$localSuccessCount paths reached input port.")
 
   println("*********** STATS END HERE ***********")

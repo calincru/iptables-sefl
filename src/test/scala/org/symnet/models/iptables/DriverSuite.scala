@@ -255,4 +255,8 @@ class DriverSuite extends FunSuite with Matchers
       )
     }
   }
+
+  // TODO: Create a new suite for the 'chain of ipt routers' performance test,
+  // read the config files from the 'generated' dir, run the test, record the
+  // time and repeat.
 }
