@@ -33,6 +33,10 @@ class Driver(
     iptablesStr: String,
     inputPort: String,
     validateOnly: Boolean = false) extends SymnetFacade with BaseParsers {
+  // We need the check-fail function for parsing any type T.
+  import Driver.parse
+
+  // Set the identifier of this device.
   override def deviceId: String = "ipt-router"
 
   // The `Driver' can be subclasses to overwrite this instruction.
@@ -80,8 +84,15 @@ class Driver(
         log = true
       )
     }
+}
 
-  private def parse[T](p: Parser[T], s: String): T = {
+object Driver extends App with BaseParsers {
+
+  /////////////////////////////////////////
+  /// Utility (private) functions
+  /////////////////////////////////////////
+
+  def parse[T](p: Parser[T], s: String): T = {
     val maybeResult = p.apply(s)
     assert(maybeResult.isJust)
 
@@ -90,9 +101,7 @@ class Driver(
 
     result
   }
-}
 
-object Driver extends App {
   /////////////////////////////////////////
   /// Parse args
   /////////////////////////////////////////
@@ -101,8 +110,9 @@ object Driver extends App {
     val iptables = opt[String](required = true)
     val routing_table = opt[String](required = true)
     val ips = opt[String](required = true)
+    val input_port = opt[String](required = true)
     val validate_only = opt[Boolean]()
-    val input_port = opt[String]()
+    val destination_ip = opt[String]()
 
     validateOpt (validate_only, input_port) {
       case (Some(true), None) => Right(Unit)
@@ -112,7 +122,6 @@ object Driver extends App {
     verify()
   }
   val conf = new Conf(args)
-
 
   /////////////////////////////////////////
   /// Build the driver and run it.
@@ -129,13 +138,11 @@ object Driver extends App {
       inputPort = conf.input_port(),
       validateOnly = conf.validate_only()) {
 
-    override def initInstruction = InstructionBlock(
-      // This is the sane default for any "initial" packet.
-      Assign(ctstate, ConstantValue(ConnectionState.New.id)),
-
-      // Constrain the destination IP.
-      Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8, None).host))
-    )
+    // Maybe use a destination ip address, if specified as argument.
+    override def initInstruction = conf.destination_ip.toOption match {
+      case Some(ip) => Assign(IPDst, ConstantValue(parse(ipParser, ip).host))
+      case None     => NoOp
+    }
   }
   val (successful, failed) = driver.run()
 
