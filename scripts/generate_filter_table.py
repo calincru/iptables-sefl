@@ -8,24 +8,94 @@ MPR_B = 4
 
 GEN_ROOT_DIR = 'data/generated/'
 
-MATCHES = {
-    '-m mark --mark': [
+# We split them into TCP/UDP matches to avoid generating conflicting matches
+# within the same rule.
+
+TCP_MATCHES = {
+    '--mark': ('-m mark', [
         '0x1/0xffff',
-    ],
-    '-p tcp --dport': [
+        '0x4000000/0xffff0000',
+        '0x2/0xffff',
+    ]),
+    '-s': ('', [
+        '192.168.1.0/24',
+        '192.168.2.1',
+        '1.1.1.1',
+    ]),
+    '-d': ('', [
+        '8.8.8.8',
+        '100.100.100.100',
+        '2.2.2.2',
+    ]),
+    '--dport': ('', [
         '9999',
         '80',
         '22',
-    ],
-    '-i': [
+    ]),
+    '--sport': ('', [
+        '9999',
+        '80',
+        '22',
+    ]),
+    '-i': ('', [
         'eth0',
         'eth1',
-    ],
-    '-o': [
+    ]),
+    '-o': ('', [
         'eth0',
         'eth1',
-    ],
+    ]),
+    '--syn': ('', [
+        # No options for --syn.
+        ' ',
+    ]),
+    '--tcp-flags': ('', [
+        'SYN,ACK,FIN SYN',
+        'SYN,ACK ALL',
+        'ALL NONE',
+    ]),
 }
+
+UDP_MATCHES = {
+    '--mark': ('-m mark', [
+        '0x1/0xffff',
+        '0x4000000/0xffff0000',
+        '0x2/0xffff',
+    ]),
+    '-s': ('', [
+        '192.168.1.0/24',
+        '192.168.2.1',
+        '1.1.1.1',
+    ]),
+    '-d': ('', [
+        '8.8.8.8',
+        '100.100.100.100',
+        '2.2.2.2',
+    ]),
+    '--dport': ('', [
+        '8081',
+        '52',
+        '1234',
+    ]),
+    '--sport': ('', [
+        '8081',
+        '52',
+        '1234',
+    ]),
+    '-i': ('', [
+        'eth0',
+        'eth1',
+    ]),
+    '-o': ('', [
+        'eth0',
+        'eth1',
+    ]),
+}
+
+
+def usage():
+    print("Usage:\n\tpython generated_filter_table <num_chains> <num_rules>")
+    sys.exit(1)
 
 
 def main(args):
@@ -34,7 +104,8 @@ def main(args):
     [a,b]), negate each one with a 50% probability, randomly selecting matches
     from the MATCHES dict and for each match, random select a value.
     """
-    assert len(args) == 3
+    if len(args) != 3:
+        usage()
 
     num_chains = int(args[1])
     num_rules = int(args[2])
@@ -45,20 +116,27 @@ def main(args):
             print('<<filter>>\n\t<FORWARD:' +
                     ('ACCEPT' if accept else 'DROP') + '>', file=f)
 
-            for i in range(int(args[1])):
-                rule = '\t\t'
-
+            for i in range(num_rules):
                 # Find the number of matches to randomly pick.
                 num_matches = random.randint(MPR_A, MPR_B)
                 # Find *which* matches to use.
-                match_keys = random.sample(MATCHES.keys(), num_matches)
+                from_tcp = random.random() < 0.5
+                match_keys = random.sample(TCP_MATCHES.keys() if from_tcp else
+                                            UDP_MATCHES.keys(), num_matches)
 
+                # Construct the rule.
+                rule = '\t\t' + ('-p tcp' if from_tcp else '-p udp')
                 for match in match_keys:
-                    # Build a new match.
-                    negate = random.random() < 0.5
+                    # Load its needed module, if that is the case.
+                    module, values = \
+                            (TCP_MATCHES if from_tcp else UDP_MATCHES)[match]
+                    rule += ' ' + module
+
+                    # Maybe negate it.
+                    negate = random.random() < 0.3
                     if negate:
                         rule += ' !'
-                    rule += ' ' + match + ' ' + random.choice(MATCHES[match])
+                    rule += ' ' + match + ' ' + random.choice(values)
 
                 # Pick a target and add it to the rule.
                 accept = random.random() < 0.5

@@ -144,22 +144,28 @@ object Driver extends App with BaseParsers {
       case None     => NoOp
     }
   }
+  // NOTE: Not the most accurate way of measuring time while running on a JVM,
+  // but our benchmark framework is too slow.
+  val t0 = System.nanoTime()
   val (successful, failed) = driver.run()
+  val t1 = System.nanoTime()
 
 
   /////////////////////////////////////////
   /// Print various useful statistics.
   /////////////////////////////////////////
+
   println("*********** STATS BEGIN HERE ***********")
+  println(s"Symbolic execution time: ${(t1 - t0) / 1000000000.0}s")
 
   val iptRouter = driver.iptRouter
   val localSuccessCount = successful.filter(
     _.history.head == iptRouter.localProcessInputPort).size
 
   // Print the number of packets that reached the local process.
-  println(s"${successful.size} successful paths.")
-  println(s"${failed.size} failed paths.")
-  println(s"$localSuccessCount paths reached input port.")
+  println(s"Successful paths: ${successful.size}")
+  println(s"Failed paths: ${failed.size}")
+  println(s"Paths reaching input port: $localSuccessCount")
 
   println("*********** STATS END HERE ***********")
 }

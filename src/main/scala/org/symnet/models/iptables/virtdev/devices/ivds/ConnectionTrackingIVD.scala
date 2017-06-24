@@ -25,6 +25,9 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
     val ctstateTagName = ctstateTag(deviceId)
     val ctstateTransitions = Map(
       ConnectionState.Unset -> ConnectionState.New,
+
+      // FIXME: This is wrong, make sure that thic packet is in the *reverse*
+      // direction.  The tuples must be stored, I guess.
       ConnectionState.New -> ConnectionState.Established
     )
 
