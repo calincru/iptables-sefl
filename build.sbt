@@ -26,6 +26,9 @@ testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 logBuffered := false
 parallelExecution in Test := false
 
+javaOptions in run += "-Xmx8G"
+fork in run := true
+
 libraryDependencies ++= {
   Seq(
     "junit" % "junit" % "4.4" % "test",

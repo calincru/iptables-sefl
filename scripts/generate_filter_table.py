@@ -1,3 +1,4 @@
+import os
 import random
 import sys
 
@@ -110,8 +111,13 @@ def main(args):
     num_chains = int(args[1])
     num_rules = int(args[2])
 
+    # Create a new dir for this number of rules, if it does not exist already.
+    gen_dir = GEN_ROOT_DIR + str(num_rules)
+    if not os.path.isdir(gen_dir):
+        os.mkdir(gen_dir)
+
     for i in range(num_chains):
-        with open(GEN_ROOT_DIR + '_gen{}'.format(i), 'w') as f:
+        with open(gen_dir + '/_gen{}'.format(i), 'w') as f:
             accept = random.random() < 0.5
             print('<<filter>>\n\t<FORWARD:' +
                     ('ACCEPT' if accept else 'DROP') + '>', file=f)

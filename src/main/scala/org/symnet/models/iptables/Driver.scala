@@ -156,7 +156,7 @@ object Driver extends App with BaseParsers {
   /////////////////////////////////////////
 
   println("*********** STATS BEGIN HERE ***********")
-  println(s"Symbolic execution time: ${(t1 - t0) / 1000000000.0}s")
+  println(s"Symbolic execution time: ${(t1 - t0) / 1000000000.0}")
 
   val iptRouter = driver.iptRouter
   val localSuccessCount = successful.filter(
