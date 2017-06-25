@@ -29,16 +29,6 @@ trait SymnetFacade {
   def deviceId: String
 
   ///
-  /// Names of device-specific metadata.
-  ///
-
-  def nfmark: String = nfmarkTag(deviceId)
-  def ctmark: String = ctmarkTag(deviceId)
-  def ctstate: String = ctstateTag(deviceId)
-  def snatState: String = snatStateTag(deviceId)
-  def dnatState: String = dnatStateTag(deviceId)
-
-  ///
   /// Run symbolic execution given a one or more virtual devices
   ///
 
@@ -70,7 +60,11 @@ trait SymnetFacade {
       (result.stuckStates, result.failedStates)
     }
 
-  protected def initState(otherInstr: Instruction): State = InstructionBlock(
+  def initState(otherInstr: Instruction): State = InstructionBlock(
+    ///////////////////////////////////////////////
+    /// Packet header fields
+    ///////////////////////////////////////////////
+
     CreateTag("START",0),
     CreateTag("L3", 0),
 
@@ -98,30 +92,48 @@ trait SymnetFacade {
 
     CreateTag("END", L4Tag + 12000),
 
-    ///
+    ///////////////////////////////////////////////
     /// Metadata fields
-    ///
+    ///////////////////////////////////////////////
 
-    Allocate(nfmark),
-    Assign(nfmark, SymbolicBitVector()),
+    metadataInitInstr,
 
-    Allocate(ctmark),
-    Assign(ctmark, SymbolicBitVector()),
+    ///////////////////////////////////////////////
+    /// User-specified additional instructions
+    ///////////////////////////////////////////////
 
-    // NOTE: We initialize the connection state to the concrete (!) value
-    // `Unset' instead of SymbolicValue.
-    Allocate(ctstate),
-    Assign(ctstate, ConstantValue(ConnectionState.Unset.id)),
-
-    Allocate(snatState),
-    Assign(snatState, SymbolicValue()),
-
-    Allocate(dnatState),
-    Assign(dnatState, SymbolicValue()),
-
-    // Add here the additional instruction.
     otherInstr
   )(State())._1.head
+
+  ///////////////////////////////////////////////
+  /// Device specific metadata.
+  ///////////////////////////////////////////////
+
+  lazy val nfmark: String = nfmarkTag(deviceId)
+  lazy val ctmark: String = ctmarkTag(deviceId)
+  lazy val ctstate: String = ctstateTag(deviceId)
+  lazy val snatState: String = snatStateTag(deviceId)
+  lazy val dnatState: String = dnatStateTag(deviceId)
+
+  lazy val metadataInitInstr: Instruction =
+    InstructionBlock(
+      Allocate(nfmark),
+      Assign(nfmark, SymbolicBitVector()),
+
+      Allocate(ctmark),
+      Assign(ctmark, SymbolicBitVector()),
+
+      // NOTE: We initialize the connection state to the concrete (!) value
+      // `Unset' instead of SymbolicValue.
+      Allocate(ctstate),
+      Assign(ctstate, ConstantValue(ConnectionState.Unset.id)),
+
+      Allocate(snatState),
+      Assign(snatState, SymbolicValue()),
+
+      Allocate(dnatState),
+      Assign(dnatState, SymbolicValue())
+    )
 }
 
 private[this] object Z3SyncDummyObject

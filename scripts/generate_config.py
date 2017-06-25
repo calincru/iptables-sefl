@@ -39,12 +39,10 @@ COMMON_MATCHES = {
         '1.1.1.1',
         '2.2.2.2',
     ]),
-    # FIXME: Be careful to ignore this in POSTROUTING.
     '-i': ('', [
         'eth0',
         'eth1',
     ]),
-    # FIXME: Be careful to ignore this in PREROUTING.
     '-o': ('', [
         'eth0',
         'eth1',
@@ -189,7 +187,7 @@ def generate_table(
         print('\t<{}:{}>'.format(chain, ('ACCEPT' if accept else 'DROP')),
               file=config_file)
 
-        for i in range(num_rules):
+        for i in range(num_rules if table_name == 'filter' else 2):
             # Find the number of matches to randomly pick.
             num_matches = random.randint(MPR_A, MPR_B)
             # Find *which* matches to use.
@@ -248,8 +246,8 @@ def main(args):
     for i in range(num_chains):
         with open(gen_dir + '/_gen{}'.format(i), 'w') as f:
             # Generate rules for each table.
-            for table in ['mangle', 'filter', 'nat']:
-                generate_table(table, tcp_matches, udp_matches, num_rules, f)
+            generate_table('filter', tcp_matches, udp_matches, num_rules, f)
+            # generate_table('nat', tcp_matches, udp_matches, 2, f)
 
 
 if __name__ == '__main__':

@@ -28,19 +28,18 @@ import virtdev.devices.IPTRouterBuilder
 import virtdev.SymnetFacade
 
 class Driver(
+    name: String,
     ipsStr: String,
     routingTableStr: String,
     iptablesStr: String,
     inputPort: String,
-    validateOnly: Boolean = false) extends SymnetFacade with BaseParsers {
+    validateOnly: Boolean = false,
+    initInstruction: Instruction = NoOp) extends SymnetFacade with BaseParsers {
   // We need the check-fail function for parsing any type T.
   import Driver.parse
 
   // Set the identifier of this device.
-  override def deviceId: String = "ipt-router"
-
-  // The `Driver' can be subclasses to overwrite this instruction.
-  def initInstruction: Instruction = NoOp
+  override def deviceId: String = name
 
   lazy val ipsMap =
     ipsStr.split("\n").filter(!_.trim.isEmpty).map(line => {
@@ -132,18 +131,18 @@ object Driver extends App with BaseParsers {
       fileName => Source.fromFile(fileName).getLines.mkString("\n")
     }
   val driver = new Driver(
+      name = "ipt-router",
       ipsStr = ips,
       routingTableStr = routingTable,
       iptablesStr = iptables,
       inputPort = conf.input_port(),
-      validateOnly = conf.validate_only()) {
+      validateOnly = conf.validate_only(),
+      // Maybe use a destination ip address, if specified as argument.
+      initInstruction = conf.destination_ip.toOption match {
+        case Some(ip) => Assign(IPDst, ConstantValue(parse(ipParser, ip).host))
+        case None     => NoOp
+      })
 
-    // Maybe use a destination ip address, if specified as argument.
-    override def initInstruction = conf.destination_ip.toOption match {
-      case Some(ip) => Assign(IPDst, ConstantValue(parse(ipParser, ip).host))
-      case None     => NoOp
-    }
-  }
   // NOTE: Not the most accurate way of measuring time while running on a JVM,
   // but our benchmark framework is too slow.
   val t0 = System.nanoTime()

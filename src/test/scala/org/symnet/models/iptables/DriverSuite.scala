@@ -61,13 +61,14 @@ class DriverSuite extends FunSuite with Matchers
     """
     val ipt = ""
 
-    val (success, _) = new Driver(ips, rt, ipt, "eth0").run()
+    val driver = new Driver("ipt-router", ips, rt, ipt, "eth0")
+    val (success, _) = driver.run()
+
     success should have length (4)
       // * 1 to local process (15.15.15.15)
       // * 1 to local process (192.168.0.1)
       // * 1 to subnet 192.168.0.0/24
       // * 1 to default gateway
-
   }
 
   test("one way firewall") {
@@ -86,12 +87,12 @@ class DriverSuite extends FunSuite with Matchers
     """
 
     {
-      val (success, _) = new Driver(ips, rt, ipt, "eth0").run()
+      val (success, _) = new Driver("ipt-router", ips, rt, ipt, "eth0").run()
       success should have length (4)
         // Same as above.
     }
     {
-      val (success, _) = new Driver(ips, rt, ipt, "eth1").run()
+      val (success, _) = new Driver("ipt-router", ips, rt, ipt, "eth1").run()
       success should have length (2)
         // Just to local processes.
     }
@@ -112,13 +113,13 @@ class DriverSuite extends FunSuite with Matchers
         -s 192.168.0.0/24 -p tcp -j SNAT --to-source 15.15.15.15:5000-10000
     """
 
-    val (success, _) = new Driver(ips, rt, ipt, "eth1") {
-      override def initInstruction = InstructionBlock(
+    val driver =  new Driver(
+      "ipt-router", ips, rt, ipt, "eth1", initInstruction = InstructionBlock(
         Assign(Proto, ConstantValue(TCPProto)),
         Assign(IPSrc, ConstantValue(Ipv4(192, 168, 0, 120).host)),
         Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host))
-      )
-    }.run()
+      ))
+    val (success, _) = driver.run()
 
     success should (
       have length (1) and
@@ -148,11 +149,9 @@ class DriverSuite extends FunSuite with Matchers
         -d 8.8.8.8 -j REDIRECT
     """
 
-    val driver = new Driver(ips, rt, ipt, "eth1") {
-      override def initInstruction = InstructionBlock(
-        Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host))
-      )
-    }
+    val driver = new Driver(
+        "ipt-router", ips, rt, ipt, "eth1",
+        initInstruction = Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host)))
     val (success, _) = driver.run()
 
     success should have length (1)
@@ -183,11 +182,9 @@ class DriverSuite extends FunSuite with Matchers
     """
 
     {
-      val driver = new Driver(ips, rt, ipt, "eth0") {
-        override def initInstruction = InstructionBlock(
-          Assign(IPDst, ConstantValue(Ipv4(15, 15, 15, 15).host))
-        )
-      }
+      val driver = new Driver(
+        "ipt-router", ips, rt, ipt, "eth0",
+        initInstruction = Assign(IPDst, ConstantValue(Ipv4(15, 15, 15, 15).host)))
       val (success, _) = driver.run()
 
       success should (
@@ -197,7 +194,7 @@ class DriverSuite extends FunSuite with Matchers
     }
     {
       // Insert an unconstrained packet.
-      val driver = new Driver(ips, rt, ipt, "eth0")
+      val driver = new Driver("ipt-router", ips, rt, ipt, "eth0")
       val (success, _) = driver.run()
 
       success should (
@@ -220,43 +217,32 @@ class DriverSuite extends FunSuite with Matchers
     val ipt = """
     """
 
-    new SymnetFacade {
-      // NOTE: This is not really needed here, but we need to be inside
-      // SymnetFacade to use the version of symExec which accepts multiple
-      // virtual devices.
-      override def deviceId = "simple-net"
+    val driver = new Driver("ipt-router", ips, rt, ipt, "eth0")
+    val iptRouter = driver.iptRouter
 
-      val driver = new Driver(ips, rt, ipt, "eth0")
-      val iptRouter = driver.iptRouter
+    val (success, _) = driver.symExec(
+      vds = List(iptRouter, ipMirror),
+      initPort = iptRouter.outputPort("eth0"),
+      otherInstr = InstructionBlock(
+        Assign(IPSrc, ConstantValue(Ipv4(15, 15, 15, 15).host)),
+        Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host)),
 
-      val (success, _) = symExec(
-        vds = List(iptRouter, ipMirror),
-        initPort = iptRouter.outputPort("eth0"),
-        otherInstr = InstructionBlock(
-          Assign(IPSrc, ConstantValue(Ipv4(15, 15, 15, 15).host)),
-          Assign(IPDst, ConstantValue(Ipv4(8, 8, 8, 8).host)),
+        Assign(driver.ctstate, ConstantValue(ConnectionState.New.id))
+      ),
+      otherLinks = Map(
+        iptRouter.outputPort("eth0") -> ipMirror.inputPort(0),
+        ipMirror.outputPort(0) -> iptRouter.inputPort("eth0")
+      ),
+      log = true
+    )
 
-          Assign(driver.ctstate, ConstantValue(ConnectionState.New.id))
-        ),
-        otherLinks = Map(
-          iptRouter.outputPort("eth0") -> ipMirror.inputPort(0),
-          ipMirror.outputPort(0) -> iptRouter.inputPort("eth0")
-        ),
-        log = true
-      )
-
-      success should (
-        have length (1) and
-        reachPort (iptRouter.localProcessInputPort)
-      )
-      success(0) should containAssignment (
-        driver.ctstate,
-        ConstantValue(ConnectionState.Established.id)
-      )
-    }
+    success should (
+      have length (1) and
+      reachPort (iptRouter.localProcessInputPort)
+    )
+    success(0) should containAssignment (
+      driver.ctstate,
+      ConstantValue(ConnectionState.Established.id)
+    )
   }
-
-  // TODO: Create a new suite for the 'chain of ipt routers' performance test,
-  // read the config files from the 'generated' dir, run the test, record the
-  // time and repeat.
 }

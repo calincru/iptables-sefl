@@ -55,7 +55,7 @@ object SymbolicExecutionBench extends Bench.ForkedTime {
             }
 
           // Run the driver.
-          new Driver(ips, routingTable, iptables, port) {
+          new Driver("ipt-router", ips, routingTable, iptables, port) {
             override def initInstruction = InstructionBlock(
               // This is the sane default for any "initial" packet.
               Assign(ctstate, ConstantValue(ConnectionState.New.id)),
