@@ -71,10 +71,10 @@ object NetworkDepthTest extends App with SymnetFacade with BaseParsers {
   /// Run the test for each depth
   /////////////////////////////////////////
 
-  List(1) map { depth =>
+  List(2) map { depth =>
     val indices = Random.shuffle(allIndices).take(depth)
     val drivers = indices.map(i =>
-        getDriver("ipt-router", getConfFile(conf.chain_size(), i)))
+        getDriver(s"ipt$i", getConfFile(conf.chain_size(), i)))
     val iptRouters = drivers.map(_.iptRouter)
 
     val t0 = System.nanoTime()
@@ -92,13 +92,15 @@ object NetworkDepthTest extends App with SymnetFacade with BaseParsers {
       // Link them together to form the actual network topology.
       otherLinks = (0 until depth - 1).map(i =>
           iptRouters(i).outputPort("eth0") ->
-            iptRouters(i).inputPort("eth0")).toMap,
+            iptRouters(i + 1).inputPort("eth0")).toMap,
       log = true
     )
     val t1 = System.nanoTime()
 
     println("*********** STATS BEGIN HERE ***********")
     println(s"Time (depth = ${depth}): ${(t1 - t0) / 1000000000.0}")
-  println("*********** STATS END HERE ***********")
+    println(s"Successful paths: ${successful.size}")
+    println(s"Failed paths: ${failed.size}")
+    println("*********** STATS END HERE ***********")
   }
 }
