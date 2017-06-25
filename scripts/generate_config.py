@@ -187,7 +187,7 @@ def generate_table(
         print('\t<{}:{}>'.format(chain, ('ACCEPT' if accept else 'DROP')),
               file=config_file)
 
-        for i in range(num_rules if table_name == 'filter' else 2):
+        for i in range(num_rules):
             # Find the number of matches to randomly pick.
             num_matches = random.randint(MPR_A, MPR_B)
             # Find *which* matches to use.

@@ -19,7 +19,7 @@ function run_tests {
   done
 
   cat /tmp/sbt-commands \
-    | sbt -J-Xmx3G \
+    | sbt \
     | grep "Symbolic execution time" \
     | awk -v num_rules="$1" '{sum += $5} END {print num_rules " rules: " sum/NR}'
 }
