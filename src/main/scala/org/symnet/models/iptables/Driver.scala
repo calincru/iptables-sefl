@@ -111,6 +111,7 @@ object Driver extends App with BaseParsers {
     val ips = opt[String](required = true)
     val input_port = opt[String](required = true)
     val validate_only = opt[Boolean]()
+    val source_ip = opt[String]()
     val destination_ip = opt[String]()
 
     validateOpt (validate_only, input_port) {
@@ -138,10 +139,15 @@ object Driver extends App with BaseParsers {
       inputPort = conf.input_port(),
       validateOnly = conf.validate_only(),
       // Maybe use a destination ip address, if specified as argument.
-      initInstruction = conf.destination_ip.toOption match {
-        case Some(ip) => Assign(IPDst, ConstantValue(parse(ipParser, ip).host))
-        case None     => NoOp
-      })
+      initInstruction = InstructionBlock(
+        conf.source_ip.toOption match {
+          case Some(ip) => Assign(IPSrc, ConstantValue(parse(ipParser, ip).host))
+          case None     => NoOp
+        },
+        conf.destination_ip.toOption match {
+          case Some(ip) => Assign(IPDst, ConstantValue(parse(ipParser, ip).host))
+          case None     => NoOp
+        }))
 
   // NOTE: Not the most accurate way of measuring time while running on a JVM,
   // but our benchmark framework is too slow.
@@ -155,7 +161,7 @@ object Driver extends App with BaseParsers {
   /////////////////////////////////////////
 
   println("*********** STATS BEGIN HERE ***********")
-  println(s"Symbolic execution time: ${(t1 - t0) / 1000000000.0}")
+  println("Symbolic execution time: %.2fs".format((t1 - t0) / 1000000000.0))
 
   val iptRouter = driver.iptRouter
   val localSuccessCount = successful.filter(
