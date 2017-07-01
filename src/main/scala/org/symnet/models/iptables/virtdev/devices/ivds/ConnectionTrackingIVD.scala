@@ -24,6 +24,8 @@ case class ConnectionTrackingIVD(name: String, deviceId: String)
   protected override def ivdPortInstructions: Map[Port, Instruction] = {
     val ctstateTagName = ctstateTag(deviceId)
     val ctstateTransitions = Map(
+      // We make sure that untracked connections remain the same.
+      ConnectionState.Untracked -> ConnectionState.Untracked,
       ConnectionState.Unset -> ConnectionState.New,
 
       // FIXME: This is wrong, make sure that thic packet is in the *reverse*

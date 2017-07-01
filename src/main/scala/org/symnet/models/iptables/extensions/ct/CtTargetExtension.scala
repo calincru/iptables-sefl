@@ -24,6 +24,10 @@ import extensions.conntrack.ConnectionState
 // connection. The target attaches a "template" connection tracking entry to the
 // packet, which is then used by the conntrack core when initializing a new ct
 // entry. This target is thus only valid in the "raw" table.
+object CtTargetExtension extends TargetExtension {
+  val targetParser = CtTarget.parser
+}
+
 case class CtTarget(option: CtTarget.Option) extends Target {
   type Self = option.Self
 

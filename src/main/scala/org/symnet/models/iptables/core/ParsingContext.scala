@@ -59,6 +59,7 @@ object ParsingContext {
   import extensions.mark.{MarkModuleLoader, MarkTargetExtension}
   import extensions.connmark.{ConnmarkModuleLoader, ConnmarkTargetExtension}
   import extensions.conntrack.ConntrackModuleLoader
+  import extensions.ct.CtTargetExtension
 
   def default: ParsingContext = ParsingContext(
     // Match extensions.
@@ -89,6 +90,9 @@ object ParsingContext {
       // mangle-related
       MarkTargetExtension,
       ConnmarkTargetExtension,
+
+      // raw-related
+      CtTargetExtension,
 
       // NOTE: Keep this one the last.
       ChainTargetExtension

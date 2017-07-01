@@ -85,16 +85,19 @@ case class SnatTarget(
         //    inclusive will be mapped to ports below 1024, and other ports will
         //    be mapped to 1024 or above. Where possible, no port alteration
         //    will occur.
-        If(Constrain(fromPort, :<:(ConstantValue(512))),
-           // then
-           Constrain(TcpSrc, :<:(ConstantValue(512))),
-           // else
-           If(Constrain(fromPort, :<:(ConstantValue(1024))),
-              // then
-              Constrain(TcpSrc, :&:(:>=:(ConstantValue(512)),
-                                    :<:(ConstantValue(1024)))),
-              // else
-              Constrain(TcpSrc, :>=:(ConstantValue(1024)))))
+        //
+        // TODO: Maybe uncomment this after demo.
+        // If(Constrain(fromPort, :<:(ConstantValue(512))),
+        //    // then
+        //    Constrain(TcpSrc, :<:(ConstantValue(512))),
+        //    // else
+        //    If(Constrain(fromPort, :<:(ConstantValue(1024))),
+        //       // then
+        //       Constrain(TcpSrc, :&:(:>=:(ConstantValue(512)),
+        //                             :<:(ConstantValue(1024)))),
+        //       // else
+        //       Constrain(TcpSrc, :>=:(ConstantValue(1024)))))
+        NoOp
       },
 
       // Save the new addresses.
